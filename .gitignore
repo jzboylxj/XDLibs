@@ -2,3 +2,9 @@
 .vscode/.ropeproject/config.py
 .vscode/settings.json
 
+.idea/misc.xml
+.idea/modules.xml
+.idea/workspace.xml
+.idea/XDLibs.iml
+.idea/codeStyles/codeStyleConfig.xml
+.idea/inspectionProfiles/profiles_settings.xml
