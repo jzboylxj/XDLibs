@@ -50,7 +50,7 @@ def _onMayaDropped():
 
     command = '''
 # -----------------------------------
-# Bak Studio Library
+# XiuDan Technology Library
 # -----------------------------------
 
 import os
@@ -61,7 +61,7 @@ if not os.path.exists(r'{path}'):
 
 if r'{path}' not in sys.path:
     sys.path.insert(0, r'{path}')
-    
+
 from XDLibs.animation import helper
 reload(helper)
 helper.JsonManager()
@@ -72,20 +72,20 @@ helper.JsonManager()
 
     cmds.shelfButton(
         command=command,
-        annotation='Batch Helper',
+        annotation='Json管理器',
         sourceType='Python',
         parent=parent,
         image="pythonFamily.png",
         image1="pythonFamily.png",
         style="iconOnly",
-        imageOverlayLabel=u"自动",
-        label=u'自动'
+        imageOverlayLabel=u"Json管理器",
+        label=u'Json管理器'
     )
 
     cmds.shelfButton(
         command=('''
 # -----------------------------------
-# Bak Studio Library
+# XiuDan Technology Library
 # -----------------------------------
 import os
 import sys
@@ -96,226 +96,219 @@ if not os.path.exists(r'{path}'):
 if r'{path}' not in sys.path:
     sys.path.insert(0, r'{path}')
     
-from doManager import doBatchHelper
-reload(doBatchHelper)
+from XDLibs.animation import helper
 
-global export_manager
+reload(helper)
 
-try:
-    export_manager.close()
-except:
-    pass
-
-export_manager = doBatchHelper.AnimExportWnd()
-export_manager.show()
+helper.ExportFBXMaster()
 ''').format(path=srcPath),
-        annotation='Animation Export Helper',
+        annotation='Export FBX Master',
         sourceType='Python',
         parent=parent,
         image="pythonFamily.png",
         image1="pythonFamily.png",
         style="iconOnly",
-        imageOverlayLabel=u"出画",
-        label=u'出画'
+        imageOverlayLabel=u"ExportFBX",
+        label=u'ExpFBX'
     )
 
-    cmds.shelfButton(
-        command=('''
-# -----------------------------------
-# Bak Studio Library
-# -----------------------------------
-import os
-import sys
+#     cmds.shelfButton(
+#         command=('''
+# # -----------------------------------
+# # Bak Studio Library
+# # -----------------------------------
+# import os
+# import sys
 
-if not os.path.exists(r'{path}'):
-    raise IOError(r'The source path "{path}" does not exist!')
+# if not os.path.exists(r'{path}'):
+#     raise IOError(r'The source path "{path}" does not exist!')
 
-if r'{path}' not in sys.path:
-    sys.path.insert(0, r'{path}')
+# if r'{path}' not in sys.path:
+#     sys.path.insert(0, r'{path}')
    
-from doManager import doBox
+# from doManager import doBox
 
-reload(doBox)
+# reload(doBox)
 
-doBox.clean_unknown_node()
-''').format(path=srcPath),
-        annotation='Animation Export Helper',
-        sourceType='Python',
-        parent=parent,
-        image="pythonFamily.png",
-        image1="pythonFamily.png",
-        style="iconOnly",
-        imageOverlayLabel=u"优化",
-        label=u'优化'
-    )
+# doBox.clean_unknown_node()
+# ''').format(path=srcPath),
+#         annotation='Animation Export Helper',
+#         sourceType='Python',
+#         parent=parent,
+#         image="pythonFamily.png",
+#         image1="pythonFamily.png",
+#         style="iconOnly",
+#         imageOverlayLabel=u"优化",
+#         label=u'优化'
+#     )
 
-    cmds.shelfButton(
-        command=('''
-# -----------------------------------
-# Bak Studio Library
-# -----------------------------------
-import os
-import sys
+#     cmds.shelfButton(
+#         command=('''
+# # -----------------------------------
+# # Bak Studio Library
+# # -----------------------------------
+# import os
+# import sys
 
-if not os.path.exists(r'{path}'):
-    raise IOError(r'The source path "{path}" does not exist!')
-if r'{path}' not in sys.path:
-    sys.path.insert(0, r'{path}')
+# if not os.path.exists(r'{path}'):
+#     raise IOError(r'The source path "{path}" does not exist!')
+# if r'{path}' not in sys.path:
+#     sys.path.insert(0, r'{path}')
 
-from v1.baladodo import doExportManager
+# from v1.baladodo import doExportManager
 
-reload(doExportManager)
+# reload(doExportManager)
 
-doExportManager.ExportManager()
-''').format(path=srcPath),
-        annotation='角色输出工具',
-        sourceType='Python',
-        parent=parent,
-        image="pythonFamily.png",
-        image1="pythonFamily.png",
-        style="iconOnly",
-        imageOverlayLabel=u"角色输出",
-        label=u'角色输出'
-    )
+# doExportManager.ExportManager()
+# ''').format(path=srcPath),
+#         annotation='角色输出工具',
+#         sourceType='Python',
+#         parent=parent,
+#         image="pythonFamily.png",
+#         image1="pythonFamily.png",
+#         style="iconOnly",
+#         imageOverlayLabel=u"角色输出",
+#         label=u'角色输出'
+#     )
 
-    cmds.shelfButton(
-        command=('''
-# -----------------------------------
-# Bak Studio Library
-# -----------------------------------
-import os
-import sys
+#     cmds.shelfButton(
+#         command=('''
+# # -----------------------------------
+# # Bak Studio Library
+# # -----------------------------------
+# import os
+# import sys
 
-if not os.path.exists(r'{path}'):
-    raise IOError(r'The source path "{path}" does not exist!')
+# if not os.path.exists(r'{path}'):
+#     raise IOError(r'The source path "{path}" does not exist!')
 
-if r'{path}' not in sys.path:
-    sys.path.insert(0, r'{path}')
+# if r'{path}' not in sys.path:
+#     sys.path.insert(0, r'{path}')
     
-from doManager import doAnimatorHelper
-reload(doAnimatorHelper)
+# from doManager import doAnimatorHelper
+# reload(doAnimatorHelper)
 
-global animator_helper
+# global animator_helper
 
-try:
-    animator_helper.close()
-except:
-    pass
+# try:
+#     animator_helper.close()
+# except:
+#     pass
 
-animator_helper = doAnimatorHelper.AnimatorHelper()
-animator_helper.show()
+# animator_helper = doAnimatorHelper.AnimatorHelper()
+# animator_helper.show()
 
-''').format(path=srcPath),
-        sourceType='Python',
-        parent=parent,
-        image="pythonFamily.png",
-        image1="pythonFamily.png",
-        style="iconOnly",
-        imageOverlayLabel=u"动画助手",
-        annotation=u"包含了一些提供给动画师的工具集",
-        label=u"动画助手",
-    )
+# ''').format(path=srcPath),
+#         sourceType='Python',
+#         parent=parent,
+#         image="pythonFamily.png",
+#         image1="pythonFamily.png",
+#         style="iconOnly",
+#         imageOverlayLabel=u"动画助手",
+#         annotation=u"包含了一些提供给动画师的工具集",
+#         label=u"动画助手",
+#     )
 
-    cmds.shelfButton(
-        command=('''
-# -----------------------------------
-# Bak Studio Library
-# -----------------------------------
-import os
-import sys
+#     cmds.shelfButton(
+#         command=('''
+# # -----------------------------------
+# # Bak Studio Library
+# # -----------------------------------
+# import os
+# import sys
 
-if not os.path.exists(r'{path}'):
-    raise IOError(r'The source path "{path}" does not exist!')
+# if not os.path.exists(r'{path}'):
+#     raise IOError(r'The source path "{path}" does not exist!')
 
-if r'{path}' not in sys.path:
-    sys.path.insert(0, r'{path}')
+# if r'{path}' not in sys.path:
+#     sys.path.insert(0, r'{path}')
    
-from pymel import core as pm
-from doManager import doToolBox
+# from pymel import core as pm
+# from doManager import doToolBox
 
-reload(doToolBox)
+# reload(doToolBox)
 
-doToolBox.ToolBox()
-''').format(path=srcPath),
-        sourceType='Python',
-        parent=parent,
-        image="pythonFamily.png",
-        image1="pythonFamily.png",
-        style="iconOnly",
-        imageOverlayLabel=u"比克",
-        annotation=u"比克非凡工具集",
-        label=u"比克工具集",
-    )
+# doToolBox.ToolBox()
+# ''').format(path=srcPath),
+#         sourceType='Python',
+#         parent=parent,
+#         image="pythonFamily.png",
+#         image1="pythonFamily.png",
+#         style="iconOnly",
+#         imageOverlayLabel=u"比克",
+#         annotation=u"比克非凡工具集",
+#         label=u"比克工具集",
+#     )
 
-    cmds.shelfButton(
-        command=('''
-# -----------------------------------
-# Bak Studio Library
-# -----------------------------------
-import os
-import sys
+#     cmds.shelfButton(
+#         command=('''
+# # -----------------------------------
+# # Bak Studio Library
+# # -----------------------------------
+# import os
+# import sys
 
-if not os.path.exists(r'{path}'):
-    raise IOError(r'The source path "{path}" does not exist!')
+# if not os.path.exists(r'{path}'):
+#     raise IOError(r'The source path "{path}" does not exist!')
 
-if r'{path}' not in sys.path:
-    sys.path.insert(0, r'{path}')
+# if r'{path}' not in sys.path:
+#     sys.path.insert(0, r'{path}')
    
-from pymel import core as pm
-from doPipline import doFace
+# from pymel import core as pm
+# from doPipline import doFace
 
-reload(doFace)
+# reload(doFace)
 
-doFace.ConnectorBuilder()
+# doFace.ConnectorBuilder()
 
-''').format(path=srcPath),
-        sourceType='Python',
-        parent=parent,
-        image="pythonFamily.png",
-        image1="pythonFamily.png",
-        style="iconOnly",
-        imageOverlayLabel=u"表情增强",
-        annotation=u"比克非凡工具集",
-        label=u"比克工具集",
-    )
+# ''').format(path=srcPath),
+#         sourceType='Python',
+#         parent=parent,
+#         image="pythonFamily.png",
+#         image1="pythonFamily.png",
+#         style="iconOnly",
+#         imageOverlayLabel=u"表情增强",
+#         annotation=u"比克非凡工具集",
+#         label=u"比克工具集",
+#     )
 
-    cmds.shelfButton(
-        command=('''
-# -----------------------------------
-# Bak Studio Library
-# -----------------------------------
-import os
-import sys
+#     cmds.shelfButton(
+#         command=('''
+# # -----------------------------------
+# # Bak Studio Library
+# # -----------------------------------
+# import os
+# import sys
 
-if not os.path.exists(r'{path}'):
-    raise IOError(r'The source path "{path}" does not exist!')
+# if not os.path.exists(r'{path}'):
+#     raise IOError(r'The source path "{path}" does not exist!')
 
-if r'{path}' not in sys.path:
-    sys.path.insert(0, r'{path}')
+# if r'{path}' not in sys.path:
+#     sys.path.insert(0, r'{path}')
 
-from pymel import core as pm
-from doManager import doBatchHelper
+# from pymel import core as pm
+# from doManager import doBatchHelper
 
-reload(doBatchHelper)
+# reload(doBatchHelper)
 
-try:
-    batch_playblast.close()
-except:
-    pass
+# try:
+#     batch_playblast.close()
+# except:
+#     pass
 
-batch_playblast = doBatchHelper.BatchPlayblast()
-batch_playblast.show()
+# batch_playblast = doBatchHelper.BatchPlayblast()
+# batch_playblast.show()
 
-    ''').format(path=srcPath),
-        sourceType='Python',
-        parent=parent,
-        image="pythonFamily.png",
-        image1="pythonFamily.png",
-        style="iconOnly",
-        imageOverlayLabel=u"拍频",
-        annotation=u"比克非凡工具集",
-        label=u"比克工具集",
-    )
+#     ''').format(path=srcPath),
+#         sourceType='Python',
+#         parent=parent,
+#         image="pythonFamily.png",
+#         image1="pythonFamily.png",
+#         style="iconOnly",
+#         imageOverlayLabel=u"拍频",
+#         annotation=u"比克非凡工具集",
+#         label=u"比克工具集",
+#     )
 
     # print("\n// Studio Library has been added to current shelf.")
 

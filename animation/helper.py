@@ -2185,12 +2185,13 @@ class ExportFBXMaster(common.Singleton):
 
         self.form_layout = pm.formLayout()
 
-        # self.work_mode = pm.radioButtonGrp(
-        #     label=u'工作模式',
-        #     labelArray2=[u'骨骼输出', u'捏脸动画清理'],
-        #     cw3=[48, 100, 100],
-        #     sl=self.work_mode_selected,
-        #     numberOfRadioButtons=2)
+        self.work_mode = pm.radioButtonGrp(
+            label=u'工作模式',
+            labelArray2=[u'骨骼输出', u'捏脸动画清理'],
+            cw3=[48, 100, 100],
+            sl=self.work_mode_selected,
+            numberOfRadioButtons=2)
+
         self.scroll_label = pm.text(label=u"输出文件列表", al="left")
         self.output_scroll = pm.textScrollList(ams=True)
         pm.popupMenu()
@@ -2207,16 +2208,16 @@ class ExportFBXMaster(common.Singleton):
             text=self.output_path,
             bc=lambda *args: self._set_output_location())
         self.excute_btn = pm.button(
-            label=u"开始输出",
+            label=u"开始输出 修改",
             c=lambda *args: self.export_to_fbx())
 
         pm.formLayout(
             self.form_layout,
             edit=True,
             attachForm=[
-                # (self.work_mode, 'top', 10),
-                # (self.work_mode, 'left', 10),
-                # (self.work_mode, 'right', 10),
+                (self.work_mode, 'top', 10),
+                (self.work_mode, 'left', 10),
+                (self.work_mode, 'right', 10),
                 (self.scroll_label, 'top', 10),
                 (self.scroll_label, 'left', 10),
                 (self.scroll_label, 'right', 10),
