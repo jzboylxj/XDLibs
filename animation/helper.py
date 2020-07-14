@@ -2185,20 +2185,24 @@ class ExportFBXMaster(common.Singleton):
 
         self.form_layout = pm.formLayout()
 
+        self.work_list_frame = pm.frameLayout(
+            label=u"工作模式", mw=10, mh=5)
         self.work_mode = pm.radioButtonGrp(
-            label=u'工作模式',
+            label=u'工作类型：',
             labelArray2=[u'骨骼输出', u'FBX优化'],
-            cw3=[48, 100, 100],
+            cw3=[60, 80, 80],
             sl=self.work_mode_selected,
             numberOfRadioButtons=2)
 
-        self.scroll_label = pm.text(label=u"输出文件列表", al="left")
+        self.scroll_label = pm.text(
+            label=u"输出文件列表：", al="left")
         self.output_scroll = pm.textScrollList(ams=True)
         pm.popupMenu()
         pm.menuItem(label=u"添加文件",
                     c=lambda *args: self._append_file())
         pm.menuItem(label=u"移除选择",
                     c=lambda *args: self.remove_select_item())
+        pm.setParent("..")
 
         self.ouput_path_field = pm.textFieldButtonGrp(
             adj=2,
@@ -2215,14 +2219,9 @@ class ExportFBXMaster(common.Singleton):
             self.form_layout,
             edit=True,
             attachForm=[
-                (self.work_mode, 'top', 10),
-                (self.work_mode, 'left', 10),
-                (self.work_mode, 'right', 10),
-                # (self.scroll_label, 'top', 10),
-                (self.scroll_label, 'left', 10),
-                (self.scroll_label, 'right', 10),
-                (self.output_scroll, 'left', 10),
-                (self.output_scroll, 'right', 10),
+                (self.work_list_frame, 'top', 10),
+                (self.work_list_frame, 'left', 10),
+                (self.work_list_frame, 'right', 10),
                 (self.ouput_path_field, 'left', 10),
                 (self.ouput_path_field, 'right', 10),
                 (self.excute_btn, 'left', 10),
@@ -2230,9 +2229,7 @@ class ExportFBXMaster(common.Singleton):
                 (self.excute_btn, 'bottom', 10)
             ],
             attachControl=[
-                (self.scroll_label, 'top', 5, self.work_mode),
-                (self.output_scroll, 'top', 5, self.scroll_label),
-                (self.output_scroll, 'bottom', 5, self.ouput_path_field),
+                (self.work_list_frame, 'bottom', 0, self.ouput_path_field),
                 (self.ouput_path_field, 'bottom', 5, self.excute_btn),
             ],
         )
