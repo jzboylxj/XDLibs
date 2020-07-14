@@ -1395,7 +1395,7 @@ class JsonManager(common.Singleton):
         controller_index = pm.scrollLayout(
             "controllerListLayout", q=True, nch=True)
         self.controller[controller_index] = (
-                "controllerGrp%s" % controller_index)
+            "controllerGrp%s" % controller_index)
         self.add_controller_widget(
             index=controller_index, parent="controllerListLayout")
 
@@ -2187,7 +2187,7 @@ class ExportFBXMaster(common.Singleton):
 
         self.work_mode = pm.radioButtonGrp(
             label=u'工作模式',
-            labelArray2=[u'骨骼输出', u'捏脸动画清理'],
+            labelArray2=[u'骨骼输出', u'FBX优化'],
             cw3=[48, 100, 100],
             sl=self.work_mode_selected,
             numberOfRadioButtons=2)
@@ -2208,8 +2208,8 @@ class ExportFBXMaster(common.Singleton):
             text=self.output_path,
             bc=lambda *args: self._set_output_location())
         self.excute_btn = pm.button(
-            label=u"开始输出 修改",
-            c=lambda *args: self.export_to_fbx())
+            label=u"开始输出",
+            c=lambda *args: self.start_export())
 
         pm.formLayout(
             self.form_layout,
@@ -2218,7 +2218,7 @@ class ExportFBXMaster(common.Singleton):
                 (self.work_mode, 'top', 10),
                 (self.work_mode, 'left', 10),
                 (self.work_mode, 'right', 10),
-                (self.scroll_label, 'top', 10),
+                # (self.scroll_label, 'top', 10),
                 (self.scroll_label, 'left', 10),
                 (self.scroll_label, 'right', 10),
                 (self.output_scroll, 'left', 10),
@@ -2230,6 +2230,7 @@ class ExportFBXMaster(common.Singleton):
                 (self.excute_btn, 'bottom', 10)
             ],
             attachControl=[
+                (self.scroll_label, 'top', 5, self.work_mode),
                 (self.output_scroll, 'top', 5, self.scroll_label),
                 (self.output_scroll, 'bottom', 5, self.ouput_path_field),
                 (self.ouput_path_field, 'bottom', 5, self.excute_btn),
@@ -2300,19 +2301,19 @@ class ExportFBXMaster(common.Singleton):
         return
 
     def start_export(self):
-        # model_selected = pm.optionMenuGrp(self.work_mode, q=True, sl=True)
+        model_selected = pm.radioButtonGrp(self.work_mode, q=True, sl=True)
 
-        # if model_selected == 1:
-        self.export_to_fbx()
-        # if model_selected == 2:
-        #     self.clean_definition_anim()
+        if model_selected == 1:
+            self.export_to_fbx()
+        if model_selected == 2:
+            self.clean_definition_anim()
 
         print u"输出成功"
 
         return
 
     def clean_definition_anim(self):
-        export_grp = ["character_root", "final_model_grp"]
+        # export_grp = ["character_root", "final_model_grp"]
 
         system_namespace = ['UI', 'shared']
 
@@ -2323,7 +2324,7 @@ class ExportFBXMaster(common.Singleton):
 
         if len(self.output_files) > 0:
             for export_file in self.output_files:
-                scence_export_grp = []
+                # scence_export_grp = []
 
                 # 新建场景，打开指定场景
                 cmds.file(new=True, force=True)
@@ -2340,56 +2341,36 @@ class ExportFBXMaster(common.Singleton):
                 # time_range = (min_time, max_time)
 
                 # 命名空间列表
-                # all_namespace_list = pm.namespaceInfo(lon=True)
-                # for name in system_namespace:
-                #     all_namespace_list.remove(name)
-                #
-                # # print all_namespace_list
-                #
-                # fbx_files = []
-                # export_file_name = ""
-                # for name in all_namespace_list:
-                #     if pm.objExists("%s:character_root" % name):
-                #         # 根据命名空间来获取场景中有多少角色
-                #         print name
-                #         for export_item in export_grp:
-                #             scence_export_grp.append(
-                #                 "%s:%s" % (name, export_item))
-                #
-                #         pm.select("%s:character_root" % name, hi=True)
-                #         bake_nodes = pm.ls(sl=True)
-                #
-                #         pm.bakeResults(
-                #             bake_nodes,
-                #             simulation=True,
-                #             t=time_range,
-                #             sb=1,
-                #             dic=True,
-                #             preserveOutsideKeys=False,
-                #             sparseAnimCurveBake=False,
-                #             removeBakedAttributeFromLayer=False,
-                #             bakeOnOverrideLayer=False,
-                #             controlPoints=False,
-                #             shape=False)
-                #
-                #         export_file_name = ""
-                #         if len(all_namespace_list) == 1:
-                #             export_file_name = "%s/%s.fbx" % (
-                #                 self.output_path, file_name)
-                #         elif len(all_namespace_list) > 1:
-                #             export_file_name = "%s/%s_%s.fbx" % (
-                #                 self.output_path, file_name, name)
-                #
-                #         pm.select(scence_export_grp)
-                #         cmds.file(
-                #             export_file_name,
-                #             force=True,
-                #             pr=True,
-                #             es=True,
-                #             typ="FBX export",
-                #             options="v=0")
-                #
-                #         fbx_files.append(export_file_name)
+                all_namespace_list = pm.namespaceInfo(lon=True)
+                for name in system_namespace:
+                    all_namespace_list.remove(name)
+
+                for namespace in all_namespace_list:
+                    pm.namespace(
+                        removeNamespace=":%s" % namespace,
+                        mergeNamespaceWithParent=True)
+                pm.select("head_JNT", hi=True)
+                for jnt in pm.ls(sl=True, type="joint"):
+                    if "definition_" in jnt.name():
+                        anim_attrs = pm.listAttr(jnt, k=True)
+                        for anim_attr in anim_attrs:
+                            cmd = '''cutKey -cl -t ":" -f ":" -at %s %s;''' % (
+                                anim_attr, jnt.name())
+                            mel.eval(cmd)
+
+                export_file_name = ""
+                if len(all_namespace_list) == 1:
+                    export_file_name = "%s/%s.fbx" % (
+                        self.output_path, file_name)
+
+                # pm.select(scence_export_grp)
+                cmds.file(
+                    export_file_name,
+                    force=True,
+                    pr=True,
+                    ea=True,
+                    typ="FBX export",
+                    options="v=0")
 
     def export_to_fbx(self):
         export_grp = ["character_root", "final_model_grp"]
@@ -2461,17 +2442,6 @@ class ExportFBXMaster(common.Singleton):
                             export_file_name = "%s/%s_%s.fbx" % (
                                 self.output_path, file_name, namespace)
 
-                        # print u"清理捏脸骨骼动画"
-                        # pm.select("%s:head_JNT" % namespace, hi=True)
-                        # for jnt in pm.ls(sl=True):
-                        #     for anim_attr in pm.listAttr(jnt, k=True):
-                        #         cmd = ''' cutKey -cl -t ":" -f ":" -at %s %s ;''' % (
-                        #             anim_attr, jnt.name())
-                        #         mel.eval(cmd)
-                        #         if anim_attr in ["scaleX", "scaleY", "scaleZ", "visibility"]:
-                        #             pm.setAttr("%s.%s" % (jnt, anim_attr), 1)
-                        #         print anim_attr
-
                         pm.select(scence_export_grp)
                         cmds.file(
                             export_file_name,
@@ -2482,24 +2452,6 @@ class ExportFBXMaster(common.Singleton):
                             options="v=0")
 
                         fbx_files.append(export_file_name)
-
-                # for fbx_file in fbx_files:
-                #     cmds.file(new=True, force=True)
-                #     cmds.file(fbx_file, o=True)
-                #     new_namespace_list = pm.namespaceInfo(lon=True)
-                #     for new_name in system_namespace:
-                #         new_namespace_list.remove(new_name)
-                #     for new_namespace in new_namespace_list:
-                #         pm.namespace(
-                #             removeNamespace=":%s" % new_namespace,
-                #             mergeNamespaceWithParent=True)
-                #     cmds.file(
-                #         export_file_name,
-                #         force=True,
-                #         pr=True,
-                #         ea=True,
-                #         typ="FBX export",
-                #         options="v=0")
 
         else:
             pm.error(u"数据文件和输出路径不能为空")
