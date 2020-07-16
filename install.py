@@ -95,7 +95,7 @@ if not os.path.exists(r'{path}'):
 
 if r'{path}' not in sys.path:
     sys.path.insert(0, r'{path}')
-    
+
 from animation import helper
 
 reload(helper)
@@ -112,133 +112,125 @@ helper.ExportFBXMaster()
         label=u'ExpFBX'
     )
 
-#     cmds.shelfButton(
-#         command=('''
-# # -----------------------------------
-# # Bak Studio Library
-# # -----------------------------------
-# import os
-# import sys
+    cmds.shelfButton(
+        command=('''
+# -----------------------------------
+# Bak Studio Library
+# -----------------------------------
+import os
+import sys
 
-# if not os.path.exists(r'{path}'):
-#     raise IOError(r'The source path "{path}" does not exist!')
+if not os.path.exists(r'{path}'):
+    raise IOError(r'The source path "{path}" does not exist!')
 
-# if r'{path}' not in sys.path:
-#     sys.path.insert(0, r'{path}')
-   
-# from doManager import doBox
+if r'{path}' not in sys.path:
+    sys.path.insert(0, r'{path}')
 
-# reload(doBox)
+from animation import helper
 
-# doBox.clean_unknown_node()
-# ''').format(path=srcPath),
-#         annotation='Animation Export Helper',
-#         sourceType='Python',
-#         parent=parent,
-#         image="pythonFamily.png",
-#         image1="pythonFamily.png",
-#         style="iconOnly",
-#         imageOverlayLabel=u"优化",
-#         label=u'优化'
-#     )
+reload(helper)
 
-#     cmds.shelfButton(
-#         command=('''
-# # -----------------------------------
-# # Bak Studio Library
-# # -----------------------------------
-# import os
-# import sys
+helper.ChannelBoxSaver().show()
+''').format(path=srcPath),
+        annotation='将控制器的一些属性写入JSON文件保存',
+        sourceType='Python',
+        parent=parent,
+        image="pythonFamily.png",
+        image1="pythonFamily.png",
+        style="iconOnly",
+        imageOverlayLabel=u"写JSON",
+        label=u'写JSON'
+    )
 
-# if not os.path.exists(r'{path}'):
-#     raise IOError(r'The source path "{path}" does not exist!')
-# if r'{path}' not in sys.path:
-#     sys.path.insert(0, r'{path}')
+    cmds.shelfButton(
+        command=('''
+# -----------------------------------
+# Bak Studio Library
+# -----------------------------------
+import os
+import sys
 
-# from v1.baladodo import doExportManager
+if not os.path.exists(r'{path}'):
+    raise IOError(r'The source path "{path}" does not exist!')
+if r'{path}' not in sys.path:
+    sys.path.insert(0, r'{path}')
 
-# reload(doExportManager)
+from animation import common
 
-# doExportManager.ExportManager()
-# ''').format(path=srcPath),
-#         annotation='角色输出工具',
-#         sourceType='Python',
-#         parent=parent,
-#         image="pythonFamily.png",
-#         image1="pythonFamily.png",
-#         style="iconOnly",
-#         imageOverlayLabel=u"角色输出",
-#         label=u'角色输出'
-#     )
+reload(common)
 
-#     cmds.shelfButton(
-#         command=('''
-# # -----------------------------------
-# # Bak Studio Library
-# # -----------------------------------
-# import os
-# import sys
+common.set_time_unit(unit='ntsc')
+''').format(path=srcPath),
+        annotation='将场景的时间制式修改为NTSC',
+        sourceType='Python',
+        parent=parent,
+        image="pythonFamily.png",
+        image1="pythonFamily.png",
+        style="iconOnly",
+        imageOverlayLabel=u"NTSC",
+        label=u'NTSC'
+    )
 
-# if not os.path.exists(r'{path}'):
-#     raise IOError(r'The source path "{path}" does not exist!')
+    cmds.shelfButton(
+        command=('''
+# -----------------------------------
+# Bak Studio Library
+# -----------------------------------
+import os
+import sys
 
-# if r'{path}' not in sys.path:
-#     sys.path.insert(0, r'{path}')
-    
-# from doManager import doAnimatorHelper
-# reload(doAnimatorHelper)
+if not os.path.exists(r'{path}'):
+    raise IOError(r'The source path "{path}" does not exist!')
 
-# global animator_helper
+if r'{path}' not in sys.path:
+    sys.path.insert(0, r'{path}')
 
-# try:
-#     animator_helper.close()
-# except:
-#     pass
+from animation import helper
 
-# animator_helper = doAnimatorHelper.AnimatorHelper()
-# animator_helper.show()
+reload(helper)
 
-# ''').format(path=srcPath),
-#         sourceType='Python',
-#         parent=parent,
-#         image="pythonFamily.png",
-#         image1="pythonFamily.png",
-#         style="iconOnly",
-#         imageOverlayLabel=u"动画助手",
-#         annotation=u"包含了一些提供给动画师的工具集",
-#         label=u"动画助手",
-#     )
+helper.ChannelBoxWriter()
 
-#     cmds.shelfButton(
-#         command=('''
-# # -----------------------------------
-# # Bak Studio Library
-# # -----------------------------------
-# import os
-# import sys
+''').format(path=srcPath),
+        sourceType='Python',
+        parent=parent,
+        image="pythonFamily.png",
+        image1="pythonFamily.png",
+        style="iconOnly",
+        imageOverlayLabel=u"读Json",
+        annotation=u"读取JSON文件数据的工具",
+        label=u"读Json",
+    )
 
-# if not os.path.exists(r'{path}'):
-#     raise IOError(r'The source path "{path}" does not exist!')
+    cmds.shelfButton(
+        command=('''
+# -----------------------------------
+# Bak Studio Library
+# -----------------------------------
+import os
+import sys
 
-# if r'{path}' not in sys.path:
-#     sys.path.insert(0, r'{path}')
-   
-# from pymel import core as pm
-# from doManager import doToolBox
+if not os.path.exists(r'{path}'):
+    raise IOError(r'The source path "{path}" does not exist!')
 
-# reload(doToolBox)
+if r'{path}' not in sys.path:
+    sys.path.insert(0, r'{path}')
 
-# doToolBox.ToolBox()
-# ''').format(path=srcPath),
-#         sourceType='Python',
-#         parent=parent,
-#         image="pythonFamily.png",
-#         image1="pythonFamily.png",
-#         style="iconOnly",
-#         imageOverlayLabel=u"比克",
-#         annotation=u"比克非凡工具集",
-#         label=u"比克工具集",
-#     )
+from animation import helper
+
+reload(helper)
+
+helper.CustomAttrHelper()
+''').format(path=srcPath),
+        sourceType='Python',
+        parent=parent,
+        image="pythonFamily.png",
+        image1="pythonFamily.png",
+        style="iconOnly",
+        imageOverlayLabel=u"strData",
+        annotation=u"为控制器添加自定义信息的工具",
+        label=u"strData",
+    )
 
 #     cmds.shelfButton(
 #         command=('''
@@ -253,7 +245,7 @@ helper.ExportFBXMaster()
 
 # if r'{path}' not in sys.path:
 #     sys.path.insert(0, r'{path}')
-   
+
 # from pymel import core as pm
 # from doPipline import doFace
 

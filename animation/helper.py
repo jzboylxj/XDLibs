@@ -2206,7 +2206,7 @@ class ExportFBXMaster(common.Singleton):
 
         self.ouput_path_field = pm.textFieldButtonGrp(
             adj=2,
-            label=u"存放路径",
+            label=u"存放路径：",
             bl=u"指定路径",
             cw3=[60, 100, 100],
             text=self.output_path,
@@ -2355,10 +2355,9 @@ class ExportFBXMaster(common.Singleton):
                                 anim_attr, jnt.name())
                             mel.eval(cmd)
 
-                export_file_name = ""
-                if len(all_namespace_list) == 1:
-                    export_file_name = "%s/%s.fbx" % (
-                        self.output_path, file_name)
+                # export_file_name = ""
+                # if len(all_namespace_list) == 1:
+                export_file_name = "%s/%s.fbx" % (self.output_path, file_name)
 
                 # pm.select(scence_export_grp)
                 cmds.file(
