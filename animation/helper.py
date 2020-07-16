@@ -445,7 +445,8 @@ class CustomAttrHelper(common.Singleton):
                 (self.frame_layout, 'right', 10),
             ],
             attachControl=[
-                # (self.controller_field, 'right', 5, self.select_controller_btn),
+                # (self.controller_field, 'right', 5,
+                # self.select_controller_btn),
             ],
         )
 
