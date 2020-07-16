@@ -5,7 +5,7 @@
 # Author: Li Xiao Jun
 # Create Date: 2019/12/10 17:25
 # Project: baladodo
-# Version: 0.1 
+# Version: 0.1
 
 """
 from __future__ import absolute_import, division, print_function
@@ -19,7 +19,6 @@ import sys
 try:
     import maya.cmds as cmds
     import maya.mel as mel
-    import pymel.core as pm
 
     isMaya = True
 except ImportError:
