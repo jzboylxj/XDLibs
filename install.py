@@ -95,11 +95,11 @@ if not os.path.exists(r'{path}'):
 if r'{path}' not in sys.path:
     sys.path.insert(0, r'{path}')
 
-from animation import helper
+from auto import export
 
-reload(helper)
+reload(export)
 
-helper.ExportFBXMaster()
+export.ExportFBXMaster()
 ''').format(path=srcPath),
         annotation='Export FBX Master',
         sourceType='Python',
