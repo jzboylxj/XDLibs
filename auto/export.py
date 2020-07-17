@@ -207,6 +207,16 @@ class ExportFBXMaster(common.Singleton):
         return
 
     def start_optimize_fbx(self, export_files):
+        """
+        优化FBX文件
+
+        主要功能：
+        1.清除命名空间
+        2.清理头部的动画曲线
+
+        :param export_files: 需要输出的文件列表
+        :return: True
+        """
         # export_grp = ["character_root", "final_model_grp"]
         system_namespace = ['UI', 'shared']
 
@@ -261,6 +271,7 @@ class ExportFBXMaster(common.Singleton):
     def export_to_fbx(self, export_files):
         """
         将maya文件中的角色输出为FBX文件
+
         :param export_files: 需要输出的文件列表
         :return: True
         """
