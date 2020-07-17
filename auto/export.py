@@ -4,10 +4,16 @@
 自动输出工具类
 """
 
+import os
 from pymel import core as pm
+import maya.cmds as cmds
+import maya.mel as mel
+
 from animation import common
 
 reload(common)
+
+__version__ = "0.2.0"
 
 
 class ExportFBXMaster(common.Singleton):
@@ -17,6 +23,7 @@ class ExportFBXMaster(common.Singleton):
         self.output_files = []
         self.output_path = ""
 
+        self.auto_work_state = 1
         self.work_mode_selected = 1
 
         self.initialize()
@@ -25,36 +32,46 @@ class ExportFBXMaster(common.Singleton):
     def show(self):
         if pm.window("autoExportFBXFileTool", ex=True):
             pm.deleteUI("autoExportFBXFileTool")
+
         pm.window(
             "autoExportFBXFileTool",
-            # t=u"自动输出 %s" % __version__,
+            t=u"自动输出 %s" % __version__,
             mb=True,
             cc=lambda *args: self._close_main_window())
 
-        # self.menu_list()
-
-        self.form_layout = pm.formLayout()
-
         self.work_list_frame = pm.frameLayout(
-            label=u"工作模式", mw=10, mh=5)
-
-        self.auto_checked = pm.checkBoxGrp(label=u"全自动")
-        # self.work_mode = pm.radioButtonGrp(
-        #     label=u'工作类型：',
-        #     labelArray2=[u'骨骼输出', u'FBX优化'],
-        #     cw3=[60, 80, 80],
-        #     sl=self.work_mode_selected,
-        #     numberOfRadioButtons=2)
-
-        self.scroll_label = pm.text(
-            label=u"输出文件列表：", al="left")
-        self.output_scroll = pm.textScrollList(ams=True)
+            label=u"自动输出", mw=10, mh=5, bgs=True)
+        self.form_layout = pm.formLayout()
+        self.work_mode = pm.radioButtonGrp(
+            label=u'工作类型：',
+            labelArray3=[u'输出FBX', u'FBX优化', u'全流程'],
+            cw4=[60, 80, 80, 80],
+            sl=self.work_mode_selected,
+            on1=lambda *args: self.fbx_optimize_state(state=False),
+            on2=lambda *args: self.fbx_optimize_state(state=True),
+            of2=lambda *args: self.fbx_optimize_state(state=False),
+            on3=lambda *args: self.fbx_optimize_state(state=True),
+            numberOfRadioButtons=3)
+        self.fbx_optimize = pm.checkBoxGrp(
+            label=u"优化选项：",
+            label1=u"清除头部动画曲线",
+            cw2=[60, 100])
+        self.task_scroll_label = pm.text(
+            label=u"任务列表：", al="left")
+        self.task_scroll = pm.textScrollList(ams=True, w=200)
         pm.popupMenu()
         pm.menuItem(label=u"添加文件",
                     c=lambda *args: self._append_file())
         pm.menuItem(label=u"移除选择",
                     c=lambda *args: self.remove_select_item())
-        pm.setParent("..")
+
+        self.output_scroll_label = pm.text(label=u"输出列表：", al="left")
+        self.output_scroll = pm.textScrollList(ams=True, w=200)
+        pm.popupMenu()
+        pm.menuItem(label=u"清空列表",
+                    c=lambda *args: self.clean_output_scroll())
+        pm.menuItem(label=u"转移到任务列表",
+                    c=lambda *args: self.move_to_task_scroll())
 
         self.ouput_path_field = pm.textFieldButtonGrp(
             adj=2,
@@ -71,41 +88,57 @@ class ExportFBXMaster(common.Singleton):
             self.form_layout,
             edit=True,
             attachForm=[
-                (self.work_list_frame, 'top', 10),
-                (self.work_list_frame, 'left', 10),
-                (self.work_list_frame, 'right', 10),
-                (self.ouput_path_field, 'left', 10),
-                (self.ouput_path_field, 'right', 10),
-                (self.excute_btn, 'left', 10),
-                (self.excute_btn, 'right', 10),
+                (self.work_mode, 'top', 0),
+                (self.work_mode, 'left', 0),
+                (self.work_mode, 'right', 0),
+                (self.fbx_optimize, 'left', 0),
+                (self.fbx_optimize, 'right', 0),
+                (self.ouput_path_field, 'left', 0),
+                (self.ouput_path_field, 'right', 0),
+                (self.excute_btn, 'left', 0),
+                (self.excute_btn, 'right', 0),
                 (self.excute_btn, 'bottom', 10)
             ],
             attachControl=[
-                (self.work_list_frame, 'bottom', 0, self.ouput_path_field),
+                (self.fbx_optimize, 'top', 5, self.work_mode),
+                (self.task_scroll_label, 'top', 5, self.fbx_optimize),
+                (self.task_scroll, 'top', 5, self.task_scroll_label),
+                (self.task_scroll, 'bottom', 5, self.ouput_path_field),
+                (self.output_scroll_label, 'top', 5, self.fbx_optimize),
+                (self.output_scroll_label, 'left', 5, self.task_scroll),
+                (self.output_scroll, 'top', 5, self.output_scroll_label),
+                (self.output_scroll, 'left', 5, self.task_scroll),
+                (self.output_scroll, 'bottom', 5, self.ouput_path_field),
                 (self.ouput_path_field, 'bottom', 5, self.excute_btn),
-            ],
+            ]
         )
 
         pm.showWindow("autoExportFBXFileTool")
+
+        if self.work_mode_selected == 2:
+            self.fbx_optimize_state(state=True)
+        elif self.work_mode_selected == 1:
+            self.fbx_optimize_state(state=False)
 
     def initialize(self):
         if pm.optionVar(q='autoExportFBXFileToolOutputPath'):
             self.output_path = pm.optionVar(
                 q='autoExportFBXFileToolOutputPath')
 
+        if pm.optionVar(q='autoExportFBXFileToolAutoChecked'):
+            self.auto_work_state = pm.optionVar(
+                q='autoExportFBXFileToolAutoChecked')
+
+        if pm.optionVar(q='autoExportFBXFileToolWorkMode'):
+            self.work_mode_selected = int(pm.optionVar(
+                q='autoExportFBXFileToolWorkMode'))
+
     def _close_main_window(self):
         pm.optionVar(sv=('autoExportFBXFileToolOutputPath', self.output_path))
-
-    def menu_list(self):
-        """
-        工具菜单栏
-        """
-        pm.menu(label=u"设置", tearOff=True)
-        pm.menuItem(
-            label=u"设置捏脸配置文件存放目录",
-            c=lambda *args: self.setting_dedinition())
-        # pm.menuItem(
-        #     label=u"调试模式", cb=False)
+        pm.optionVar(
+            sv=("autoExportFBXFileToolWorkMode",
+                pm.radioButtonGrp(self.work_mode, q=True, sl=True)))
+        return
 
     def _append_file(self):
         multiple_filters = (
@@ -115,7 +148,7 @@ class ExportFBXMaster(common.Singleton):
             "FBX Files (*.fbx);;"
         )
         current_export_list = pm.textScrollList(
-            self.output_scroll, q=True, ai=True)
+            self.task_scroll, q=True, ai=True)
         export_files = pm.fileDialog2(
             fileFilter=multiple_filters,
             dialogStyle=2, fileMode=4, okc=u"添加")
@@ -123,19 +156,19 @@ class ExportFBXMaster(common.Singleton):
             for export_file in export_files:
                 if export_file not in current_export_list:
                     pm.textScrollList(
-                        self.output_scroll, edit=True, append=export_file)
+                        self.task_scroll, edit=True, append=export_file)
 
         self.output_files = pm.textScrollList(
-            self.output_scroll, q=True, ai=True)
+            self.task_scroll, q=True, ai=True)
         return True
 
     def remove_select_item(self):
         pm.textScrollList(
-            self.output_scroll,
+            self.task_scroll,
             e=True,
-            ri=pm.textScrollList(self.output_scroll, q=True, si=True))
+            ri=pm.textScrollList(self.task_scroll, q=True, si=True))
         self.output_files = pm.textScrollList(
-            self.output_scroll, q=True, ai=True)
+            self.task_scroll, q=True, ai=True)
         return
 
     def _set_output_location(self):
@@ -152,154 +185,179 @@ class ExportFBXMaster(common.Singleton):
     def start_export(self):
         model_selected = pm.radioButtonGrp(self.work_mode, q=True, sl=True)
 
-        if model_selected == 1:
-            self.export_to_fbx()
-        if model_selected == 2:
-            self.clean_definition_anim()
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
+
+        if len(self.output_files) < 1:
+            pm.error(u"任务列表不能为空")
+        else:
+            if model_selected == 1:
+                self.export_to_fbx(self.output_files)
+            if model_selected == 2:
+                self.start_optimize_fbx(self.output_files)
+            if model_selected == 3:
+                if self.export_to_fbx(self.output_files):
+                    self.move_to_task_scroll()
+                    self.output_files = pm.textScrollList(
+                        self.task_scroll, q=True, ai=True)
+                    self.start_optimize_fbx(self.output_files)
 
         print u"输出成功"
 
         return
 
-    def clean_definition_anim(self):
+    def start_optimize_fbx(self, export_files):
         # export_grp = ["character_root", "final_model_grp"]
-
         system_namespace = ['UI', 'shared']
 
-        print self.output_files
+        for export_file in export_files:
+            # 新建场景，打开指定场景
+            cmds.file(new=True, force=True)
+            cmds.file(export_file, o=True)
+            file_name = cmds.file(
+                q=1, sceneName=True, shortName=True).split('.')[0]
+            print (file_name + ' already open!')
 
-        if not os.path.exists(self.output_path):
-            os.makedirs(self.output_path)
+            # 将MAYA的时间格式改成ntsc(30帧每秒)
+            common.set_time_unit(unit='ntsc')
 
-        if len(self.output_files) > 0:
-            for export_file in self.output_files:
-                # scence_export_grp = []
+            # 命名空间列表
+            all_namespace_list = pm.namespaceInfo(lon=True)
+            for name in system_namespace:
+                all_namespace_list.remove(name)
+            # 清楚命名空间
+            for namespace in all_namespace_list:
+                pm.namespace(removeNamespace=":%s" % namespace,
+                             mergeNamespaceWithParent=True)
 
-                # 新建场景，打开指定场景
-                cmds.file(new=True, force=True)
-                cmds.file(export_file, o=True)
-                file_name = cmds.file(
-                    q=1, sceneName=True, shortName=True).split('.')[0]
-                print (file_name + ' already open!')
+            if pm.objExists("character_Group"):
+                pm.delete("character_Group")
 
-                # 将MAYA的时间格式改成ntsc(30帧每秒)
-                common.set_time_unit(unit='ntsc')
-
-                # min_time = pm.playbackOptions(q=True, minTime=True)
-                # max_time = pm.playbackOptions(q=True, maxTime=True)
-                # time_range = (min_time, max_time)
-
-                # 命名空间列表
-                all_namespace_list = pm.namespaceInfo(lon=True)
-                for name in system_namespace:
-                    all_namespace_list.remove(name)
-
-                for namespace in all_namespace_list:
-                    pm.namespace(
-                        removeNamespace=":%s" % namespace,
-                        mergeNamespaceWithParent=True)
+            if pm.checkBoxGrp(self.fbx_optimize, q=True, v1=True):
                 pm.select("head_JNT", hi=True)
-                for jnt in pm.ls(sl=True, type="joint"):
-                    if "definition_" in jnt.name():
-                        anim_attrs = pm.listAttr(jnt, k=True)
-                        for anim_attr in anim_attrs:
-                            cmd = '''cutKey -cl -t ":" -f ":" -at %s %s;''' % (
-                                anim_attr, jnt.name())
-                            mel.eval(cmd)
+                for jnt in pm.ls(sl=True):
+                    anim_attrs = pm.listAttr(jnt, k=True)
+                    for anim_attr in anim_attrs:
+                        cmd = '''cutKey -cl -t ":" -f ":" -at %s %s;''' % (
+                            anim_attr, jnt.name())
+                        mel.eval(cmd)
 
-                # export_file_name = ""
-                # if len(all_namespace_list) == 1:
-                export_file_name = "%s/%s.fbx" % (self.output_path, file_name)
+            export_file_name = "%s/%s.fbx" % (self.output_path, file_name)
 
-                # pm.select(scence_export_grp)
-                cmds.file(
-                    export_file_name,
-                    force=True,
-                    pr=True,
-                    ea=True,
-                    typ="FBX export",
-                    options="v=0")
+            cmds.file(export_file_name,
+                      force=True,
+                      pr=True,
+                      ea=True,
+                      typ="FBX export",
+                      options="v=0")
 
-    def export_to_fbx(self):
-        export_grp = ["character_root", "final_model_grp"]
+            pm.textScrollList(
+                self.output_scroll, e=True, a=export_file_name)
+            pm.textScrollList(
+                self.task_scroll, e=True, ri=export_file)
 
-        system_namespace = ['UI', 'shared']
+        return True
 
-        print self.output_files
+    def export_to_fbx(self, export_files):
+        """
+        将maya文件中的角色输出为FBX文件
+        :param export_files: 需要输出的文件列表
+        :return: True
+        """
+        for export_file in export_files:
+            # 新建场景，打开指定场景
+            cmds.file(new=True, force=True)
+            cmds.file(export_file, o=True)
+            file_name = cmds.file(
+                q=1, sceneName=True, shortName=True).split('.')[0]
+            print (file_name + ' already open!')
 
-        if not os.path.exists(self.output_path):
-            os.makedirs(self.output_path)
+            # 将MAYA的时间格式改成ntsc(30帧每秒)
+            common.set_time_unit(unit='ntsc')
 
-        if len(self.output_files) > 0:
-            for export_file in self.output_files:
-                scence_export_grp = []
+            min_time = pm.playbackOptions(q=True, minTime=True)
+            max_time = pm.playbackOptions(q=True, maxTime=True)
+            time_range = (min_time, max_time)
 
-                # 新建场景，打开指定场景
-                cmds.file(new=True, force=True)
-                cmds.file(export_file, o=True)
-                file_name = cmds.file(
-                    q=1, sceneName=True, shortName=True).split('.')[0]
-                print (file_name + ' already open!')
+            system_namespace = ['UI', 'shared']
+            # 命名空间列表
+            all_namespace_list = pm.namespaceInfo(lon=True)
+            for name in system_namespace:
+                all_namespace_list.remove(name)
 
-                # 将MAYA的时间格式改成ntsc(30帧每秒)
-                common.set_time_unit(unit='ntsc')
+            print u"所有的命名空间：%s" % all_namespace_list
 
-                min_time = pm.playbackOptions(q=True, minTime=True)
-                max_time = pm.playbackOptions(q=True, maxTime=True)
-                time_range = (min_time, max_time)
+            fbx_files = []
+            # 角色输出时需要包含的两个组
+            export_grp = ["character_root", "final_model_grp"]
 
-                # 命名空间列表
-                all_namespace_list = pm.namespaceInfo(lon=True)
-                for name in system_namespace:
-                    all_namespace_list.remove(name)
+            for cha_name in all_namespace_list:
+                print "cha name: %s" % cha_name
+                scene_export_grp = []
+                # 制作过程中有可能引用非角色对象，例如道具，
+                # 这个时候就需要用程序来判断使用该命名空间的对象是否为一个角色
+                if pm.objExists("%s:character_root" % cha_name):
+                    # 根据命名空间来获取场景中有多少角色
+                    for export_item in export_grp:
+                        scene_export_grp.append(
+                            "%s:%s" % (cha_name, export_item))
+                    print u"%s需要输出的组：%s" % (cha_name, scene_export_grp)
+                    pm.select("%s:character_root" % cha_name, hi=True)
+                    bake_nodes = pm.ls(sl=True)
 
-                # print all_namespace_list
+                    print u"--------- 开始烘焙动画开始 --------------"
 
-                fbx_files = []
-                export_file_name = ""
-                for namespace in all_namespace_list:
-                    if pm.objExists("%s:character_root" % namespace):
-                        # 根据命名空间来获取场景中有多少角色
-                        print "namespace: %s" % namespace
-                        for export_item in export_grp:
-                            scence_export_grp.append(
-                                "%s:%s" % (namespace, export_item))
+                    pm.bakeResults(
+                        bake_nodes,
+                        simulation=True,
+                        t=time_range,
+                        sb=1,
+                        dic=True,
+                        preserveOutsideKeys=False,
+                        sparseAnimCurveBake=False,
+                        removeBakedAttributeFromLayer=False,
+                        bakeOnOverrideLayer=False,
+                        controlPoints=False,
+                        shape=False)
 
-                        pm.select("%s:character_root" % namespace, hi=True)
-                        bake_nodes = pm.ls(sl=True)
+                    export_file_name = ""
+                    if len(all_namespace_list) == 1:
+                        export_file_name = "%s/%s.fbx" % (
+                            self.output_path, file_name)
+                    elif len(all_namespace_list) > 1:
+                        export_file_name = "%s/%s_%s.fbx" % (
+                            self.output_path, file_name, cha_name)
 
-                        print u"烘焙动画开始"
-                        pm.bakeResults(
-                            bake_nodes,
-                            simulation=True,
-                            t=time_range,
-                            sb=1,
-                            dic=True,
-                            preserveOutsideKeys=False,
-                            sparseAnimCurveBake=False,
-                            removeBakedAttributeFromLayer=False,
-                            bakeOnOverrideLayer=False,
-                            controlPoints=False,
-                            shape=False)
+                    pm.select(scene_export_grp)
+                    cmds.file(
+                        export_file_name,
+                        force=True,
+                        pr=True,
+                        es=True,
+                        typ="FBX export",
+                        options="v=0")
 
-                        export_file_name = ""
-                        if len(all_namespace_list) == 1:
-                            export_file_name = "%s/%s.fbx" % (
-                                self.output_path, file_name)
-                        elif len(all_namespace_list) > 1:
-                            export_file_name = "%s/%s_%s.fbx" % (
-                                self.output_path, file_name, namespace)
+                    fbx_files.append(export_file_name)
+                    pm.textScrollList(
+                        self.output_scroll, e=True, a=export_file_name)
 
-                        pm.select(scence_export_grp)
-                        cmds.file(
-                            export_file_name,
-                            force=True,
-                            pr=True,
-                            es=True,
-                            typ="FBX export",
-                            options="v=0")
+            pm.textScrollList(self.task_scroll, e=True, ri=export_file)
 
-                        fbx_files.append(export_file_name)
+        return True
 
-        else:
-            pm.error(u"数据文件和输出路径不能为空")
+    def fbx_optimize_state(self, state):
+        if state == True:
+            pm.checkBoxGrp(self.fbx_optimize, e=True, en=True)
+        elif state == False:
+            pm.checkBoxGrp(self.fbx_optimize, e=True, en=False)
+
+    def clean_output_scroll(self):
+        pm.textScrollList(self.output_scroll, e=True, ra=True)
+        return
+
+    def move_to_task_scroll(self):
+        output_list = pm.textScrollList(self.output_scroll, q=True, ai=True)
+        pm.textScrollList(self.task_scroll, e=True, ra=True)
+        pm.textScrollList(self.task_scroll, e=True, a=output_list)
+        pm.textScrollList(self.output_scroll, e=True, ra=True)
+        return
