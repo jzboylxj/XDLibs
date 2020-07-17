@@ -231,37 +231,33 @@ helper.CustomAttrHelper()
         label=u"strData",
     )
 
-#     cmds.shelfButton(
-#         command=('''
-# # -----------------------------------
-# # Bak Studio Library
-# # -----------------------------------
-# import os
-# import sys
+    cmds.shelfButton(
+        command=('''
+# -----------------------------------
+# Bak Studio Library
+# -----------------------------------
+import os
+import sys
 
-# if not os.path.exists(r'{path}'):
-#     raise IOError(r'The source path "{path}" does not exist!')
+if not os.path.exists(r'{path}'):
+    raise IOError(r'The source path "{path}" does not exist!')
 
-# if r'{path}' not in sys.path:
-#     sys.path.insert(0, r'{path}')
+if r'{path}' not in sys.path:
+    sys.path.insert(0, r'{path}')
 
-# from pymel import core as pm
-# from doPipline import doFace
-
-# reload(doFace)
-
-# doFace.ConnectorBuilder()
-
-# ''').format(path=srcPath),
-#         sourceType='Python',
-#         parent=parent,
-#         image="pythonFamily.png",
-#         image1="pythonFamily.png",
-#         style="iconOnly",
-#         imageOverlayLabel=u"表情增强",
-#         annotation=u"比克非凡工具集",
-#         label=u"比克工具集",
-#     )
+from animation import rig
+reload(rig)
+rig.copy_skin()
+''').format(path=srcPath),
+        sourceType='Python',
+        parent=parent,
+        image="pythonFamily.png",
+        image1="pythonFamily.png",
+        style="iconOnly",
+        imageOverlayLabel=u"CopySkin",
+        annotation=u"CopySkin",
+        label=u"CopySkin",
+    )
 
 #     cmds.shelfButton(
 #         command=('''
