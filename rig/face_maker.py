@@ -4,4 +4,22 @@
 # @Author  : Li XiaoJun
 # @Site    : 
 # @File    : face_maker.py
-# @Software: PyCharm
+
+from animation import common
+
+reload(common)
+
+
+class FaceMaker(common.Singleton):
+
+    def __init__(self):
+        super(FaceMaker, self).__init__()
+
+        self.initialize()
+        self.show()
+
+    def initialize(self):
+        pass
+
+    def show(self):
+        pass
