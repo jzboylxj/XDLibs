@@ -132,3 +132,57 @@ def clean_unknown_node():
     else:
         print u"unknownPlugin个数为0，不需要清理"
 
+
+def moving_target(target, value=None):
+    """
+    移动对象
+
+    :param target:目标对象
+    :param value: 目标参数
+    :return: none
+    """
+    if value is None:
+        value = [0, 0, 0, 0, 0, 0, 1, 1, 1]
+    pm.PyNode(target).translateX.set(value[0])
+    pm.PyNode(target).translateY.set(value[1])
+    pm.PyNode(target).translateZ.set(value[2])
+    pm.PyNode(target).rotateX.set(value[3])
+    pm.PyNode(target).rotateY.set(value[4])
+    pm.PyNode(target).rotateZ.set(value[5])
+    pm.PyNode(target).scaleX.set(value[6])
+    pm.PyNode(target).scaleY.set(value[7])
+    pm.PyNode(target).scaleZ.set(value[8])
+
+    return
+
+
+def lock_and_hide_attr(target, translate=True, rotate=True, scale=True,
+                       vis=False):
+    """
+    锁定并隐藏目标的通道栏属性
+
+    :param target: 目标对象
+    :param translate: 位移属性
+    :param rotate: 旋转属性
+    :param scale: 缩放属性
+    :param vis: 可见性
+    :return: none
+    """
+    pm.setAttr("%s.tx" % target, lock=translate, k=(not translate),
+               cb=(not translate))
+    pm.setAttr("%s.ty" % target, lock=translate, k=(not translate),
+               cb=(not translate))
+    pm.setAttr("%s.tz" % target, lock=translate, k=(not translate),
+               cb=(not translate))
+
+    pm.setAttr("%s.rx" % target, lock=rotate, k=(not rotate), cb=(not rotate))
+    pm.setAttr("%s.ry" % target, lock=rotate, k=(not rotate), cb=(not rotate))
+    pm.setAttr("%s.rz" % target, lock=rotate, k=(not rotate), cb=(not rotate))
+
+    pm.setAttr("%s.sx" % target, lock=scale, k=(not scale), cb=(not scale))
+    pm.setAttr("%s.sy" % target, lock=scale, k=(not scale), cb=(not scale))
+    pm.setAttr("%s.sz" % target, lock=scale, k=(not scale), cb=(not scale))
+
+    pm.setAttr("%s.visibility" % target, lock=vis, k=(not vis), cb=(not vis))
+
+    return

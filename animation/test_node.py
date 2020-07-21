@@ -5,7 +5,7 @@
 # @Site    : 
 # @File    : test_node.py
 # @Software: PyCharm
-
+from animation.common import moving_target
 from pymel import core as pm
 
 
@@ -101,7 +101,7 @@ class TestEditorController:
         for jnt_dict in bone_range:
             print "Bone Name: %s" % jnt_dict["BoneName"]
             for dv_attr in attr_list:
-                move_joint(jnt_dict["BoneName"])
+                moving_target(jnt_dict["BoneName"])
                 pm.setDrivenKeyframe(
                     "%s.%s" % (jnt_dict["BoneName"], dv_attr),
                     cd="%s.%s" % (locator, slider_attr),
@@ -114,7 +114,7 @@ class TestEditorController:
                     value[3], value[4], value[5],
                     value[6], value[7], value[8],
                 ]
-                move_joint(jnt_dict["BoneName"], value=dv_value)
+                moving_target(jnt_dict["BoneName"], value=dv_value)
                 pm.setDrivenKeyframe(
                     "%s.%s" % (jnt_dict["BoneName"], dv_attr),
                     cd="%s.%s" % (locator, slider_attr),
@@ -127,7 +127,7 @@ class TestEditorController:
                     value[3], value[4], value[5],
                     value[6], value[7], value[8],
                 ]
-                move_joint(jnt_dict["BoneName"], value=dv_value)
+                moving_target(jnt_dict["BoneName"], value=dv_value)
                 pm.setDrivenKeyframe(
                     "%s.%s" % (jnt_dict["BoneName"], dv_attr),
                     cd="%s.%s" % (locator, slider_attr),
@@ -137,17 +137,3 @@ class TestEditorController:
         return
 
 
-def move_joint(jnt, value=None):
-    if value is None:
-        value = [0, 0, 0, 0, 0, 0, 1, 1, 1]
-    pm.PyNode(jnt).translateX.set(value[0])
-    pm.PyNode(jnt).translateY.set(value[1])
-    pm.PyNode(jnt).translateZ.set(value[2])
-    pm.PyNode(jnt).rotateX.set(value[3])
-    pm.PyNode(jnt).rotateY.set(value[4])
-    pm.PyNode(jnt).rotateZ.set(value[5])
-    pm.PyNode(jnt).scaleX.set(value[6])
-    pm.PyNode(jnt).scaleY.set(value[7])
-    pm.PyNode(jnt).scaleZ.set(value[8])
-
-    return
