@@ -2,7 +2,7 @@
 # coding: utf-8
 # @Time    : 2020/7/22 13:56
 # @Author  : Li XiaoJun
-# @Site    : 
+# @Site    :
 # @File    : ar_rig.py
 
 import os
@@ -178,10 +178,10 @@ class ARFaceEditor(common.Singleton):
 
         pm.button(
             label="Update Selected",
-            w=120, c=lambda *args: self.update_sdk())
+            w=120, c=lambda *args: self.update_sdk(type="select"))
         pm.button(
             label="Update All",
-            w=120, c=lambda *args: self.update_sdk())
+            w=120, c=lambda *args: self.update_sdk(type="all"))
 
         pm.setParent("..")
 
@@ -338,7 +338,7 @@ class ARFaceEditor(common.Singleton):
         locator = helper.zero_locator(name=name)
         pm.addAttr(locator, ln="sliderX", at="double", min=0, max=1, dv=0)
         pm.setAttr("%s.sliderX" % locator, e=True, k=True)
-
+        print u"%s已经创建" % locator
         return
 
     def update_sdk(self, type="select", pre=5):
@@ -417,14 +417,14 @@ class ARFaceEditor(common.Singleton):
     def sdk_slider_to_rig(self, channel, attr="sliderX"):
         attr_list = ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz"]
         for jnt in self.ar_data.get_channel_joints(channel):
+            value = self.ar_data.get_channel_joint_attr(channel, jnt)
+
             for dv_attr in attr_list:
                 helper.position_joint(jnt, value=[0, 0, 0, 0, 0, 0, 1, 1, 1])
                 pm.setDrivenKeyframe(
                     "%s.%s" % (jnt, dv_attr),
                     cd="%s.%s" % (channel, attr),
                     dv=0)
-
-                value = self.ar_data.get_channel_joint_attr(channel, jnt)
                 dv_value = [
                     value[0] * 100,
                     value[1] * 100,
@@ -436,7 +436,6 @@ class ARFaceEditor(common.Singleton):
                     value[7],
                     value[8],
                 ]
-
                 helper.position_joint(jnt, value=dv_value)
                 pm.setDrivenKeyframe(
                     "%s.%s" % (jnt, dv_attr),
@@ -462,12 +461,14 @@ class ARFaceEditor(common.Singleton):
                     joint=item.name(),
                     value=[0, 0, 0, 0, 0, 0, 1, 1, 1]
                 )
-                self.ar_data.data_to_json()
 
-                pm.textScrollList(self.ar_item_scroll, e=True, si=item)
+            pm.textScrollList(self.ar_item_scroll, e=True, da=True)
+            pm.textScrollList(self.ar_item_scroll, e=True, si=item)
 
-                if auto_sdk:
-                    self.update_sdk()
+            if auto_sdk:
+                self.update_sdk(type="select")
+
+            self.ar_data.data_to_json()
 
         return True
 
