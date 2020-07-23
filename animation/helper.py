@@ -701,9 +701,6 @@ class JsonManager(common.Singleton):
         self.controller = {}
         self.controller_detail = {}
 
-        self.ar_file_location = ''
-        self.ar_data = {}
-
         self.current_tab_index = 1
 
         # 历史版本的json文件存放路径
@@ -737,7 +734,7 @@ class JsonManager(common.Singleton):
             "jsonManagerMainTabLayout",
             innerMarginWidth=5, innerMarginHeight=5)
         child1 = self.custom_tab()
-        child2 = self.ar_tab()
+        # child2 = self.ar_tab()
         child3 = self.discard_tab()
 
         pm.tabLayout(
@@ -745,7 +742,7 @@ class JsonManager(common.Singleton):
             edit=True,
             tabLabel=(
                 (child1, u'捏脸'),
-                (child2, u'AR'),
+                # (child2, u'AR'),
                 (child3, u'历史版本')),
             sti=self.current_tab_index)
 
@@ -804,8 +801,6 @@ class JsonManager(common.Singleton):
         pm.formLayout(
             controller_list_layout, edit=True,
             attachForm=[
-                # (add_module_btn, 'top', 10),
-                # (add_module_btn, 'left', 10),
                 (add_controller_btn, 'top', 10),
                 (add_controller_btn, 'left', 10),
                 (add_controller_detail_btn, 'top', 10),
@@ -816,7 +811,6 @@ class JsonManager(common.Singleton):
                 (save_data_btn, 'bottom', 10)
             ],
             attachControl=[
-                # (add_controller_btn, 'left', 10, add_module_btn),
                 (add_controller_detail_btn, 'left', 5, add_controller_btn),
                 ("controllerListLayout", 'top', 10, add_controller_btn),
                 ("controllerListLayout", 'bottom', 10, save_data_btn),
@@ -879,83 +873,150 @@ class JsonManager(common.Singleton):
         pm.setParent("..")
         return layout
 
-    def ar_tab(self):
-        """
-        标签栏之AR控制栏
-
-        :return: layout
-        """
-        layout = pm.formLayout("ARFormTab")
-        json_field = pm.textFieldButtonGrp(
-            "ARFileLocationField",
-            label=u"存放路径",
-            bl=u"指定路径",
-            adj=2,
-            cw3=[60, 100, 100],
-            text=self.ar_file_location,
-            bc=lambda *args: self.setting_ar_file_location())
-
-        self.auto_create_controller_check = pm.checkBox(
-            label=u"自动创建控制器", value=True)
-
-        ID_layout = pm.columnLayout(adj=1, rs=5)
-        pm.text(label=u"通道列表", al="left")
-        pm.textScrollList(
-            "ARIDScrollList",
-            height=400,
-            sc=lambda *args: self.selected_ar_id_in_list())
-        pm.popupMenu()
-        pm.menuItem(label=u"为选择项添加控制器",
-                    c=lambda *args: self.add_slider_for_selected())
-        pm.setParent("..")
-
-        detail_frame = pm.frameLayout(label=u"通道属性", bgs=True)
-        pm.textFieldButtonGrp(
-            "arIDDriverField",
-            enable=False,
-            label=u"控制器",
-            bl=u"设置",
-            adj=2,
-            cw3=[60, 100, 60])
-        pm.floatSliderGrp(
-            "arIDControlSlider",
-            enable=False,
-            label=u"滑竿控制",
-            field=True,
-            minValue=0,
-            maxValue=1.0,
-            fieldMinValue=0,
-            fieldMaxValue=1.0,
-            pre=3,
-            adj=3,
-            value=0,
-            cw3=[60, 60, 100])
-        pm.setParent("..")
-
-        pm.formLayout(
-            layout, edit=True,
-            attachForm=[
-                (json_field, 'top', 5),
-                (json_field, 'left', 10),
-                (json_field, 'right', 10),
-                (self.auto_create_controller_check, 'left', 10),
-                (self.auto_create_controller_check, 'right', 10),
-                (ID_layout, 'left', 10),
-                (ID_layout, 'right', 10),
-                (detail_frame, 'left', 10),
-                (detail_frame, 'right', 10),
-            ],
-            attachControl=[
-                (self.auto_create_controller_check, 'top', 5, json_field),
-                (ID_layout, 'top', 5, self.auto_create_controller_check),
-                (detail_frame, 'top', 10, ID_layout),
-            ])
-
-        pm.setParent("..")
-
-        self.append_id_to_scroll(self.ar_file_location)
-
-        return layout
+    # def ar_tab(self):
+    #     """
+    #     标签栏之AR控制栏
+    #
+    #     :return: layout
+    #     """
+    #     layout = pm.formLayout("ARFormTab")
+    #     json_field = pm.textFieldButtonGrp(
+    #         "ARFileLocationField",
+    #         label=u"存放路径：",
+    #         bl=u"指定路径",
+    #         adj=2,
+    #         cw3=[100, 100, 100],
+    #         text=self.ar_file_location,
+    #         bc=lambda *args: self.setting_ar_file_location())
+    #
+    #     self.ar_channel_options = pm.optionMenuGrp(
+    #         label=u"人脸识别通道：",
+    #         cw2=[100, 100],
+    #         adj=2,
+    #         cc=lambda *args: self.selected_ar_channel())
+    #
+    #     build_channel_btn = pm.button(
+    #         label=u"重建",
+    #         w=58,
+    #         c=lambda *args: self.rebuild_channel_controller())
+    #
+    #     self.auto_create_controller_check = pm.checkBox(
+    #         label=u"自动创建控制器", value=True)
+    #
+    #     # ID_layout = pm.columnLayout(adj=1, rs=5)
+    #     # pm.text(label=u"通道列表", al="left")
+    #     # pm.textScrollList(
+    #     #     "ARIDScrollList",
+    #     #     height=400,
+    #     #     sc=lambda *args: self.selected_ar_id_in_list())
+    #     # pm.popupMenu()
+    #     # pm.menuItem(label=u"为选择项添加控制器",
+    #     #             c=lambda *args: self.add_slider_for_selected())
+    #     # pm.setParent("..")
+    #
+    #     detail_frame = pm.frameLayout(
+    #         label=u"通道属性", bgs=True, mw=10, mh=10)
+    #     detail_form = pm.formLayout()
+    #     # pm.textFieldButtonGrp(
+    #     #     "arIDDriverField",
+    #     #     enable=False,
+    #     #     label=u"控制器",
+    #     #     bl=u"设置",
+    #     #     adj=2,
+    #     #     cw3=[60, 100, 60])
+    #     ar_id_slider = pm.floatSliderGrp(
+    #         "arIDControlSlider",
+    #         enable=False,
+    #         label=u"滑竿控制",
+    #         field=True,
+    #         minValue=0,
+    #         maxValue=1.0,
+    #         fieldMinValue=0,
+    #         fieldMaxValue=1.0,
+    #         pre=3,
+    #         adj=3,
+    #         value=0,
+    #         cw3=[100, 60, 100])
+    #     self.ar_item_scroll = pm.textScrollList(
+    #         w=200,
+    #         sc=lambda *args: self.selected_ar_item_in_scroll())
+    #
+    #     ar_item_data_layout = pm.columnLayout(adj=1)
+    #     self.ar_item_joint_name = pm.text(
+    #         label=u"Joint name", al="left", fn="boldLabelFont")
+    #     self.ar_item_attr_tx = pm.floatFieldGrp(
+    #         adj=1, cw2=[50, 80], label="translateX", pre=3)
+    #     self.ar_item_attr_ty = pm.floatFieldGrp(
+    #         adj=1, cw2=[50, 80], label="translateY", pre=3)
+    #     self.ar_item_attr_tz = pm.floatFieldGrp(
+    #         adj=1, cw2=[50, 80], label="translateZ", pre=3)
+    #     self.ar_item_attr_rx = pm.floatFieldGrp(
+    #         adj=1, cw2=[50, 80], label="rotateX", pre=3)
+    #     self.ar_item_attr_ry = pm.floatFieldGrp(
+    #         adj=1, cw2=[50, 80], label="rotateY", pre=3)
+    #     self.ar_item_attr_rz = pm.floatFieldGrp(
+    #         adj=1, cw2=[50, 80], label="rotateZ", pre=3)
+    #     self.ar_item_attr_sx = pm.floatFieldGrp(
+    #         adj=1, cw2=[50, 80], label="scaleX", pre=3)
+    #     self.ar_item_attr_sy = pm.floatFieldGrp(
+    #         adj=1, cw2=[50, 80], label="scaleY", pre=3)
+    #     self.ar_item_attr_sz = pm.floatFieldGrp(
+    #         adj=1, cw2=[50, 80], label="scaleZ", pre=3)
+    #     pm.setParent("..")
+    #
+    #     pm.formLayout(
+    #         detail_form, edit=True,
+    #         attachForm=[
+    #             (ar_id_slider, 'left', 0),
+    #             (ar_id_slider, 'right', 0),
+    #             (self.ar_item_scroll, 'left', 0),
+    #             (self.ar_item_scroll, 'bottom', 0),
+    #             (ar_item_data_layout, 'right', 0),
+    #             (ar_item_data_layout, 'bottom', 0),
+    #         ],
+    #         attachControl=[
+    #             (self.ar_item_scroll, 'top', 7, ar_id_slider),
+    #             (ar_item_data_layout, 'top', 7, ar_id_slider),
+    #             (ar_item_data_layout, 'left', 5, self.ar_item_scroll),
+    #         ])
+    #     pm.setParent("..")
+    #     pm.setParent("..")
+    #
+    #     pm.formLayout(
+    #         layout, edit=True,
+    #         attachForm=[
+    #             (json_field, 'top', 5),
+    #             (json_field, 'left', 10),
+    #             (json_field, 'right', 10),
+    #             (self.ar_channel_options, 'left', 10),
+    #             (build_channel_btn, 'right', 14),
+    #             (self.auto_create_controller_check, 'left', 10),
+    #             (self.auto_create_controller_check, 'right', 10),
+    #             (detail_frame, 'left', 10),
+    #             (detail_frame, 'right', 10),
+    #             (detail_frame, 'bottom', 10),
+    #         ],
+    #         attachControl=[
+    #             (self.ar_channel_options, 'top', 7, json_field),
+    #             (self.ar_channel_options, 'right', 7, build_channel_btn),
+    #             (build_channel_btn, 'top', 5, json_field),
+    #             (self.auto_create_controller_check,
+    #              'top', 5, self.ar_channel_options),
+    #             (detail_frame, 'top', 10, self.auto_create_controller_check),
+    #         ])
+    #
+    #     pm.setParent("..")
+    #
+    #     self.init_ar_channel_options(
+    #         self.ar_file_location, self.ar_channel_options)
+    #     pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
+    #     self.selected_ar_channel()
+    #
+    #     if (pm.textScrollList(self.ar_item_scroll, q=True, ni=True)>1):
+    #         pm.textScrollList(self.ar_item_scroll, e=True, sii=1)
+    #         self.selected_ar_item_in_scroll()
+    #
+    #     return layout
 
     def create_editor_test_controller(self):
         selected_module = pm.optionMenuGrp(
@@ -1000,100 +1061,6 @@ class JsonManager(common.Singleton):
         locator = zero_locator(name=name)
         pm.addAttr(locator, ln="sliderX", at="double", min=0, max=1, dv=0)
         pm.setAttr("%s.sliderX" % locator, e=True, k=True)
-
-        return
-
-    def sdk_slider_to_rig(self, slider, attr="sliderX"):
-        attr_list = ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz"]
-        for jnt in self.ar_data[slider].keys():
-            print jnt
-            for dv_attr in attr_list:
-                position_joint(jnt, value=[0, 0, 0, 0, 0, 0, 1, 1, 1])
-                pm.setDrivenKeyframe(
-                    "%s.%s" % (jnt, dv_attr),
-                    cd="%s.%s" % (slider, attr),
-                    dv=0)
-
-                value = self.ar_data[slider][jnt]["max"]
-                dv_value = [
-                    value[0] * 100,
-                    value[1] * 100,
-                    value[2] * 100,
-                    value[3],
-                    value[4],
-                    value[5],
-                    value[6],
-                    value[7],
-                    value[8],
-                ]
-
-                position_joint(jnt, value=dv_value)
-                pm.setDrivenKeyframe(
-                    "%s.%s" % (jnt, dv_attr),
-                    cd="%s.%s" % (slider, attr),
-                    dv=1)
-
-        pm.setAttr("%s.%s" % (slider, attr), 0)
-        return
-
-    def selected_ar_id_in_list(self):
-        print pm.textScrollList("ARIDScrollList", q=True, si=True)[0]
-
-        selected_key = pm.textScrollList("ARIDScrollList", q=True, si=True)[0]
-        print self.ar_data[selected_key]
-
-        if pm.objExists(selected_key):
-            pm.textFieldButtonGrp(
-                "arIDDriverField", e=True, enable=True, text=selected_key)
-            pm.floatSliderGrp("arIDControlSlider", e=True, enable=True)
-            pm.connectControl('arIDControlSlider',
-                              '%s.sliderX' % selected_key)
-
-        else:
-            if pm.checkBox(self.auto_create_controller_check, q=True, v=True):
-                pm.textFieldButtonGrp(
-                    "arIDDriverField", e=True, enable=True, text=selected_key)
-                pm.floatSliderGrp("arIDControlSlider", e=True, enable=True)
-
-                self.create_slider_controller(name=selected_key)
-                self.sdk_slider_to_rig(slider=selected_key)
-                pm.connectControl('arIDControlSlider',
-                                  '%s.sliderX' % selected_key)
-            else:
-                pm.textFieldButtonGrp(
-                    "arIDDriverField", e=True, enable=False, text='')
-                pm.floatSliderGrp("arIDControlSlider", e=True, enable=False)
-
-        return
-
-    def setting_ar_file_location(self):
-        json_location = pm.fileDialog2(
-            dialogStyle=2,
-            fileFilter="JSON File (*.json);;",
-            fileMode=1, okc=u"选择文件")
-        pm.textFieldButtonGrp(
-            "ARFileLocationField", e=True, text=json_location[0])
-
-        self.ar_file_location = json_location[0]
-
-        self.append_id_to_scroll(json_location[0])
-
-        return
-
-    def append_id_to_scroll(self, file_name):
-        if file_name != '':
-            ID_list = []
-            with open(file_name, 'r') as data:
-                dict_data = json.load(data)
-                ID_list = dict_data.keys()
-
-                self.ar_data = dict_data
-
-            # 对列表进行排序
-            ID_list.sort()
-
-            # print ID_list
-            pm.textScrollList("ARIDScrollList", e=True, a=ID_list)
 
         return
 
@@ -1162,9 +1129,9 @@ class JsonManager(common.Singleton):
                 q='jsonManagerFolder')
             self.module_sections = self.scanning_folder("folders")
 
-        if pm.optionVar(q='arFileLocation'):
-            self.ar_file_location = pm.optionVar(
-                q='arFileLocation')
+        # if pm.optionVar(q='arFileLocation'):
+        #     self.ar_file_location = pm.optionVar(
+        #         q='arFileLocation')
 
         if pm.optionVar(q='jsonManagerMainTabLayoutIndex'):
             self.current_tab_index = int(pm.optionVar(
@@ -2110,3 +2077,154 @@ def join_list_item(list_data):
         print output_str
 
     return output_str
+
+
+class ExpressionHelper(common.Singleton):
+    def __init__(self):
+        super(ExpressionHelper, self).__init__()
+
+        self.expression_data = {}
+        self.joint_number = 0
+
+        self.show()
+
+    def show(self):
+        if pm.window("ExpressionHelper", ex=True):
+            pm.deleteUI("ExpressionHelper")
+        pm.window(
+            "ExpressionHelper",
+            t=u"表情助手",
+            mb=True)
+
+        form_layout = pm.formLayout()
+
+        column_layout = pm.columnLayout(adj=1, rs=2)
+        self.work_mode_control = pm.radioButtonGrp(
+            label=u"工作模式：",
+            labelArray3=[u'翻转', u'镜像', u'粘贴'],
+            numberOfRadioButtons=3, cw4=[60, 60, 60, 60], sl=1)
+        self.label_control = pm.text(label=u"搜索和替换选项：", al="left")
+        self.search_field_control = pm.textFieldGrp(
+            label=u"搜索：", cw2=[60, 240], text="_L_")
+        self.replace_field_control = pm.textFieldGrp(
+            label=u"替换：", cw2=[60, 240], text="_R_")
+        self.task_info_control = pm.text(
+            label=u"已经复制%s根骨骼的信息" % self.joint_number,
+            w=300,
+            al="left")
+        pm.setParent("..")
+
+        self.copy_button = pm.button(
+            label=u"复制数据", w=80, c=lambda *args: self.copy_expression())
+        self.select_source_button = pm.button(
+            label=u"选择来源",
+            w=80, c=lambda *args: self.select_source_object())
+        self.select_target_button = pm.button(
+            label=u"选择目标",
+            w=80, c=lambda *args: self.select_target_object())
+        self.paste_button = pm.button(
+            label=u"拷贝数据", w=80, c=lambda *args: self.paste_expression())
+
+        pm.formLayout(
+            form_layout, edit=True,
+            attachForm=[
+                (column_layout, "top", 10),
+                (column_layout, "left", 10),
+                (column_layout, "right", 10),
+                (self.copy_button, 'left', 10),
+                (self.copy_button, 'bottom', 10),
+                (self.select_source_button, 'bottom', 10),
+                (self.select_target_button, 'bottom', 10),
+                (self.paste_button, 'bottom', 10),
+                # (self.paste_button, 'right', 10),
+            ],
+            attachControl=[
+                (column_layout, 'bottom', 10, self.copy_button),
+                (self.select_source_button, 'left', 10, self.copy_button),
+                (self.select_target_button, 'left', 10, self.select_source_button),
+                (self.paste_button, 'left', 10, self.select_target_button),
+            ])
+
+        pm.showWindow("ExpressionHelper")
+
+    def copy_expression(self):
+        self.expression_data = {}
+
+        sel_joints = pm.ls(sl=True)
+        for jnt in sel_joints:
+            self.expression_data[jnt.name()] = [
+                round(pm.PyNode(jnt).translateX.get(), 5),
+                round(pm.PyNode(jnt).translateY.get(), 5),
+                round(pm.PyNode(jnt).translateZ.get(), 5),
+                round(pm.PyNode(jnt).rotateX.get(), 5),
+                round(pm.PyNode(jnt).rotateY.get(), 5),
+                round(pm.PyNode(jnt).rotateZ.get(), 5),
+                round(pm.PyNode(jnt).scaleX.get(), 5),
+                round(pm.PyNode(jnt).scaleY.get(), 5),
+                round(pm.PyNode(jnt).scaleZ.get(), 5),
+            ]
+
+        self.joint_number = len(sel_joints)
+
+        pm.text(self.task_info_control,
+                e=True,
+                label=u"已经复制%s根骨骼的信息" % self.joint_number)
+
+        print self.expression_data
+
+        return True
+
+    def select_source_object(self):
+        source_objects = self.expression_data.keys()
+        pm.select(source_objects)
+        return
+
+    def select_target_object(self):
+        target_objects = self.target_list
+        pm.select(target_objects)
+        return
+
+    def paste_expression(self):
+        work_mode_list = ['flip', 'mirror', 'paste']
+        current_mode_index = pm.radioButtonGrp(
+            self.work_mode_control, q=True, sl=True)
+        work_mode = work_mode_list[current_mode_index - 1]
+
+        self.target_list = []
+        for jnt in self.expression_data.keys():
+            search_field = pm.textFieldGrp(
+                self.search_field_control, q=True, text=True)
+            replace_field = pm.textFieldGrp(
+                self.replace_field_control, q=True, text=True)
+
+            value = self.expression_data[jnt]
+
+            if work_mode == 'flip':
+                target_jnt = ''
+                if search_field in jnt:
+                    target_jnt = jnt.replace(search_field, replace_field)
+                    self.target_list.append(target_jnt)
+                elif replace_field in jnt:
+                    target_jnt = jnt.replace(replace_field, search_field)
+                    self.target_list.append(target_jnt)
+                else:
+                    target_jnt = jnt
+                    self.target_list.append(target_jnt)
+                common.moving_target(
+                    target=target_jnt,
+                    value=[
+                        value[0] * -1,
+                        value[1],
+                        value[2],
+                        value[3],
+                        value[4] * -1,
+                        value[5] * -1,
+                        value[6],
+                        value[7],
+                        value[8],
+                    ],
+                )
+        else:
+            pass
+
+        return True

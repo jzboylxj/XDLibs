@@ -27,6 +27,7 @@ class ARFaceData:
     def __init__(self):
         self.dict_data = {}
         self.ar_channels = []
+        self.filename = ""
 
     def decode_from_json(self, filename):
         if filename != '':
@@ -38,14 +39,29 @@ class ARFaceData:
             ID_list.sort()
             self.ar_channels = ID_list
 
+            self.filename = filename
+
+    def set_channel_joint(self, channel, joint):
+        self.dict_data[channel][joint] = {}
+
+        return True
+
     def get_channel_joints(self, channel):
         return self.dict_data[channel].keys()
+
+    def set_channel_joint_attr(self, channel, joint, value):
+        self.dict_data[channel][joint]["max"] = value
+
+        return True
 
     def get_channel_joint_attr(self, channel, joint):
         return self.dict_data[channel][joint]["max"]
 
-    def data_to_json(self, filename):
-        pass
+    def data_to_json(self):
+        with open(self.filename, "w") as f:
+            json.dump(self.dict_data, f, indent=2)
+
+        return True
 
 
 class ARFaceEditor(common.Singleton):
@@ -123,42 +139,49 @@ class ARFaceEditor(common.Singleton):
             value=0,
             cw3=[100, 60, 100])
         self.ar_item_scroll = pm.textScrollList(
-            w=200,
+            w=200, ams=True,
             sc=lambda *args: self.selected_ar_item_in_scroll()
         )
         pm.popupMenu()
         pm.menuItem(
             label=u"添加骨骼",
-            # c=lambda *args: self.clean_output_scroll()
-        )
+            c=lambda *args: self.new_joint_to_ar_channel(auto_sdk=False))
         pm.menuItem(
-            label=u"转移到任务列表",
-            # c=lambda *args: self.move_to_task_scroll()
-        )
+            label=u"添加骨骼和SDK",
+            c=lambda *args: self.new_joint_to_ar_channel(auto_sdk=True))
+        pm.menuItem(divider=True)
+        pm.menuItem(
+            label=u"选择所有骨骼",
+            c=lambda *args: self.select_all_joint_in_scroll())
 
         ar_item_data_layout = pm.columnLayout(adj=1, rs=5)
         self.ar_item_joint_name = pm.text(
             label=u"Joint name", al="left", fn="boldLabelFont")
         self.ar_item_attr_tx = pm.floatFieldGrp(
-            adj=1, cw2=[100, 80], label="translateX", pre=3)
+            adj=1, cw2=[80, 80], label="translateX", pre=3)
         self.ar_item_attr_ty = pm.floatFieldGrp(
-            adj=1, cw2=[100, 80], label="translateY", pre=3)
+            adj=1, cw2=[80, 80], label="translateY", pre=3)
         self.ar_item_attr_tz = pm.floatFieldGrp(
-            adj=1, cw2=[100, 80], label="translateZ", pre=3)
+            adj=1, cw2=[80, 80], label="translateZ", pre=3)
         self.ar_item_attr_rx = pm.floatFieldGrp(
-            adj=1, cw2=[100, 80], label="rotateX", pre=3)
+            adj=1, cw2=[80, 80], label="rotateX", pre=3)
         self.ar_item_attr_ry = pm.floatFieldGrp(
-            adj=1, cw2=[100, 80], label="rotateY", pre=3)
+            adj=1, cw2=[80, 80], label="rotateY", pre=3)
         self.ar_item_attr_rz = pm.floatFieldGrp(
-            adj=1, cw2=[100, 80], label="rotateZ", pre=3)
+            adj=1, cw2=[80, 80], label="rotateZ", pre=3)
         self.ar_item_attr_sx = pm.floatFieldGrp(
-            adj=1, cw2=[100, 80], label="scaleX", pre=3)
+            adj=1, cw2=[80, 80], label="scaleX", pre=3)
         self.ar_item_attr_sy = pm.floatFieldGrp(
-            adj=1, cw2=[100, 80], label="scaleY", pre=3)
+            adj=1, cw2=[80, 80], label="scaleY", pre=3)
         self.ar_item_attr_sz = pm.floatFieldGrp(
-            adj=1, cw2=[100, 80], label="scaleZ", pre=3)
+            adj=1, cw2=[80, 80], label="scaleZ", pre=3)
 
-        pm.button(label="Update", w=100)
+        pm.button(
+            label="Update Selected",
+            w=120, c=lambda *args: self.update_sdk())
+        pm.button(
+            label="Update All",
+            w=120, c=lambda *args: self.update_sdk())
 
         pm.setParent("..")
 
@@ -267,14 +290,14 @@ class ARFaceEditor(common.Singleton):
 
         # 当前选择的骨骼
         current_item = pm.textScrollList(
-            self.ar_item_scroll, q=True, si=True)[0]
+            self.ar_item_scroll, q=True, si=True)
         pm.select(current_item)
 
         current_item_attrs = self.ar_data.get_channel_joint_attr(
-            current_channel, current_item)
+            current_channel, current_item[0])
 
         # 修改通道属性栏里面底部右侧的面板的名称
-        pm.text(self.ar_item_joint_name, e=True, label=current_item)
+        pm.text(self.ar_item_joint_name, e=True, label=current_item[0])
         pm.floatFieldGrp(
             self.ar_item_attr_tx, e=True, v1=current_item_attrs[0] * 100)
         pm.floatFieldGrp(
@@ -300,10 +323,11 @@ class ARFaceEditor(common.Singleton):
                 self.ar_channel_options, q=True, ils=True):
             channel_label = pm.menuItem(item, q=True, label=True)
 
-            self.create_slider_controller(name=channel_label)
-            self.sdk_slider_to_rig(channel=channel_label)
-            pm.connectControl(
-                'arIDControlSlider', '%s.sliderX' % channel_label)
+            if not pm.objExists(channel_label):
+                self.create_slider_controller(name=channel_label)
+                self.sdk_slider_to_rig(channel=channel_label)
+                pm.connectControl(
+                    'arIDControlSlider', '%s.sliderX' % channel_label)
 
         pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
         self.selected_ar_channel()
@@ -316,6 +340,79 @@ class ARFaceEditor(common.Singleton):
         pm.setAttr("%s.sliderX" % locator, e=True, k=True)
 
         return
+
+    def update_sdk(self, type="select", pre=5):
+        current_jnts = []
+        if type == "select":
+            current_jnts = pm.textScrollList(
+                self.ar_item_scroll, q=True, si=True)
+        elif type == "all":
+            current_jnts = pm.textScrollList(
+                self.ar_item_scroll, q=True, ai=True)
+
+        for current_jnt in current_jnts:
+            jnt_value = [
+                round(pm.PyNode(current_jnt).translateX.get() * 0.01, pre),
+                round(pm.PyNode(current_jnt).translateY.get() * 0.01, pre),
+                round(pm.PyNode(current_jnt).translateZ.get() * 0.01, pre),
+                round(pm.PyNode(current_jnt).rotateX.get(), pre),
+                round(pm.PyNode(current_jnt).rotateY.get(), pre),
+                round(pm.PyNode(current_jnt).rotateZ.get(), pre),
+                round(pm.PyNode(current_jnt).scaleX.get(), pre),
+                round(pm.PyNode(current_jnt).scaleY.get(), pre),
+                round(pm.PyNode(current_jnt).scaleZ.get(), pre),
+            ]
+
+            attr_list = ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz"]
+
+            for dv_attr in attr_list:
+                helper.position_joint(
+                    current_jnt, value=[0, 0, 0, 0, 0, 0, 1, 1, 1])
+
+                pm.setDrivenKeyframe(
+                    "%s.%s" % (current_jnt, dv_attr),
+                    cd="%s.sliderX" % (pm.optionMenuGrp(
+                        self.ar_channel_options, q=True, value=True)),
+                    dv=0)
+
+                helper.position_joint(
+                    current_jnt,
+                    value=[
+                        jnt_value[0] * 100,
+                        jnt_value[1] * 100,
+                        jnt_value[2] * 100,
+                        jnt_value[3],
+                        jnt_value[4],
+                        jnt_value[5],
+                        jnt_value[6],
+                        jnt_value[7],
+                        jnt_value[8]])
+                pm.setDrivenKeyframe(
+                    "%s.%s" % (current_jnt, dv_attr),
+                    cd="%s.sliderX" % (pm.optionMenuGrp(
+                        self.ar_channel_options, q=True, value=True)),
+                    dv=1)
+
+            pm.floatFieldGrp(self.ar_item_attr_tx, e=True,
+                             v1=jnt_value[0] * 100)
+            pm.floatFieldGrp(self.ar_item_attr_ty, e=True,
+                             v1=jnt_value[1] * 100)
+            pm.floatFieldGrp(self.ar_item_attr_tz, e=True,
+                             v1=jnt_value[2] * 100)
+            pm.floatFieldGrp(self.ar_item_attr_rx, e=True, v1=jnt_value[3])
+            pm.floatFieldGrp(self.ar_item_attr_ry, e=True, v1=jnt_value[4])
+            pm.floatFieldGrp(self.ar_item_attr_rz, e=True, v1=jnt_value[5])
+            pm.floatFieldGrp(self.ar_item_attr_sx, e=True, v1=jnt_value[6])
+            pm.floatFieldGrp(self.ar_item_attr_sy, e=True, v1=jnt_value[7])
+            pm.floatFieldGrp(self.ar_item_attr_sz, e=True, v1=jnt_value[8])
+
+            self.ar_data.set_channel_joint_attr(
+                channel=pm.optionMenuGrp(
+                    self.ar_channel_options, q=True, value=True),
+                joint=current_jnt,
+                value=jnt_value,
+            )
+        self.ar_data.data_to_json()
 
     def sdk_slider_to_rig(self, channel, attr="sliderX"):
         attr_list = ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz"]
@@ -347,4 +444,34 @@ class ARFaceEditor(common.Singleton):
                     dv=1)
 
         pm.setAttr("%s.%s" % (channel, attr), 0)
+        return
+
+    def new_joint_to_ar_channel(self, auto_sdk=False):
+        all_items = pm.textScrollList(self.ar_item_scroll, q=True, ai=True)
+        for item in pm.ls(sl=True):
+            if item not in all_items:
+                pm.textScrollList(self.ar_item_scroll, e=True, a=item)
+                self.ar_data.set_channel_joint(
+                    channel=pm.optionMenuGrp(
+                        self.ar_channel_options, q=True, value=True),
+                    joint=item.name(),
+                )
+                self.ar_data.set_channel_joint_attr(
+                    channel=pm.optionMenuGrp(
+                        self.ar_channel_options, q=True, value=True),
+                    joint=item.name(),
+                    value=[0, 0, 0, 0, 0, 0, 1, 1, 1]
+                )
+                self.ar_data.data_to_json()
+
+                pm.textScrollList(self.ar_item_scroll, e=True, si=item)
+
+                if auto_sdk:
+                    self.update_sdk()
+
+        return True
+
+    def select_all_joint_in_scroll(self):
+        all_jnt = pm.textScrollList(self.ar_item_scroll, q=True, ai=True)
+        pm.select(all_jnt)
         return
