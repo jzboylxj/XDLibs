@@ -866,157 +866,11 @@ class JsonManager(common.Singleton):
             ],
             attachControl=[
                 (option_menu, 'right', 5, add_module_btn),
-                # (add_module_btn, 'left', 5, option_menu),
                 (tab_layout, 'top', 5, option_menu),
             ])
 
         pm.setParent("..")
         return layout
-
-    # def ar_tab(self):
-    #     """
-    #     标签栏之AR控制栏
-    #
-    #     :return: layout
-    #     """
-    #     layout = pm.formLayout("ARFormTab")
-    #     json_field = pm.textFieldButtonGrp(
-    #         "ARFileLocationField",
-    #         label=u"存放路径：",
-    #         bl=u"指定路径",
-    #         adj=2,
-    #         cw3=[100, 100, 100],
-    #         text=self.ar_file_location,
-    #         bc=lambda *args: self.setting_ar_file_location())
-    #
-    #     self.ar_channel_options = pm.optionMenuGrp(
-    #         label=u"人脸识别通道：",
-    #         cw2=[100, 100],
-    #         adj=2,
-    #         cc=lambda *args: self.selected_ar_channel())
-    #
-    #     build_channel_btn = pm.button(
-    #         label=u"重建",
-    #         w=58,
-    #         c=lambda *args: self.rebuild_channel_controller())
-    #
-    #     self.auto_create_controller_check = pm.checkBox(
-    #         label=u"自动创建控制器", value=True)
-    #
-    #     # ID_layout = pm.columnLayout(adj=1, rs=5)
-    #     # pm.text(label=u"通道列表", al="left")
-    #     # pm.textScrollList(
-    #     #     "ARIDScrollList",
-    #     #     height=400,
-    #     #     sc=lambda *args: self.selected_ar_id_in_list())
-    #     # pm.popupMenu()
-    #     # pm.menuItem(label=u"为选择项添加控制器",
-    #     #             c=lambda *args: self.add_slider_for_selected())
-    #     # pm.setParent("..")
-    #
-    #     detail_frame = pm.frameLayout(
-    #         label=u"通道属性", bgs=True, mw=10, mh=10)
-    #     detail_form = pm.formLayout()
-    #     # pm.textFieldButtonGrp(
-    #     #     "arIDDriverField",
-    #     #     enable=False,
-    #     #     label=u"控制器",
-    #     #     bl=u"设置",
-    #     #     adj=2,
-    #     #     cw3=[60, 100, 60])
-    #     ar_id_slider = pm.floatSliderGrp(
-    #         "arIDControlSlider",
-    #         enable=False,
-    #         label=u"滑竿控制",
-    #         field=True,
-    #         minValue=0,
-    #         maxValue=1.0,
-    #         fieldMinValue=0,
-    #         fieldMaxValue=1.0,
-    #         pre=3,
-    #         adj=3,
-    #         value=0,
-    #         cw3=[100, 60, 100])
-    #     self.ar_item_scroll = pm.textScrollList(
-    #         w=200,
-    #         sc=lambda *args: self.selected_ar_item_in_scroll())
-    #
-    #     ar_item_data_layout = pm.columnLayout(adj=1)
-    #     self.ar_item_joint_name = pm.text(
-    #         label=u"Joint name", al="left", fn="boldLabelFont")
-    #     self.ar_item_attr_tx = pm.floatFieldGrp(
-    #         adj=1, cw2=[50, 80], label="translateX", pre=3)
-    #     self.ar_item_attr_ty = pm.floatFieldGrp(
-    #         adj=1, cw2=[50, 80], label="translateY", pre=3)
-    #     self.ar_item_attr_tz = pm.floatFieldGrp(
-    #         adj=1, cw2=[50, 80], label="translateZ", pre=3)
-    #     self.ar_item_attr_rx = pm.floatFieldGrp(
-    #         adj=1, cw2=[50, 80], label="rotateX", pre=3)
-    #     self.ar_item_attr_ry = pm.floatFieldGrp(
-    #         adj=1, cw2=[50, 80], label="rotateY", pre=3)
-    #     self.ar_item_attr_rz = pm.floatFieldGrp(
-    #         adj=1, cw2=[50, 80], label="rotateZ", pre=3)
-    #     self.ar_item_attr_sx = pm.floatFieldGrp(
-    #         adj=1, cw2=[50, 80], label="scaleX", pre=3)
-    #     self.ar_item_attr_sy = pm.floatFieldGrp(
-    #         adj=1, cw2=[50, 80], label="scaleY", pre=3)
-    #     self.ar_item_attr_sz = pm.floatFieldGrp(
-    #         adj=1, cw2=[50, 80], label="scaleZ", pre=3)
-    #     pm.setParent("..")
-    #
-    #     pm.formLayout(
-    #         detail_form, edit=True,
-    #         attachForm=[
-    #             (ar_id_slider, 'left', 0),
-    #             (ar_id_slider, 'right', 0),
-    #             (self.ar_item_scroll, 'left', 0),
-    #             (self.ar_item_scroll, 'bottom', 0),
-    #             (ar_item_data_layout, 'right', 0),
-    #             (ar_item_data_layout, 'bottom', 0),
-    #         ],
-    #         attachControl=[
-    #             (self.ar_item_scroll, 'top', 7, ar_id_slider),
-    #             (ar_item_data_layout, 'top', 7, ar_id_slider),
-    #             (ar_item_data_layout, 'left', 5, self.ar_item_scroll),
-    #         ])
-    #     pm.setParent("..")
-    #     pm.setParent("..")
-    #
-    #     pm.formLayout(
-    #         layout, edit=True,
-    #         attachForm=[
-    #             (json_field, 'top', 5),
-    #             (json_field, 'left', 10),
-    #             (json_field, 'right', 10),
-    #             (self.ar_channel_options, 'left', 10),
-    #             (build_channel_btn, 'right', 14),
-    #             (self.auto_create_controller_check, 'left', 10),
-    #             (self.auto_create_controller_check, 'right', 10),
-    #             (detail_frame, 'left', 10),
-    #             (detail_frame, 'right', 10),
-    #             (detail_frame, 'bottom', 10),
-    #         ],
-    #         attachControl=[
-    #             (self.ar_channel_options, 'top', 7, json_field),
-    #             (self.ar_channel_options, 'right', 7, build_channel_btn),
-    #             (build_channel_btn, 'top', 5, json_field),
-    #             (self.auto_create_controller_check,
-    #              'top', 5, self.ar_channel_options),
-    #             (detail_frame, 'top', 10, self.auto_create_controller_check),
-    #         ])
-    #
-    #     pm.setParent("..")
-    #
-    #     self.init_ar_channel_options(
-    #         self.ar_file_location, self.ar_channel_options)
-    #     pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
-    #     self.selected_ar_channel()
-    #
-    #     if (pm.textScrollList(self.ar_item_scroll, q=True, ni=True)>1):
-    #         pm.textScrollList(self.ar_item_scroll, e=True, sii=1)
-    #         self.selected_ar_item_in_scroll()
-    #
-    #     return layout
 
     def create_editor_test_controller(self):
         selected_module = pm.optionMenuGrp(
@@ -1128,10 +982,6 @@ class JsonManager(common.Singleton):
             self.json_folder = pm.optionVar(
                 q='jsonManagerFolder')
             self.module_sections = self.scanning_folder("folders")
-
-        # if pm.optionVar(q='arFileLocation'):
-        #     self.ar_file_location = pm.optionVar(
-        #         q='arFileLocation')
 
         if pm.optionVar(q='jsonManagerMainTabLayoutIndex'):
             self.current_tab_index = int(pm.optionVar(
