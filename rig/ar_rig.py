@@ -29,6 +29,8 @@ class ARFaceData:
         self.ar_channels = []
         self.filename = ""
 
+        self.unity_data = {}
+
     def decode_from_json(self, filename):
         if filename != '':
             with open(filename, 'r') as data:
@@ -63,6 +65,28 @@ class ARFaceData:
 
         return True
 
+    def export_for_unity(self, filename):
+        print filename
+
+        print "self.dict_data: %s" % self.dict_data
+        joint_list = []
+
+        channel_list = self.dict_data.keys()
+        for channel in channel_list:
+            for jnt in self.dict_data[channel].keys():
+                if jnt not in self.unity_data.keys():
+                    jnt_dict = {channel:self.dict_data[channel][jnt]["max"]}
+                    self.unity_data[jnt] = jnt_dict
+                else:
+                    self.unity_data[jnt][channel]=self.dict_data[channel][jnt]["max"]
+
+        print "self.unity_data: %s" % self.unity_data
+
+        with open(filename, "w") as f:
+            json.dump(self.unity_data, f, indent=2)
+
+        return
+
 
 class ARFaceEditor(common.Singleton):
     def __init__(self):
@@ -78,6 +102,8 @@ class ARFaceEditor(common.Singleton):
         if pm.optionVar(q='ARFaceEditor_jsonFileLocation'):
             self.ar_file_location = pm.optionVar(
                 q='ARFaceEditor_jsonFileLocation')
+        else:
+            self.ar_file_location = ""
 
     def show(self):
         if pm.window("ARFaceEditor", ex=True):
@@ -88,12 +114,26 @@ class ARFaceEditor(common.Singleton):
             mb=True,
             cc=lambda *args: self._closed_window_cmd())
 
+        self.menu_list()
         self.main_layout()
 
         pm.showWindow("ARFaceEditor")
 
     def _closed_window_cmd(self):
         pass
+
+    def menu_list(self):
+        """
+        工具菜单栏
+
+        :return:
+        """
+        pm.menu(label=u"数据", tearOff=True)
+        pm.menuItem(
+            label=u"输出Unity",
+            c=lambda *args: self.export_for_unity())
+
+        return
 
     def main_layout(self):
         """
@@ -153,6 +193,10 @@ class ARFaceEditor(common.Singleton):
         pm.menuItem(
             label=u"选择所有骨骼",
             c=lambda *args: self.select_all_joint_in_scroll())
+        pm.menuItem(divider=True)
+        pm.menuItem(
+            label=u"移除选择骨骼",
+            c=lambda *args: self.remove_select_joint_in_scroll())
 
         ar_item_data_layout = pm.columnLayout(adj=1, rs=5)
         self.ar_item_joint_name = pm.text(
@@ -183,7 +227,7 @@ class ARFaceEditor(common.Singleton):
             label="Update All",
             w=120, c=lambda *args: self.update_sdk(type="all"))
 
-        pm.setParent("..")
+        pm.setParent("..")  # end of ar_item_data_layout
 
         pm.formLayout(
             detail_form, edit=True,
@@ -200,8 +244,8 @@ class ARFaceEditor(common.Singleton):
                 (ar_item_data_layout, 'top', 7, ar_id_slider),
                 (ar_item_data_layout, 'left', 5, self.ar_item_scroll),
             ])
-        pm.setParent("..")
-        pm.setParent("..")
+        pm.setParent("..")  # end of detail_form
+        pm.setParent("..")  # end of detail_frame
 
         pm.formLayout(
             layout, edit=True,
@@ -224,13 +268,14 @@ class ARFaceEditor(common.Singleton):
 
         pm.setParent("..")
 
-        self.init_ar_channel_options()
-        pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
-        self.selected_ar_channel()
+        if self.ar_file_location != "":
+            self.init_ar_channel_options()
+            pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
+            self.selected_ar_channel()
 
-        if (pm.textScrollList(self.ar_item_scroll, q=True, ni=True) > 1):
-            pm.textScrollList(self.ar_item_scroll, e=True, sii=1)
-            self.selected_ar_item_in_scroll()
+            if (pm.textScrollList(self.ar_item_scroll, q=True, ni=True) > 1):
+                pm.textScrollList(self.ar_item_scroll, e=True, sii=1)
+                self.selected_ar_item_in_scroll()
 
         return layout
 
@@ -475,4 +520,33 @@ class ARFaceEditor(common.Singleton):
     def select_all_joint_in_scroll(self):
         all_jnt = pm.textScrollList(self.ar_item_scroll, q=True, ai=True)
         pm.select(all_jnt)
+        return
+
+    def remove_select_joint_in_scroll(self):
+        select_joint = pm.textScrollList(self.ar_item_scroll, q=True, si=True)
+        select_index = pm.textScrollList(self.ar_item_scroll, q=True, sii=True)
+        print "select_index: %s" % select_index[0]
+        print self.ar_data.dict_data[
+            pm.optionMenuGrp(self.ar_channel_options, q=True, value=True)]
+        helper.position_joint(select_joint[0],
+                              value=[0, 0, 0, 0, 0, 0, 1, 1, 1])
+        self.ar_data.dict_data[
+            pm.optionMenuGrp(self.ar_channel_options, q=True, value=True)
+        ].pop(select_joint[0])
+        if int(select_index[0]) > 1:
+            pm.textScrollList(
+                self.ar_item_scroll, e=True, da=True)
+            pm.textScrollList(
+                self.ar_item_scroll, e=True, sii=(select_index[0] - 1))
+            self.selected_ar_item_in_scroll()
+        return
+
+    def export_for_unity(self):
+        json_file = pm.fileDialog2(
+            dialogStyle=2,
+            fileFilter="JSON File (*.json);;",
+            fileMode=0, okc=u"选择文件")
+
+        if json_file:
+            self.ar_data.export_for_unity(filename=json_file[0])
         return
