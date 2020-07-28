@@ -37,11 +37,9 @@ class ModuleRig(common.Singleton):
 
         self.menu_bar()
 
-        self.main_tab = pm.tabLayout(
-            "jsonManagerMainTabLayout",
-            innerMarginWidth=5, innerMarginHeight=5)
-        child1 = self.tab_rig_body()
-        child2 = self.tab_rig_face()
+        self.main_tab = pm.tabLayout(innerMarginWidth=5, innerMarginHeight=5)
+        child1 = self.tab_body()
+        child2 = self.tab_face()
 
         pm.tabLayout(
             self.main_tab,
@@ -63,218 +61,126 @@ class ModuleRig(common.Singleton):
     def menu_bar(self):
         pass
 
-    def tab_rig_body(self):
+    def tab_body(self):
         form_layout = pm.formLayout()
         pm.setParent("..")
         return form_layout
 
-    def tab_rig_face(self):
-        scroll_layout = pm.scrollLayout(cr=False)
-        self.face_pre_layout()
-
-        pm.setParent("..")
-        return scroll_layout
+    def tab_face(self):
+        layout = self.face_pre_layout()
+        return layout
 
     def face_pre_layout(self):
-        face_pre_layout = pm.frameLayout(
+        layout = pm.columnLayout(adj=1)
+        pm.frameLayout(
             label=u"Pre",
             cll=True,
             cl=False,
             bgs=True,
+            bgc=[0.2, 0.2, 0.2],
             mw=5, mh=5)
 
-        pm.text(label=u"Polygons:", al="left")
-        pm.rowColumnLayout(nc=3)
-        pm.button(
-            label="Mask",
-            w=120,
-            c=lambda *args: self.choose_input(
-                text_field="xdFaceMaskTextField"))
-        pm.popupMenu()
-        pm.menuItem(label=u"re-select")
-        pm.textField("xdFaceMaskTextField", w=120, en=False)
-        pm.button("?")
-        pm.setParent("..")
+        face_component = ["Mask", "Face"]
 
-        pm.text(label=u"Objects:", al="left")
-        pm.rowColumnLayout(nc=3)
-        pm.button(
-            label="Face",
-            w=120,
-            c=lambda *args: self.choose_input(
-                text_field="xdFaceFaceTextField"))
-        pm.popupMenu()
-        pm.menuItem(label=u"re-select")
-        pm.textField("xdFaceFaceTextField", w=120, en=False)
-        pm.button("?")
-        pm.setParent("..")
-
-        pm.rowColumnLayout(nc=3)
-        pm.button(
-            label="All Head",
-            w=120,
-            c=lambda *args: self.choose_input(
-                text_field="xdFaceAllHeadTextField"))
-        pm.popupMenu()
-        pm.menuItem(label=u"re-select")
-        pm.textField("xdFaceAllHeadTextField", w=120, en=False)
-        pm.button("?")
-        pm.setParent("..")
-
-        pm.rowColumnLayout(nc=3)
-        pm.button(
-            label="Right Eye",
-            w=120,
-            c=lambda *args: self.choose_input(
-                text_field="xdFaceRightEyeTextField"))
-        pm.popupMenu()
-        pm.menuItem(label=u"re-select")
-        pm.textField("xdFaceRightEyeTextField", w=120, en=False)
-        pm.button("?")
-        pm.setParent("..")
-
-        pm.rowColumnLayout(nc=3)
-        pm.button(
-            label="Left Eye",
-            w=120,
-            c=lambda *args: self.choose_input(
-                text_field="xdFaceLeftEyeTextField"))
-        pm.popupMenu()
-        pm.menuItem(label=u"re-select")
-        pm.textField("xdFaceLeftEyeTextField", w=120, en=False)
-        pm.button("?")
-        pm.setParent("..")
-
-        pm.text(label=u"Optional:", al="left")
-        pm.rowColumnLayout(nc=3)
-        pm.button(
-            label="Upper Teeth",
-            w=120,
-            c=lambda *args: self.choose_input(
-                text_field="xdFaceUpperTeethTextField"))
-        pm.popupMenu()
-        pm.menuItem(label=u"re-select")
-        pm.textField("xdFaceUpperTeethTextField", w=120, en=False)
-        pm.button("?")
-        pm.setParent("..")
-
-        pm.rowColumnLayout(nc=3)
-        pm.button(
-            label="Lower Teeth",
-            w=120,
-            c=lambda *args: self.choose_input(
-                text_field="xdFaceLowerTeethTextField"))
-        pm.popupMenu()
-        pm.menuItem(label=u"re-select")
-        pm.textField("xdFaceLowerTeethTextField", w=120, en=False)
-        pm.button("?")
-        pm.setParent("..")
-
-        pm.rowColumnLayout(nc=3)
-        pm.button(
-            label="Tongue",
-            w=120,
-            c=lambda *args: self.choose_input(
-                text_field="xdFaceTongueTextField"))
-        pm.popupMenu()
-        pm.menuItem(label=u"re-select")
-        pm.textField("xdFaceTongueTextField", w=120, en=False)
-        pm.button("?")
-        pm.setParent("..")
-
-        pm.rowColumnLayout(nc=3)
-        pm.button(
-            label="Eyebrow",
-            w=120,
-            c=lambda *args: self.choose_input(
-                text_field="xdFaceEyebrowTextField"))
-        pm.popupMenu()
-        pm.menuItem(label=u"re-select")
-        pm.textField("xdFaceEyebrowTextField", w=120, en=False)
-        pm.button("?")
-        pm.setParent("..")
-
-        pm.rowColumnLayout(nc=3)
-        pm.button(
-            label="Eyelash",
-            w=120,
-            c=lambda *args: self.choose_input(
-                text_field="xdFaceEyelashTextField"))
-        pm.popupMenu()
-        pm.menuItem(label=u"re-select")
-        pm.textField("xdFaceEyelashTextField", w=120, en=False)
-        pm.button("?")
-        pm.setParent("..")
-
-        pm.rowColumnLayout(nc=3)
-        pm.button(
-            label="Extras",
-            w=120,
-            c=lambda *args: self.choose_input(
-                text_field="xdFaceExtrasTextField"))
-        pm.popupMenu()
-        pm.menuItem(label=u"re-select")
-        pm.textField("xdFaceExtrasTextField", w=120, en=False)
-        pm.button("?")
-        pm.setParent("..")
+        pm.columnLayout(adj=1)
+        for component in face_component:
+            if component == "Mask":
+                pm.text(label=u"Polygons:", al="left")
+            elif component == "Face":
+                pm.separator(h=7, st="none")
+                pm.text(label=u"Objects:", al="left")
+            self.text_field_widget(component)
+        pm.setParent("..")  # end of pre_form_layout
 
         pm.separator(h=5, style="in")
 
-        form_layout = pm.formLayout()
-        rig_type_options = pm.optionMenuGrp(
-            label=u"Rig-type:", cw2=[52, 300], adj=2)
-        rig_type_options_help = pm.button("?")
-        symmetrical_check_box = pm.checkBox(label=u"Non symmetrical")
-        symmetrical_check_help = pm.button(label="?")
-        game_engine_check_box = pm.checkBox(label=u"Game engine")
-        game_engine_check_help = pm.button(label="?")
-        advanced_check_box = pm.checkBox(label=u"Advanced")
-        advanced_check_help = pm.button(label="?")
+        # form_layout = pm.formLayout()
+        # rig_type_options = pm.optionMenuGrp(
+        #     label=u"Rig-type:", cw2=[52, 300], adj=2)
+        # rig_type_options_help = pm.button("?")
+        # symmetrical_check_box = pm.checkBox(label=u"Non symmetrical")
+        # symmetrical_check_help = pm.button(label="?")
+        # game_engine_check_box = pm.checkBox(label=u"Game engine")
+        # game_engine_check_help = pm.button(label="?")
+        # advanced_check_box = pm.checkBox(label=u"Advanced")
+        # advanced_check_help = pm.button(label="?")
+        #
+        # pm.formLayout(
+        #     form_layout,
+        #     edit=True,
+        #     attachForm=[
+        #         (rig_type_options, 'top', 2),
+        #         (rig_type_options, 'left', 0),
+        #         (rig_type_options_help, 'right', 0),
+        #         (symmetrical_check_box, 'left', 0),
+        #         (symmetrical_check_help, 'right', 0),
+        #         (game_engine_check_help, 'right', 0),
+        #         (advanced_check_help, 'right', 0),
+        #     ],
+        #     attachControl=[
+        #         (rig_type_options, 'right', 5, rig_type_options_help),
+        #         (symmetrical_check_box, 'top', 9, rig_type_options),
+        #         (game_engine_check_box, 'top', 12, symmetrical_check_box),
+        #         (advanced_check_box, 'top', 12, game_engine_check_box),
+        #         (symmetrical_check_help, 'top', 6, rig_type_options),
+        #         (game_engine_check_help, 'top', 2, symmetrical_check_help),
+        #         (advanced_check_help, 'top', 2, game_engine_check_help),
+        #     ]
+        # )
+        # pm.setParent("..")  # end of form_layout
+        pm.setParent("..")  # end of face_pre_layout
+        pm.setParent("..")  # end of layout
 
+        return layout
+
+    def text_field_widget(self, label):
+        pm.formLayout("facePreComponent%sLayout" % label)
+        pm.textFieldButtonGrp(
+            "face%sTextField" % label,
+            label=label,
+            cw3=[40, 100, 60],
+            adj=2,
+            bl="    Get    ",
+            bc=lambda *args: self.choose_input(
+                text_field="face%sTextField" % label))
+        pm.popupMenu()
+        pm.menuItem(label=u"re-select")
+        pm.button(
+            "face%sHelp" % label,
+            label=u"?")
         pm.formLayout(
-            form_layout,
+            "facePreComponent%sLayout" % label,
             edit=True,
             attachForm=[
-                (rig_type_options, 'top', 2),
-                (rig_type_options, 'left', 0),
-                (rig_type_options_help, 'right', 0),
-                (symmetrical_check_box, 'left', 0),
-                (symmetrical_check_help, 'right', 0),
-                (game_engine_check_help, 'right', 0),
-                (advanced_check_help, 'right', 0),
+                ("face%sTextField" % label, 'top', 2),
+                ("face%sTextField" % label, 'left', 5),
+                ("face%sHelp" % label, 'top', 2),
+                ("face%sHelp" % label, 'right', 5),
             ],
             attachControl=[
-                (rig_type_options, 'right', 5, rig_type_options_help),
-                (symmetrical_check_box, 'top', 9, rig_type_options),
-                (game_engine_check_box, 'top', 12, symmetrical_check_box),
-                (advanced_check_box, 'top', 12, game_engine_check_box),
-                (symmetrical_check_help, 'top', 6, rig_type_options),
-                (game_engine_check_help, 'top', 2, symmetrical_check_help),
-                (advanced_check_help, 'top', 2, game_engine_check_help),
-            ]
-        )
+                ("face%sTextField" % label, 'right', 5, "face%sHelp" % label),
+            ])
         pm.setParent("..")
-        pm.setParent("..")
-
-        return face_pre_layout
 
     def choose_input(self, text_field):
+        value = None
+
         head_joint = "Head_M"
         sel = pm.ls(sl=True)
-
-        print "text_field: %s" % text_field
 
         if not pm.objExists("FaceFitSkeleton"):
             self.create_face_fit_skeleton()
 
-        if text_field == "xdFaceMaskTextField":
-            print "Clicked Mask Button!"
-            # self.create_face_fit_mask()
-        if (text_field == "xdFaceFaceTextField" or
-                text_field == "xdFaceAllHeadTextField"):
+        if text_field == "faceMaskTextField":
+            self.create_face_fit_mask()
+        if (text_field == "faceFaceTextField" or
+                text_field == "faceAllHeadTextField"):
             for index in range(0, len(sel)):
                 if mel.eval(' gmatch %s "*[.]*" ' % sel[index]):
-                    pm.error("Only select Object, not vertices, edges or faces")
+                    pm.error(
+                        "Only select Object, not vertices, edges or faces")
+
+        # pm.textFieldButtonGrp(text_field, e=True, text=value)
 
         return
 
@@ -287,55 +193,108 @@ class ModuleRig(common.Singleton):
         if pm.objExists("FaceFitSkeleton"):
             pm.delete("FaceFitSkeleton")
 
-        face_fit_skeleton = pm.createNode("transform",
-                                          n="FaceFitSkeleton", p=face_group)
+        face_fit_skeleton = pm.createNode(
+            "transform", n="FaceFitSkeleton", p=face_group)
         common.lock_and_hide_attr(face_fit_skeleton)
+
+        temp_circle = pm.circle(
+            nr=(0, 1, 0), c=(0, 0, 0), sw=360,
+            r=0.5, d=3, ut=0, tol=0.000393701, s=8, ch=0)
+
+        pm.rename(temp_circle[0], "TempCircle")
+        pm.parent(
+            temp_circle[0].getShape().name(),
+            "FaceFitSkeleton",
+            add=True, s=True)
+        pm.delete("TempCircle")
+        pm.rename("TempCircleShape", "FaceFitSkeletonShape")
+        pm.setAttr("FaceFitSkeletonShape.overrideEnabled", 1)
+        pm.setAttr("FaceFitSkeletonShape.overrideColor", 13)
+        pm.rotate(
+            "FaceFitSkeleton.cv[0:99]",
+            0, -90, 0, r=True, p=[0, 0, 0], os=True, fo=True)
+        pm.duplicate("FaceFitSkeleton", n="FaceFitSkeletonHeight")
+        pm.duplicate("FaceFitSkeleton", n="FaceFitSkeletonCircle")
+        pm.duplicate("FaceFitSkeleton", n="FaceFitSkeletonHeightCircle")
+        pm.parent("FaceFitSkeletonHeightShape", "FaceFitSkeleton", add=True,
+                  s=True)
+        pm.parent("FaceFitSkeletonCircleShape", "FaceFitSkeleton", add=True,
+                  s=True)
+        pm.parent("FaceFitSkeletonHeightCircleShape", "FaceFitSkeleton",
+                  add=True, s=True)
+        pm.delete(["FaceFitSkeletonHeight",
+                   "FaceFitSkeletonCircle",
+                   "FaceFitSkeletonHeightCircle"])
+        pm.move("FaceFitSkeletonHeightShape.cv[0:99]", 0, 1.0, 0, r=True)
+        pm.move("FaceFitSkeletonHeightCircleShape.cv[0:99]", 0, 1.0, 0, r=True)
 
         return
 
     def create_face_fit_mask(self):
-        print "mask"
         # global string $gMainProgressBar;
         gMainProgressBar = mel.eval('$tmp = $gMainProgressBar')
         # float $faceScale;
         # float $bb[];
         # string $tempString[];
+
+        # sel = pm.ls(sl=True)
+        # if not mel.eval(' gmatch %s "*.f*" ' % sel[0]):
+        #     pm.error(u"没有选择多边形元素，角色脸部的多边形元素必须被选择.")
+
         sel = pm.ls(sl=True)
-        if not mel.eval(' gmatch %s "*.f*" ' % sel[0]):
+        list = [item.name() for item in sel]
+        if ".f[" not in list[0]:
             pm.error(u"没有选择多边形元素，角色脸部的多边形元素必须被选择.")
 
-        # progressBar -e -st "Storing Mask" -bp -ii 1 -min 0 -max 9 $gMainProgressBar;
-        pm.progressBar(gMainProgressBar,
-                       edit=True,
-                       beginProgress=True,
-                       isInterruptable=True,
-                       status='Example Calculation ...',
-                       maxValue=5000)
-        pm.evalDeferred("pm.progressBar(gMainProgressBar, e=True, ep=True)")
-        # evalDeferred ("progressBar -e -ep "+$gMainProgressBar);
+        # pm.progressBar(gMainProgressBar,
+        #                edit=True,
+        #                st="Storing Mask",
+        #                beginProgress=True,
+        #                isInterruptable=True,
+        #                status='Example Calculation ...',
+        #                minValue=0,
+        #                maxValue=9)
+        # pm.evalDeferred("progressBar -e -ep " + gMainProgressBar)
 
-        # $tempString=`listRelatives -s FaceFitSkeleton`;
-        # if (size($tempString))
-        #     delete $tempString;
+        # 检查线圈有没有形节点，如果有的话就删除
+        # face_fit_skeleton_shapes = pm.listRelatives("FaceFitSkeleton", s=True)
+        # if len(face_fit_skeleton_shapes):
+        #     pm.delete(face_fit_skeleton_shapes)
 
-        # $tempString=`circle -c 0 0 0 -nr 0 1 0 -sw 360 -r 0.5 -d 3 -ut 0 -tol 0.000393701 -s 8 -ch 0`;
-        # rename $tempString[0] TempCircle;
-        # parent -add -s TempCircleShape FaceFitSkeleton;
-        # delete TempCircle;
-        # rename TempCircleShape FaceFitSkeletonShape;
-        # setAttr FaceFitSkeletonShape.overrideEnabled 1;
-        # setAttr FaceFitSkeletonShape.overrideColor 13;
-        # //scale -r -p 0 0 0 0.5 0.5 0.5 FaceFitSkeleton.cv[0:99];
-        # rotate -r -p 0 0 0 -os 0 -90 0 FaceFitSkeleton.cv[0:99];
-        # duplicate -n FaceFitSkeletonHeight FaceFitSkeleton;
-        # duplicate -n FaceFitSkeletonCircle FaceFitSkeleton;
-        # duplicate -n FaceFitSkeletonHeightCircle FaceFitSkeleton;
-        # parent -add -s FaceFitSkeletonHeightShape FaceFitSkeleton;
-        # parent -add -s FaceFitSkeletonCircleShape FaceFitSkeleton;
-        # parent -add -s FaceFitSkeletonHeightCircleShape FaceFitSkeleton;
-        # delete FaceFitSkeletonHeight FaceFitSkeletonCircle FaceFitSkeletonHeightCircle;
-        # move -r 0 1.0 0 FaceFitSkeletonHeightShape.cv[0:99]  FaceFitSkeletonHeightCircleShape.cv[0:99];
+        # temp_circle = pm.circle(
+        #     nr=(0, 1, 0), c=(0, 0, 0), sw=360,
+        #     r=0.5, d=3, ut=0, tol=0.000393701, s=8, ch=0)
+        #
+        # pm.rename(temp_circle[0], "TempCircle")
+        # pm.parent(
+        #     temp_circle[0].getShape().name(),
+        #     "FaceFitSkeleton",
+        #     add=True, s=True)
+        # pm.delete("TempCircle")
+        # pm.rename("TempCircleShape", "FaceFitSkeletonShape")
+        # pm.setAttr("FaceFitSkeletonShape.overrideEnabled", 1)
+        # pm.setAttr("FaceFitSkeletonShape.overrideColor", 13)
+        # pm.rotate(
+        #     "FaceFitSkeleton.cv[0:99]",
+        #     0, -90, 0, r=True, p=[0, 0, 0], os=True, fo=True)
+        # pm.duplicate("FaceFitSkeleton", n="FaceFitSkeletonHeight")
+        # pm.duplicate("FaceFitSkeleton", n="FaceFitSkeletonCircle")
+        # pm.duplicate("FaceFitSkeleton", n="FaceFitSkeletonHeightCircle")
+        # pm.parent("FaceFitSkeletonHeightShape", "FaceFitSkeleton", add=True,
+        #           s=True)
+        # pm.parent("FaceFitSkeletonCircleShape", "FaceFitSkeleton", add=True,
+        #           s=True)
+        # pm.parent("FaceFitSkeletonHeightCircleShape", "FaceFitSkeleton",
+        #           add=True, s=True)
+        # pm.delete(["FaceFitSkeletonHeight",
+        #            "FaceFitSkeletonCircle",
+        #            "FaceFitSkeletonHeightCircle"])
+        # pm.move("FaceFitSkeletonHeightShape.cv[0:99]", 0, 1.0, 0, r=True)
+        # pm.move("FaceFitSkeletonHeightCircleShape.cv[0:99]", 0, 1.0, 0, r=True)
 
+        if len(sel)>0:
+            pm.select(sel)
+            bb = pm.xform(q=True, ws=True, bb=True)
         # if ($sel[0]!="")
         #     {
         #     select $sel;
