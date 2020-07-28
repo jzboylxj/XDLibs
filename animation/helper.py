@@ -1929,9 +1929,9 @@ def join_list_item(list_data):
     return output_str
 
 
-class ExpressionHelper(common.Singleton):
+class DataPasteHelper(common.Singleton):
     def __init__(self):
-        super(ExpressionHelper, self).__init__()
+        super(DataPasteHelper, self).__init__()
 
         self.expression_data = {}
         self.joint_number = 0
@@ -1943,7 +1943,7 @@ class ExpressionHelper(common.Singleton):
             pm.deleteUI("ExpressionHelper")
         pm.window(
             "ExpressionHelper",
-            t=u"表情助手",
+            t=u"数据粘贴助手",
             mb=True)
 
         form_layout = pm.formLayout()
@@ -1951,7 +1951,7 @@ class ExpressionHelper(common.Singleton):
         column_layout = pm.columnLayout(adj=1, rs=2)
         self.work_mode_control = pm.radioButtonGrp(
             label=u"工作模式：",
-            labelArray3=[u'翻转', u'镜像', u'粘贴'],
+            labelArray3=[u'镜像', u'翻转', u'粘贴'],
             numberOfRadioButtons=3, cw4=[60, 60, 60, 60], sl=1)
         self.label_control = pm.text(label=u"搜索和替换选项：", al="left")
         self.search_field_control = pm.textFieldGrp(
@@ -1959,7 +1959,7 @@ class ExpressionHelper(common.Singleton):
         self.replace_field_control = pm.textFieldGrp(
             label=u"替换：", cw2=[60, 240], text="_R_")
         self.task_info_control = pm.text(
-            label=u"已经复制%s根骨骼的信息" % self.joint_number,
+            label=u"已经复制%s个对象的通道栏数据" % self.joint_number,
             w=300,
             al="left")
         pm.setParent("..")
@@ -2020,7 +2020,7 @@ class ExpressionHelper(common.Singleton):
                 e=True,
                 label=u"已经复制%s根骨骼的信息" % self.joint_number)
 
-        print self.expression_data
+        # print self.expression_data
 
         return True
 
@@ -2035,7 +2035,7 @@ class ExpressionHelper(common.Singleton):
         return
 
     def paste_expression(self):
-        work_mode_list = ['flip', 'mirror', 'paste']
+        work_mode_list = ['mirror', 'flip', 'paste']
         current_mode_index = pm.radioButtonGrp(
             self.work_mode_control, q=True, sl=True)
         work_mode = work_mode_list[current_mode_index - 1]
@@ -2049,7 +2049,7 @@ class ExpressionHelper(common.Singleton):
 
             value = self.expression_data[jnt]
 
-            if work_mode == 'flip':
+            if work_mode == 'mirror':
                 target_jnt = ''
                 if search_field in jnt:
                     target_jnt = jnt.replace(search_field, replace_field)
