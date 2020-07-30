@@ -32,6 +32,20 @@ def str_to_list(str):
     return str_list
 
 
+def list_to_str(list=[]):
+    """
+    解析列表，将所有的成员转换成列表，中间用空格分隔开
+
+    :param list: 需要解析的字符串
+    :return: string
+    """
+
+    str = ""
+    for item in list:
+        str = str+" "+item
+    return str.strip()
+
+
 def zero_locator(name):
     """
     创建一个通道栏属性全部锁定并隐藏的locator
@@ -1192,7 +1206,7 @@ class JsonManager(common.Singleton):
         controller_index = pm.scrollLayout(
             "controllerListLayout", q=True, nch=True)
         self.controller[controller_index] = (
-                "controllerGrp%s" % controller_index)
+            "controllerGrp%s" % controller_index)
         self.add_controller_widget(
             index=controller_index, parent="controllerListLayout")
 
