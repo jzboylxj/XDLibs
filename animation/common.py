@@ -186,3 +186,8 @@ def lock_and_hide_attr(target, translate=True, rotate=True, scale=True,
     pm.setAttr("%s.visibility" % target, lock=vis, k=(not vis), cb=(not vis))
 
     return
+
+def null_node(name, node_type="transform"):
+    null_node = pm.createNode(node_type, name=name)
+    lock_and_hide_attr(null_node)
+    return null_node
