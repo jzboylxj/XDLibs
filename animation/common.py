@@ -187,7 +187,99 @@ def lock_and_hide_attr(target, translate=True, rotate=True, scale=True,
 
     return
 
-def null_node(name, node_type="transform"):
-    null_node = pm.createNode(node_type, name=name)
-    lock_and_hide_attr(null_node)
+
+def null_node(name, parent="", node_type="transform"):
+    null_node = pm.createNode(node_type, name=name).name()
+    lock_and_hide_attr(null_node, vis=True)
+    pm.parent(null_node, parent)
     return null_node
+
+
+def quick_add_attr(node="", attr="", value=""):
+    pm.addAttr(node, ln=attr, dt="string")
+    pm.setAttr("%s.%s" % (node, attr), e=True, keyable=True)
+    pm.setAttr("%s.%s" % (node, attr), value)
+    return
+
+
+def create_two_layout_bone(name, parent, offset_value=None):
+    pm.select(cl=True)
+    if offset_value is None:
+        offset_value = [0, 1, 0]
+    bone = pm.joint(name=name)
+    con = add_node_as_parent(
+        bone.name(),
+        search_field="_BND",
+        suffix="_CON",
+        node_type="circle")
+    bnd_grp = add_node_as_parent(
+        con,
+        search_field="_CON",
+        suffix="_GRP",
+        node_type="transform")
+    pm.parent(bnd_grp, parent)
+    bnd_grp.translateX.set(offset_value[0])
+    bnd_grp.translateY.set(offset_value[1])
+    bnd_grp.translateZ.set(offset_value[2])
+    return bone
+
+
+def create_three_layout_bone(name="", parent="", offset_value=None):
+    if offset_value is None:
+        offset_value = [0, 1, 0]
+    pm.select(cl=True)
+    bone = pm.joint(name=name)
+    con = add_node_as_parent(
+        bone.name(),
+        search_field="_BND",
+        suffix="_CON",
+        node_type="circle")
+    bnd_loc = add_node_as_parent(
+        con,
+        search_field="_CON",
+        suffix="_BND_LOC",
+        node_type="locator")
+    bnd_grp = add_node_as_parent(
+        bnd_loc,
+        search_field="_BND_LOC",
+        suffix="_BND_GRP", node_type="transform")
+    pm.parent(bnd_grp, parent)
+    bnd_grp.translateX.set(offset_value[0])
+    bnd_grp.translateY.set(offset_value[1])
+    bnd_grp.translateZ.set(offset_value[2])
+    return bone
+
+
+def add_node_as_parent(
+        target, search_field="_BND", suffix="_LOC", node_type="locator"):
+    """
+    为目标节点添加一个指定节点作为它的父节点
+
+    这个函数常用来将目标节点的通道栏参数归零
+    :param target: 目标节点
+    :param node_type: 节点类型
+    :return: 新的创建的节点
+    """
+    new_parent_node = None
+
+    new_parent_name = target.replace(search_field, suffix)
+
+    if node_type == "locator":
+        new_parent_node = pm.spaceLocator(name=new_parent_name).name()
+    if node_type == "circle":
+        new_parent_node = pm.circle(
+            c=(0, 0, 0), nr=(0, 1, 0), name=new_parent_name, ch=0)[0].name()
+    if node_type == "transform":
+        new_parent_node = pm.createNode(
+            "transform", name=new_parent_name).name()
+
+    pm.delete(pm.parentConstraint(target, new_parent_node, mo=False))
+
+    current_parent = pm.PyNode(target).getParent()
+
+    if current_parent is not None:
+        pm.parent(target, new_parent_node)
+        pm.parent(new_parent_node, current_parent)
+    else:
+        pm.parent(target, new_parent_node)
+    return new_parent_node
