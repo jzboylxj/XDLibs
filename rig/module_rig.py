@@ -10,9 +10,11 @@ from pymel import core as pm
 
 from animation import common
 from animation import helper
+from rig import node
 
 reload(common)
 reload(helper)
+reload(node)
 
 tool_version = 0.3
 
@@ -25,15 +27,20 @@ class ModuleRig(common.Singleton):
     """
     模块化绑定工具包
     """
+
     def __init__(self):
         super(ModuleRig, self).__init__()
+
+        # 头部根节点
+        self.head_grp = None
+        self.head_config_node = None
 
         # 当前TabLayout选择状态的选择索引
         self.current_tab_index = 2
         self.text_field_button_grp_width = [110, 100, 100]
 
-        self.initialize()
         self.show()
+        self.initialize()
 
     def show(self):
         if pm.window("xdModuleRigUI", ex=True):
@@ -53,12 +60,18 @@ class ModuleRig(common.Singleton):
         pm.symbolButton(
             image=head_icon,
             ann=u"创建头部根骨骼结构",
-            c=lambda *args: self.set_head_field())
+            c=lambda *args: self.create_head_bone())
 
         pm.symbolButton(
             image=eye_icon,
             ann=u"创建眼睛绑定模块",
-            c=lambda *args: self.set_eye_field())
+            c=lambda *args: self.create_eye_module())
+        pm.separator(w=2)
+        pm.button(label="Jaw And Mouth")
+        pm.separator(w=2)
+        pm.button(label="Nose")
+        pm.separator(w=2)
+        pm.button(label="Ears")
 
         pm.tabLayout(
             tool_tab_bar,
@@ -116,7 +129,20 @@ class ModuleRig(common.Singleton):
         pm.showWindow("xdModuleRigUI")
 
     def initialize(self):
-        pass
+        if pm.objExists("head_config"):
+            self.init_tree_view()
+            self.head_config_node = "head_config"
+
+    def init_tree_view(self):
+        for item in pm.PyNode("head_config").getChildren():
+            module_name = pm.PyNode(item).attr("module").get()
+            module_parent = pm.PyNode(item).attr("parentModule").get()
+            new_item = [module_name, module_parent]
+            pm.treeView(self.tree_view, e=True, addItem=new_item)
+        return
+
+    def refresh_tree_view(self):
+        print pm.treeView(self.tree_view, q=True, ch=True)
 
     def _closed_window_cmd(self):
         pass
@@ -204,7 +230,7 @@ class ModuleRig(common.Singleton):
             bl="Set",
             cw3=self.text_field_button_grp_width,
             adj=2,
-            bc=lambda *args: self.set_eye_field(
+            bc=lambda *args: self.create_eye_module(
                 side="right",
                 text_field=self.right_eye_bone_control))
         self.left_eye_bone_control = pm.textFieldButtonGrp(
@@ -212,7 +238,7 @@ class ModuleRig(common.Singleton):
             bl="Set",
             cw3=self.text_field_button_grp_width,
             adj=2,
-            bc=lambda *args: self.set_eye_field(
+            bc=lambda *args: self.create_eye_module(
                 side="left",
                 text_field=self.left_eye_bone_control))
         pm.setParent("..")
@@ -326,207 +352,125 @@ class ModuleRig(common.Singleton):
         pm.setParent("..")
         return layout
 
-    def set_head_field(self):
-        # pm.textFieldButtonGrp(
-        #     self.head_bone_control,
-        #     e=True,
-        #     text=self.create_head_bone())
-        if self.create_head_bone():
-            pm.treeView(self.tree_view, e=True, addItem=("Head", ""))
-            pm.treeView(self.tree_view, e=True, addItem=("HeadTop", "Head"))
-            pm.treeView(self.tree_view, e=True, addItem=("HeadBot", "Head"))
-        return
-
     def create_head_bone(self):
         """
         创建头部根骨骼
         :return: head bone
         """
-        head_bone = None
-        if pm.objExists("head_BND"):
+        if pm.objExists("head_BND") or pm.objExists("head_config"):
             # pm.error(u"场景中已经存在Head_BND，请确认是否已经有绑定")
             user_confirm = pm.confirmDialog(
                 title='Confirm',
-                message=u"场景中已经存在Head_BND，请确认是否已经有绑定",
+                message=u"场景中已经存在表情绑定，请确认！",
                 button=['Continue', 'Cancel'],
                 defaultButton='Continue',
                 cancelButton='Cancel',
                 dismissString='Cancel')
             if user_confirm == "Continue":
-                head_bone = "Head_BND"
-                return head_bone
+                pass
             elif user_confirm == "Cancel":
-                head_bone = ""
-                return head_bone
+                pass
         else:
-            self.create_head_config()
-            head_bone = pm.joint(name="head_BND").name()
-            pm.select(head_bone)
-            head_sub_con = add_node_as_parent(
-                head_bone,
-                search_field="_BND", suffix="Sub_CON", node_type="circle")
-            head_con = add_node_as_parent(
-                head_sub_con,
-                search_field="Sub_CON", suffix="_CON", node_type="circle")
-            head_bnd_loc = add_node_as_parent(
-                head_con,
-                search_field="_CON", suffix="_BND_LOC", node_type="locator")
-            head_grp = add_node_as_parent(
-                head_bnd_loc,
-                search_field="_BND_LOC", suffix="_GRP", node_type="transform")
+            self.head_grp = pm.createNode("transform", name="head_GRP").name()
+            # 创建配置节点来存储头部绑定的一些配置信息
+            if not pm.objExists("head_config"):
+                self.head_config_node = common.null_node(name="head_config")
+                pm.parent(self.head_config_node, self.head_grp)
+            else:
+                self.head_config_node = "head_config"
+
+            head = node.DoJointGrp(name="head")
+            head.build_mode_3(parent=self.head_grp, have_sub=True)
+            # head.setting_config_node("parentModule", "")
+            pm.parent(head.config_node, self.head_config_node)
+            pm.treeView(self.tree_view,
+                        e=True, addItem=["head", ""])
 
             # 创建头部上半部分的根骨骼
-            head_top = DoJointGrp(
-                name="headTop",
-                parent=head_bone,
-                offset_value=[0, 2, 2])
+            head_top = node.DoJointGrp(name="headTop")
+            head_top.build_mode_3(parent=head.bnd_name, offset_value=[0, 2, 2])
+            # head_top.setting_config_node(attr="parentModule", value=head.name)
+            pm.parent(head_top.config_node, self.head_config_node)
+            pm.treeView(self.tree_view,
+                        e=True, addItem=["headTop", "head"])
+
             # 创建头部下半部分的根骨骼
-            head_bot = DoJointGrp(
-                name="headBottom",
-                parent=head_bone,
-                offset_value=[0, 1.5, 2])
+            head_bot = node.DoJointGrp(name="headBottom")
+            head_bot.build_mode_3(parent=head.bnd_name,
+                                  offset_value=[0, 1.5, 2])
+            # head_bot.setting_config_node(attr="parentModule", value=head.name)
+            pm.parent(head_bot.config_node, self.head_config_node)
+            pm.treeView(self.tree_view,
+                        e=True, addItem=["headBottom", "head"])
 
-            print head_top, head_bot
+        return True
 
-        return head_bone
-
-    def set_head_top_field(self):
-        pm.textFieldButtonGrp(
-            self.head_top_bone_control,
-            e=True,
-            text=self.create_head_component_bone(name="headTop_BND"))
-        return
-
-    def set_head_bottom_field(self):
-        pm.textFieldButtonGrp(
-            self.head_bottom_bone_control,
-            e=True,
-            text=self.create_head_component_bone(name="headBottom_BND"))
-        return
-
-    def create_head_component_bone(self, name):
-        pm.select(cl=True)
-        head_top_bone = None
-        head_bone = pm.textFieldButtonGrp(
-            self.head_bone_control, q=True, text=True)
-        if pm.objExists(head_bone):
-            create_three_layout_bone(name=name)
-        else:
-            pm.error(u"缺少head_BND骨骼")
-        return head_top_bone
-
-    def set_eye_field(self, side, text_field):
+    def create_eye_module(self):
         eye_grp = "eye_GRP"
+        head_top = node.DoJointGrp(name="headTop")
+
         if not pm.objExists(eye_grp):
             eye_grp = pm.createNode("transform", name=eye_grp)
-            head_top_bone = pm.textFieldButtonGrp(
-                self.head_top_bone_control, q=True, text=True)
-            pm.parent(eye_grp, head_top_bone)
+            pm.parent(eye_grp, head_top.bnd_name)
             eye_grp.translate.set([0, 0, 0])
             eye_grp.rotate.set([0, 0, 0])
 
-        eye_bone = None
-        if side == "left":
-            eye_bone = self.create_eye_component(side="left")
-        elif side == "right":
-            eye_bone = self.create_eye_component(side="right")
-
-        pm.textFieldButtonGrp(text_field, e=True, text=eye_bone)
-
-        return
-
-    def create_eye_component(self, side):
-        offset_value = []
+        side_list = ["left", "right"]
         prefix = ""
+        offset_value = [0, 0, 0]
+        for side in side_list:
+            if side == "left":
+                offset_value = [2, 0, 0]
+                prefix = "L_"
+            elif side == "right":
+                offset_value = [-2, 0, 0]
+                prefix = "R_"
 
-        if side == "left":
-            offset_value = [2, 0, 0]
-            prefix = "L_"
-        elif side == "right":
-            offset_value = [-2, 0, 0]
-            prefix = "R_"
+            eye_bone = node.DoJointGrp(name="%seyeMove" % prefix)
+            eye_bone.build_mode_2(parent=eye_grp, offset_value=offset_value)
+            # eye_bone.setting_config_node(
+            #     attr="parentModule", value=head_top.name)
+            pm.parent(eye_bone.config_node, self.head_config_node)
+            pm.treeView(self.tree_view,
+                        e=True, addItem=["%seyeMove" % prefix, "headTop"])
 
-        eye_bone = create_two_layout_bone(
-            name="%seyeMove_BND" % prefix,
-            parent="eye_GRP",
-            offset_value=offset_value)
-
-        eye_loc = pm.spaceLocator(name="%seye_LOC" % prefix)
-        pm.parent(eye_loc, pm.PyNode(eye_bone).getParent())
-        eye_loc.translate.set([0, 0, 0])
-        eye_loc.rotate.set([0, 0, 0])
-
-        pm.select(cl=True)
-        eyeball_bnd = pm.joint(name="%seye_BND" % prefix)
-        pm.parent(eyeball_bnd, eye_loc)
-        eyeball_bnd.translate.set([0, 0, 0])
-        eyeball_bnd.rotate.set([0, 0, 0])
-
-        eyeball_con = add_node_as_parent(
-            eyeball_bnd,
-            search_field="_BND", suffix="_CON", node_type="circle")
-        eyeball_con_grp = add_node_as_parent(
-            eyeball_con,
-            search_field="_CON", suffix="_CON_GRP", node_type="transform")
-
-        return eye_bone
-
-    def set_jaw_field(self):
-        pm.textFieldButtonGrp(
-            self.jaw_bone_control,
-            e=True,
-            text=self.create_jaw_bone())
+        return True
 
     def create_jaw_bone(self):
         jaw_parent = pm.textFieldButtonGrp(
             self.head_bottom_bone_control, q=True, text=True)
-        jaw_bone = create_three_layout_bone(
+        jaw_bone = common.create_three_layout_bone(
             name="jaw_BND",
             parent=jaw_parent,
             offset_value=[0, -2, 2])
         return jaw_bone
 
-    def set_chin_field(self):
-        pm.textFieldButtonGrp(
-            self.chin_bone_control,
-            e=True,
-            text=self.create_chin_bone())
 
     def create_chin_bone(self):
         chin_parent = pm.textFieldButtonGrp(
             self.jaw_bone_control, q=True, text=True)
-        chin_bone = create_three_layout_bone(
+        chin_bone = common.create_three_layout_bone(
             name="chin_BND",
             parent=chin_parent,
             offset_value=[0, -2, 2])
         return chin_bone
 
-    def set_lower_teeth_field(self):
-        pm.textFieldButtonGrp(
-            self.lower_teeth_bone_control,
-            e=True,
-            text=self.create_lower_teeth_bone())
 
     def create_lower_teeth_bone(self):
         teeth_parent = pm.textFieldButtonGrp(
             self.jaw_bone_control, q=True, text=True)
-        teeth_bone = create_three_layout_bone(
+        teeth_bone = common.create_three_layout_bone(
             name="teethBot_BND",
             parent=teeth_parent,
             offset_value=[0, -2, 2])
         return teeth_bone
 
-    def set_upper_teeth_field(self):
-        pm.textFieldButtonGrp(
-            self.upper_teeth_bone_control,
-            e=True,
-            text=self.create_upper_teeth_bone())
 
     def create_upper_teeth_bone(self):
         teeth_parent = pm.textFieldButtonGrp(
             self.head_bottom_bone_control, q=True, text=True)
         teeth_parent = pm.PyNode(teeth_parent).getParent()
-        teeth_bone = create_three_layout_bone(
+        teeth_bone = common.create_three_layout_bone(
             name="teethTop_BND",
             parent=teeth_parent,
             offset_value=[0, 2, 2])
@@ -545,7 +489,7 @@ class ModuleRig(common.Singleton):
             pm.createNode("transform", n="nose_GRP"),
             pm.createNode("transform", n="noseAndEars_GRP"))
         pm.parent("noseAndEars_GRP", nose_parent)
-        teeth_bone = create_three_layout_bone(
+        teeth_bone = common.create_three_layout_bone(
             name="nose_BND",
             parent="nose_GRP",
             offset_value=[0, -2, 2])
@@ -561,7 +505,7 @@ class ModuleRig(common.Singleton):
         nose_tip_parent = pm.textFieldButtonGrp(
             self.nose_bone_control, q=True, text=True)
         nose_tip_parent = pm.PyNode(nose_tip_parent).getParent()
-        nose_tip_bone = create_three_layout_bone(
+        nose_tip_bone = common.create_three_layout_bone(
             name="noseTip_BND",
             parent=nose_tip_parent,
             offset_value=[0, 2, 2])
@@ -577,7 +521,7 @@ class ModuleRig(common.Singleton):
         nostril_parent = pm.textFieldButtonGrp(
             self.nose_bone_control, q=True, text=True)
         nostril_parent = pm.PyNode(nostril_parent).getParent()
-        nose_tip_bone = create_three_layout_bone(
+        nose_tip_bone = common.create_three_layout_bone(
             name="R_nostril_BND",
             parent=nostril_parent,
             offset_value=[-2, 0, 0])
@@ -593,7 +537,7 @@ class ModuleRig(common.Singleton):
         nostril_parent = pm.textFieldButtonGrp(
             self.nose_bone_control, q=True, text=True)
         nostril_parent = pm.PyNode(nostril_parent).getParent()
-        nose_tip_bone = create_three_layout_bone(
+        nose_tip_bone = common.create_three_layout_bone(
             name="L_nostril_BND",
             parent=nostril_parent,
             offset_value=[2, 0, 0])
@@ -612,7 +556,7 @@ class ModuleRig(common.Singleton):
         tongue_bone_list = []
 
         for index in range(1, 7):
-            tongue_bone = create_three_layout_bone(
+            tongue_bone = common.create_three_layout_bone(
                 name="tongue_00%s_BND" % index,
                 parent=tongue_parent,
                 offset_value=[0, -2, 2])
@@ -668,132 +612,3 @@ class ModuleRig(common.Singleton):
 
     def set_left_eyecorner_inner_field(self):
         pass
-
-
-    def create_head_config(self):
-        pm.createNode()
-
-
-def create_two_layout_bone(name, parent, offset_value=None):
-    pm.select(cl=True)
-    if offset_value is None:
-        offset_value = [0, 1, 0]
-    bone = pm.joint(name=name)
-    con = add_node_as_parent(
-        bone.name(),
-        search_field="_BND",
-        suffix="_CON",
-        node_type="circle")
-    bnd_grp = add_node_as_parent(
-        con,
-        search_field="_CON",
-        suffix="_GRP",
-        node_type="transform")
-    pm.parent(bnd_grp, parent)
-    bnd_grp.translateX.set(offset_value[0])
-    bnd_grp.translateY.set(offset_value[1])
-    bnd_grp.translateZ.set(offset_value[2])
-    return bone
-
-
-class DoJointGrp:
-    def __init__(self, name="", parent="", offset_value=None):
-        self.name = name
-        self.bnd_name = None
-        self.bnd_con = None
-        self.bnd_loc = None
-        self.bnd_grp = None
-
-        self.parent = parent
-
-        if offset_value is None:
-            self.offset_value = [0, 0, 0]
-        else:
-            self.offset_value = offset_value
-
-        self.build()
-
-    def __str__(self):
-        return self.name
-
-    def build(self):
-        pm.select(cl=True)
-        self.bnd_name = pm.joint(name=(self.name + "_BND")).name()
-        self.bnd_con = add_node_as_parent(
-            self.bnd_name,
-            search_field="_BND",
-            suffix="_CON",
-            node_type="circle")
-        self.bnd_loc = add_node_as_parent(
-            self.bnd_con,
-            search_field="_CON",
-            suffix="_BND_LOC",
-            node_type="locator")
-        self.bnd_grp = add_node_as_parent(
-            self.bnd_loc,
-            search_field="_BND_LOC",
-            suffix="_BND_GRP", node_type="transform")
-        pm.parent(self.bnd_grp, self.parent)
-        pm.PyNode(self.bnd_grp).translate.set(self.offset_value)
-        return
-
-
-def create_three_layout_bone(name="", parent="", offset_value=None):
-    if offset_value is None:
-        offset_value = [0, 1, 0]
-    pm.select(cl=True)
-    bone = pm.joint(name=name)
-    con = add_node_as_parent(
-        bone.name(),
-        search_field="_BND",
-        suffix="_CON",
-        node_type="circle")
-    bnd_loc = add_node_as_parent(
-        con,
-        search_field="_CON",
-        suffix="_BND_LOC",
-        node_type="locator")
-    bnd_grp = add_node_as_parent(
-        bnd_loc,
-        search_field="_BND_LOC",
-        suffix="_BND_GRP", node_type="transform")
-    pm.parent(bnd_grp, parent)
-    bnd_grp.translateX.set(offset_value[0])
-    bnd_grp.translateY.set(offset_value[1])
-    bnd_grp.translateZ.set(offset_value[2])
-    return bone
-
-
-def add_node_as_parent(
-        target, search_field="_BND", suffix="_LOC", node_type="locator"):
-    """
-    为目标节点添加一个指定节点作为它的父节点
-
-    这个函数常用来将目标节点的通道栏参数归零
-    :param target: 目标节点
-    :param node_type: 节点类型
-    :return: 新的创建的节点
-    """
-    new_parent_node = None
-
-    new_parent_name = target.replace(search_field, suffix)
-
-    if node_type == "locator":
-        new_parent_node = pm.spaceLocator(name=new_parent_name).name()
-    if node_type == "circle":
-        new_parent_node = pm.circle(
-            c=(0, 0, 0), nr=(0, 1, 0), name=new_parent_name, ch=0)[0].name()
-    if node_type == "transform":
-        new_parent_node = pm.createNode(
-            "transform", name=new_parent_name).name()
-
-    pm.delete(pm.parentConstraint(target, new_parent_node, mo=False))
-
-    current_parent = pm.PyNode(target).getParent()
-
-    if current_parent is not None:
-        pm.parent(target, new_parent_node)
-        pm.parent(new_parent_node, current_parent)
-    else:
-        pm.parent(target, new_parent_node)
-    return new_parent_node
