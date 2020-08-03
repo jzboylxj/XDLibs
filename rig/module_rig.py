@@ -10,7 +10,7 @@ from pymel import core as pm
 
 from animation import common
 from animation import helper
-from rig import node
+from rig.module import node
 
 reload(common)
 reload(helper)
@@ -43,6 +43,10 @@ class ModuleRig(common.Singleton):
         self.initialize()
 
     def show(self):
+        """
+        显示主窗口
+        :return: window
+        """
         if pm.window("xdModuleRigUI", ex=True):
             pm.deleteUI("xdModuleRigUI")
         pm.window(
@@ -59,30 +63,37 @@ class ModuleRig(common.Singleton):
         face_action_bar = pm.rowColumnLayout(p=tool_tab_bar, nr=1)
         pm.symbolButton(
             image=head_icon,
-            ann=u"创建头部根骨骼结构",
-            c=lambda *args: self.create_head_bone())
+            ann=u"创建头部根骨骼模块",
+            c=lambda *args: self.create_head_root_module())
 
         pm.symbolButton(
             image=eye_icon,
             ann=u"创建眼睛绑定模块",
             c=lambda *args: self.create_eye_module())
         pm.separator(w=2)
-        pm.button(label="Jaw And Mouth")
+        pm.button(
+            label="Jaw And Mouth",
+            ann=u"创建下巴和舌头、牙齿模块",
+            c=lambda *args: self.create_jaw_and_chin_module())
         pm.separator(w=2)
-        pm.button(label="Nose")
+        pm.button(
+            label="Nose",
+            ann=u"创建鼻子模块",
+            c=lambda *args: self.create_nose_module())
         pm.separator(w=2)
-        pm.button(label="Ears")
+        pm.button(
+            label="Ears",
+            ann=u"创建耳朵模块",
+            c=lambda *args: self.create_ears_module())
 
         pm.tabLayout(
             tool_tab_bar,
             edit=True,
             tabLabel=(
                 (face_action_bar, u'组件'),
-            ),
-            # sti=self.current_tab_index
-        )
+            ))
 
-        data_form = pm.formLayout(p=main_layout)
+        data_form = pm.paneLayout(configuration='vertical2', p=main_layout)
         tree_view_frame = pm.frameLayout(
             label=u"组件栏",
             mw=5, mh=5,
@@ -95,22 +106,17 @@ class ModuleRig(common.Singleton):
             parent=tree_view_frame,
             # numberOfButtons=3,
             abr=False)
+        pm.treeView(
+            self.tree_view,
+            edit=True,
+            # pressCommand=[(1, pressTreeCallBack),
+            #               (2, pressTreeCallBack),
+            #               (3, pressTreeCallBack)],
+            # selectCommand=selectTreeCallBack
+        )
+
         data_frame = pm.frameLayout(
             label=u"数据栏", mw=5, mh=5, bgs=True, p=data_form)
-        pm.formLayout(
-            data_form, edit=True,
-            attachForm=[
-                (tree_view_frame, "top", 5),
-                (tree_view_frame, "left", 5),
-                (tree_view_frame, "bottom", 5),
-                (data_frame, "top", 5),
-                (data_frame, "right", 5),
-                (data_frame, "bottom", 5),
-            ],
-            attachControl=[
-                (data_frame, 'left', 2, tree_view_frame),
-            ]
-        )
 
         pm.formLayout(
             main_layout, edit=True,
@@ -129,15 +135,25 @@ class ModuleRig(common.Singleton):
         pm.showWindow("xdModuleRigUI")
 
     def initialize(self):
+        """
+        初始化窗口的数值
+        :return:
+        """
         if pm.objExists("head_config"):
             self.init_tree_view()
             self.head_config_node = "head_config"
 
     def init_tree_view(self):
-        for item in pm.PyNode("head_config").getChildren():
-            module_name = pm.PyNode(item).attr("module").get()
-            module_parent = pm.PyNode(item).attr("parentModule").get()
+        """
+        初始化
+        :return:
+        """
+        config_list = pm.PyNode("head_config").getChildren()
+        for config_node in config_list:
+            module_name = pm.PyNode(config_node).attr("module").get()
+            module_parent = pm.PyNode(config_node).attr("parentModule").get()
             new_item = [module_name, module_parent]
+            print new_item
             pm.treeView(self.tree_view, e=True, addItem=new_item)
         return
 
@@ -352,7 +368,7 @@ class ModuleRig(common.Singleton):
         pm.setParent("..")
         return layout
 
-    def create_head_bone(self):
+    def create_head_root_module(self):
         """
         创建头部根骨骼
         :return: head bone
@@ -381,7 +397,7 @@ class ModuleRig(common.Singleton):
 
             head = node.DoJointGrp(name="head")
             head.build_mode_3(parent=self.head_grp, have_sub=True)
-            # head.setting_config_node("parentModule", "")
+            head.setting_config_node("parentModule", "")
             pm.parent(head.config_node, self.head_config_node)
             pm.treeView(self.tree_view,
                         e=True, addItem=["head", ""])
@@ -389,7 +405,7 @@ class ModuleRig(common.Singleton):
             # 创建头部上半部分的根骨骼
             head_top = node.DoJointGrp(name="headTop")
             head_top.build_mode_3(parent=head.bnd_name, offset_value=[0, 2, 2])
-            # head_top.setting_config_node(attr="parentModule", value=head.name)
+            head_top.setting_config_node(attr="parentModule", value=head.name)
             pm.parent(head_top.config_node, self.head_config_node)
             pm.treeView(self.tree_view,
                         e=True, addItem=["headTop", "head"])
@@ -398,7 +414,7 @@ class ModuleRig(common.Singleton):
             head_bot = node.DoJointGrp(name="headBottom")
             head_bot.build_mode_3(parent=head.bnd_name,
                                   offset_value=[0, 1.5, 2])
-            # head_bot.setting_config_node(attr="parentModule", value=head.name)
+            head_bot.setting_config_node(attr="parentModule", value=head.name)
             pm.parent(head_bot.config_node, self.head_config_node)
             pm.treeView(self.tree_view,
                         e=True, addItem=["headBottom", "head"])
@@ -428,187 +444,145 @@ class ModuleRig(common.Singleton):
 
             eye_bone = node.DoJointGrp(name="%seyeMove" % prefix)
             eye_bone.build_mode_2(parent=eye_grp, offset_value=offset_value)
-            # eye_bone.setting_config_node(
-            #     attr="parentModule", value=head_top.name)
+            eye_bone.setting_config_node(
+                attr="parentModule", value=head_top.name)
             pm.parent(eye_bone.config_node, self.head_config_node)
             pm.treeView(self.tree_view,
                         e=True, addItem=["%seyeMove" % prefix, "headTop"])
 
         return True
 
-    def create_jaw_bone(self):
-        jaw_parent = pm.textFieldButtonGrp(
-            self.head_bottom_bone_control, q=True, text=True)
-        jaw_bone = common.create_three_layout_bone(
-            name="jaw_BND",
-            parent=jaw_parent,
-            offset_value=[0, -2, 2])
-        return jaw_bone
+    def create_jaw_and_chin_module(self):
+        head_bot = node.DoJointGrp(name="headBottom")
+        # Jaw
+        jaw_bone = node.DoJointGrp(name="jaw")
+        jaw_bone.build_mode_3(parent=head_bot.bnd_name,
+                              offset_value=[0, -2, 2])
+        jaw_bone.setting_config_node(attr="parentModule", value=head_bot.name)
+        pm.parent(jaw_bone.config_node, self.head_config_node)
+        pm.treeView(self.tree_view,
+                    e=True, addItem=["jaw", "headBottom"])
+        # chin
+        chin_bone = node.DoJointGrp(name="chin")
+        chin_bone.build_mode_3(parent=jaw_bone.bnd_name,
+                               offset_value=[0, 0, 0])
+        chin_bone.setting_config_node(
+            attr="parentModule", value=jaw_bone.name)
+        pm.parent(chin_bone.config_node, self.head_config_node)
+        pm.treeView(self.tree_view,
+                    e=True, addItem=["chin", "jaw"])
+
+        # lower teeth
+        lower_teeth_bone = node.DoJointGrp(name="teethBot")
+        lower_teeth_bone.build_mode_3(parent=jaw_bone.bnd_name,
+                                      offset_value=[0, -2, 2])
+        lower_teeth_bone.setting_config_node(
+            attr="parentModule", value=jaw_bone.name)
+        pm.parent(lower_teeth_bone.config_node, self.head_config_node)
+        pm.treeView(self.tree_view,
+                    e=True, addItem=["teethBot", "jaw"])
+
+        # upper teeth
+        upper_teeth_bone = node.DoJointGrp(name="teethTop")
+        upper_teeth_bone.build_mode_3(parent=head_bot.bnd_con,
+                                      offset_value=[0, 2, 2])
+        upper_teeth_bone.setting_config_node(
+            attr="parentModule", value=head_bot.name)
+        pm.parent(upper_teeth_bone.config_node, self.head_config_node)
+        pm.treeView(self.tree_view,
+                    e=True, addItem=["teethTop", "headBottom"])
+
+        # tongue
+        tongue_segments = 6
+        for index in range(1, tongue_segments + 1):
+            tongue_bone = node.DoJointGrp(name="tongue_00%s" % index)
+            if index == 1:
+                tongue_bone.build_mode_3(
+                    parent=jaw_bone.bnd_name, offset_value=[0, -2, 2])
+                tongue_bone.setting_config_node(
+                    attr="parentModule", value=jaw_bone.name)
+                pm.parent(tongue_bone.config_node, self.head_config_node)
+                pm.treeView(self.tree_view,
+                            e=True, addItem=["tongue_00%s" % index, "jaw"])
+            else:
+                tongue_parent_module = node.DoJointGrp(
+                    name="tongue_00%s" % (index - 1))
+                tongue_bone.build_mode_3(
+                    parent=tongue_parent_module.bnd_name,
+                    offset_value=[0, -2, 2])
+                tongue_bone.setting_config_node(
+                    attr="parentModule", value=tongue_parent_module.name)
+                pm.parent(tongue_bone.config_node, self.head_config_node)
+                pm.treeView(
+                    self.tree_view,
+                    e=True,
+                    addItem=["tongue_00%s" % index,
+                             ("tongue_00%s" % (index - 1))])
+
+        return True
+
+    def create_nose_module(self):
+        head_bone = node.DoJointGrp("head")
+
+        nose_grp = ""
+        nose_ears_grp = ""
+        if not pm.objExists("nose_GRP"):
+            nose_grp = pm.createNode("transform", n="nose_GRP")
+        if not pm.objExists("noseAndEars_GRP"):
+            nose_ears_grp = pm.createNode("transform", n="noseAndEars_GRP")
+        pm.parent(nose_grp, nose_ears_grp)
+        pm.parent(nose_ears_grp, head_bone.bnd_name)
+
+        # nose 根骨骼
+        nose_bone = node.DoJointGrp("nose")
+        nose_bone.build_mode_3(parent=nose_grp, offset_value=[0, -2, 2])
+        nose_bone.setting_config_node(
+            attr="parentModule", value=head_bone.name)
+        pm.parent(nose_bone.config_node, self.head_config_node)
+        pm.treeView(self.tree_view,
+                    e=True, addItem=["nose", "head"])
+
+        # nose tip
+        nose_tip_bone = node.DoJointGrp("noseTip")
+        nose_tip_bone.build_mode_3(
+            parent=nose_bone.bnd_name, offset_value=[0, 2, 2])
+        nose_tip_bone.setting_config_node(
+            attr="parentModule", value=nose_bone.name)
+        pm.parent(nose_tip_bone.config_node, self.head_config_node)
+        pm.treeView(self.tree_view,
+                    e=True, addItem=["noseTip", "nose"])
+
+        # right nostril
+        right_nostril_bone = node.DoJointGrp("R_nostril")
+        right_nostril_bone.build_mode_3(
+            parent=nose_bone.bnd_name, offset_value=[-2, 0, 0])
+        right_nostril_bone.setting_config_node(
+            attr="parentModule", value=nose_bone.name)
+        pm.parent(right_nostril_bone.config_node, self.head_config_node)
+        pm.treeView(self.tree_view,
+                    e=True, addItem=["R_nostril", "nose"])
+
+        # left nostril
+        left_nostril_bone = node.DoJointGrp("L_nostril")
+        left_nostril_bone.build_mode_3(
+            parent=nose_bone.bnd_name, offset_value=[2, 0, 0])
+        left_nostril_bone.setting_config_node(
+            attr="parentModule", value=nose_bone.name)
+        pm.parent(left_nostril_bone.config_node, self.head_config_node)
+        pm.treeView(self.tree_view,
+                    e=True, addItem=["L_nostril", "nose"])
+
+        return True
+
+    def create_ears_module(self):
+        print u"点击'创建耳朵模块按钮'"
+        return
 
 
-    def create_chin_bone(self):
-        chin_parent = pm.textFieldButtonGrp(
-            self.jaw_bone_control, q=True, text=True)
-        chin_bone = common.create_three_layout_bone(
-            name="chin_BND",
-            parent=chin_parent,
-            offset_value=[0, -2, 2])
-        return chin_bone
+def selectTreeCallBack(*args):
+    print 'selection : ' + args[0] + ' onoff= ' + str(args[1])
+    return True
 
 
-    def create_lower_teeth_bone(self):
-        teeth_parent = pm.textFieldButtonGrp(
-            self.jaw_bone_control, q=True, text=True)
-        teeth_bone = common.create_three_layout_bone(
-            name="teethBot_BND",
-            parent=teeth_parent,
-            offset_value=[0, -2, 2])
-        return teeth_bone
-
-
-    def create_upper_teeth_bone(self):
-        teeth_parent = pm.textFieldButtonGrp(
-            self.head_bottom_bone_control, q=True, text=True)
-        teeth_parent = pm.PyNode(teeth_parent).getParent()
-        teeth_bone = common.create_three_layout_bone(
-            name="teethTop_BND",
-            parent=teeth_parent,
-            offset_value=[0, 2, 2])
-        return teeth_bone
-
-    def set_nose_field(self):
-        pm.textFieldButtonGrp(
-            self.nose_bone_control,
-            e=True,
-            text=self.create_nose_bone())
-
-    def create_nose_bone(self):
-        nose_parent = pm.textFieldButtonGrp(
-            self.head_bone_control, q=True, text=True)
-        pm.parent(
-            pm.createNode("transform", n="nose_GRP"),
-            pm.createNode("transform", n="noseAndEars_GRP"))
-        pm.parent("noseAndEars_GRP", nose_parent)
-        teeth_bone = common.create_three_layout_bone(
-            name="nose_BND",
-            parent="nose_GRP",
-            offset_value=[0, -2, 2])
-        return teeth_bone
-
-    def set_nose_tip_field(self):
-        pm.textFieldButtonGrp(
-            self.nose_tip_bone_control,
-            e=True,
-            text=self.create_nose_tip_bone())
-
-    def create_nose_tip_bone(self):
-        nose_tip_parent = pm.textFieldButtonGrp(
-            self.nose_bone_control, q=True, text=True)
-        nose_tip_parent = pm.PyNode(nose_tip_parent).getParent()
-        nose_tip_bone = common.create_three_layout_bone(
-            name="noseTip_BND",
-            parent=nose_tip_parent,
-            offset_value=[0, 2, 2])
-        return nose_tip_bone
-
-    def set_right_nostril_field(self):
-        pm.textFieldButtonGrp(
-            self.right_nostril_bone_control,
-            e=True,
-            text=self.create_right_nostril_bone())
-
-    def create_right_nostril_bone(self):
-        nostril_parent = pm.textFieldButtonGrp(
-            self.nose_bone_control, q=True, text=True)
-        nostril_parent = pm.PyNode(nostril_parent).getParent()
-        nose_tip_bone = common.create_three_layout_bone(
-            name="R_nostril_BND",
-            parent=nostril_parent,
-            offset_value=[-2, 0, 0])
-        return nose_tip_bone
-
-    def set_left_nostril_field(self):
-        pm.textFieldButtonGrp(
-            self.left_nostril_bone_control,
-            e=True,
-            text=self.create_left_nostril_bone())
-
-    def create_left_nostril_bone(self):
-        nostril_parent = pm.textFieldButtonGrp(
-            self.nose_bone_control, q=True, text=True)
-        nostril_parent = pm.PyNode(nostril_parent).getParent()
-        nose_tip_bone = common.create_three_layout_bone(
-            name="L_nostril_BND",
-            parent=nostril_parent,
-            offset_value=[2, 0, 0])
-        return nose_tip_bone
-
-    def set_tongue_field(self):
-        pm.textFieldButtonGrp(
-            self.tongue_bone_control,
-            e=True,
-            text=self.create_tongue_bone())
-
-    def create_tongue_bone(self):
-        tongue_parent = pm.textFieldButtonGrp(
-            self.jaw_bone_control, q=True, text=True)
-
-        tongue_bone_list = []
-
-        for index in range(1, 7):
-            tongue_bone = common.create_three_layout_bone(
-                name="tongue_00%s_BND" % index,
-                parent=tongue_parent,
-                offset_value=[0, -2, 2])
-            tongue_parent = tongue_bone
-            tongue_bone_list.append(tongue_bone)
-
-        return helper.list_to_str(tongue_bone_list)
-
-    def init_pre_layout(self):
-        if pm.objExists("head_config"):
-            pm.textFieldButtonGrp(
-                self.head_bone_control,
-                e=True, text=pm.getAttr("head_config.head"))
-            pm.textFieldButtonGrp(
-                self.head_top_bone_control,
-                e=True, text=pm.getAttr("head_config.headTop"))
-            pm.textFieldButtonGrp(
-                self.head_bottom_bone_control,
-                e=True, text=pm.getAttr("head_config.headBottom"))
-            pm.textFieldButtonGrp(
-                self.left_eye_bone_control,
-                e=True, text=pm.getAttr("head_config.leftEye"))
-            pm.textFieldButtonGrp(
-                self.right_eye_bone_control,
-                e=True, text=pm.getAttr("head_config.rightEye"))
-            pm.textFieldButtonGrp(
-                self.jaw_bone_control,
-                e=True, text=pm.getAttr("head_config.jaw"))
-            pm.textFieldButtonGrp(
-                self.chin_bone_control,
-                e=True, text=pm.getAttr("head_config.chin"))
-            pm.textFieldButtonGrp(
-                self.lower_teeth_bone_control,
-                e=True, text=pm.getAttr("head_config.lowerTeeth"))
-            pm.textFieldButtonGrp(
-                self.upper_teeth_bone_control,
-                e=True, text=pm.getAttr("head_config.upperTeeth"))
-            pm.textFieldButtonGrp(
-                self.nose_bone_control,
-                e=True, text=pm.getAttr("head_config.nose"))
-            pm.textFieldButtonGrp(
-                self.tongue_bone_control,
-                e=True, text=pm.getAttr("head_config.tongue"))
-            pm.textFieldButtonGrp(
-                self.nose_tip_bone_control,
-                e=True, text=pm.getAttr("head_config.noseTip"))
-            pm.textFieldButtonGrp(
-                self.right_nostril_bone_control,
-                e=True, text=pm.getAttr("head_config.rightNostril"))
-            pm.textFieldButtonGrp(
-                self.left_nostril_bone_control,
-                e=True, text=pm.getAttr("head_config.leftNostril"))
-
-    def set_left_eyecorner_inner_field(self):
-        pass
+def pressTreeCallBack(*args):
+    print 'press :- str= ' + args[0] + ' onoff= ' + str(args[1])

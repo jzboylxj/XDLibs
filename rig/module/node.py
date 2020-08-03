@@ -79,7 +79,8 @@ class DoJointGrp:
         self.create_config_node()
 
         self.setting_config_node("module", self.name)
-        self.setting_config_node("parentModule", value=self.parent_module)
+        self.setting_config_node("parentModule",
+                                 value=self.parent_module)
         self.setting_config_node("parentNode", self.parent_node)
         self.setting_config_node("bndGrp", self.bnd_grp)
         self.setting_config_node("bndLoc", self.bnd_loc)
