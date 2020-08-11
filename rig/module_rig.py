@@ -575,6 +575,7 @@ class ModuleRig(common.Singleton):
         return True
 
     def create_ears_module(self):
+        # todo 耳朵模块没有实现
         print u"点击'创建耳朵模块按钮'"
         return
 
