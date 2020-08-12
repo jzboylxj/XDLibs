@@ -75,10 +75,11 @@ class ARFaceData:
         for channel in channel_list:
             for jnt in self.dict_data[channel].keys():
                 if jnt not in self.unity_data.keys():
-                    jnt_dict = {channel:self.dict_data[channel][jnt]["max"]}
+                    jnt_dict = {channel: self.dict_data[channel][jnt]["max"]}
                     self.unity_data[jnt] = jnt_dict
                 else:
-                    self.unity_data[jnt][channel]=self.dict_data[channel][jnt]["max"]
+                    self.unity_data[jnt][channel] = \
+                        self.dict_data[channel][jnt]["max"]
 
         print "self.unity_data: %s" % self.unity_data
 
@@ -89,6 +90,10 @@ class ARFaceData:
 
 
 class ARFaceEditor(common.Singleton):
+    """
+    AR人脸识别的通道模板编辑器
+    """
+
     def __init__(self):
         super(ARFaceEditor, self).__init__()
 
@@ -147,7 +152,7 @@ class ARFaceEditor(common.Singleton):
             label=u"存放路径：",
             bl=u"指定路径",
             adj=2,
-            cw3=[100, 100, 100],
+            cw3=[100, 100, 60],
             text=self.ar_file_location,
             bc=lambda *args: self.set_json_location())
 
@@ -158,9 +163,14 @@ class ARFaceEditor(common.Singleton):
             cc=lambda *args: self.selected_ar_channel())
 
         build_channel_btn = pm.button(
-            label=u"重建",
+            label=u"重建选择",
             w=58,
-            c=lambda *args: self.rebuild_channel_controller())
+            c=lambda *args: self.rebuild_channels_controller(type="selected"))
+
+        build_channels_btn = pm.button(
+            label=u"重建所有",
+            w=58,
+            c=lambda *args: self.rebuild_channels_controller(type="all"))
 
         detail_frame = pm.frameLayout(
             label=u"通道属性", bgs=True, mw=10, mh=10)
@@ -254,7 +264,7 @@ class ARFaceEditor(common.Singleton):
                 (self.json_location_widget, 'left', 10),
                 (self.json_location_widget, 'right', 10),
                 (self.ar_channel_options, 'left', 10),
-                (build_channel_btn, 'right', 14),
+                (build_channels_btn, 'right', 14),
                 (detail_frame, 'left', 10),
                 (detail_frame, 'right', 10),
                 (detail_frame, 'bottom', 10),
@@ -263,6 +273,8 @@ class ARFaceEditor(common.Singleton):
                 (self.ar_channel_options, 'top', 7, self.json_location_widget),
                 (self.ar_channel_options, 'right', 7, build_channel_btn),
                 (build_channel_btn, 'top', 5, self.json_location_widget),
+                (build_channel_btn, 'right', 5, build_channels_btn),
+                (build_channels_btn, 'top', 5, self.json_location_widget),
                 (detail_frame, 'top', 10, self.ar_channel_options),
             ])
 
@@ -363,19 +375,32 @@ class ARFaceEditor(common.Singleton):
             self.ar_item_attr_sz, e=True, v1=current_item_attrs[8])
         return
 
-    def rebuild_channel_controller(self):
-        for item in pm.optionMenuGrp(
-                self.ar_channel_options, q=True, ils=True):
-            channel_label = pm.menuItem(item, q=True, label=True)
-
+    def rebuild_channels_controller(self, type="all"):
+        if type == "all":
+            for item in pm.optionMenuGrp(
+                    self.ar_channel_options, q=True, ils=True):
+                channel_label = pm.menuItem(item, q=True, label=True)
+                if not pm.objExists(channel_label):
+                    self.create_slider_controller(name=channel_label)
+                    self.sdk_slider_to_rig(channel=channel_label)
+                    pm.connectControl(
+                        'arIDControlSlider', '%s.sliderX' % channel_label)
+            pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
+            self.selected_ar_channel()
+        elif type == "selected":
+            all_menu_item = pm.optionMenuGrp(
+                self.ar_channel_options, q=True, ils=True)
+            current_index = pm.optionMenuGrp(
+                self.ar_channel_options, q=True, sl=True)-1
+            channel_label = pm.menuItem(
+                all_menu_item[current_index], q=True, label=True)
             if not pm.objExists(channel_label):
                 self.create_slider_controller(name=channel_label)
                 self.sdk_slider_to_rig(channel=channel_label)
                 pm.connectControl(
                     'arIDControlSlider', '%s.sliderX' % channel_label)
-
-        pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
-        self.selected_ar_channel()
+            pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
+            # self.selected_ar_channel()
 
         return
 
