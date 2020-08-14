@@ -1,11 +1,13 @@
 # coding=utf-8
+from imp import reload
+
 from pymel import core as pm
 import os
 
 import maya.cmds as cmds
 import maya.mel as mel
 
-import common
+from animation import common
 
 reload(common)
 
@@ -495,7 +497,7 @@ class ImproveFacialSdk(common.Singleton):
     @staticmethod
     def selected_list_item(widget=None):
         selected_item = pm.textScrollList(widget, q=True, si=True)[0]
-        print selected_item
+        print(selected_item)
         if pm.objExists(selected_item):
             pm.select(selected_item)
             item_attrs = pm.listAttr(selected_item, k=True)
@@ -566,8 +568,8 @@ class ImproveFacialSdk(common.Singleton):
                 'improveFacialSdkDriverValue',
                 "%s.%s" % (selected_ctrl_item, selected_attr_item))
 
-            print "selected_attr_item : %s" % selected_attr_item
-            print "driver_dict : %s" % driver_dict
+            print("selected_attr_item : %s" % selected_attr_item)
+            print("driver_dict : %s" % driver_dict)
             if selected_attr_item in driver_dict.keys():
                 self.scroll_list_content(
                     dict_data=driver_dict[selected_attr_item])
@@ -586,7 +588,7 @@ class ImproveFacialSdk(common.Singleton):
     def scroll_list_content(self, dict_data=None):
         if dict_data is None:
             dict_data = {}
-        print "dict_data : %s" % dict_data
+        print("dict_data : %s" % dict_data)
 
         if pm.columnLayout("improveFacialSdkDrivenListItem", ex=True):
             pm.deleteUI("improveFacialSdkDrivenListItem")
@@ -605,7 +607,7 @@ class ImproveFacialSdk(common.Singleton):
                 pm.text(label=item_attr, al="left")
                 anim_curve = pm.PyNode(dict_data[item][item_attr])
                 control_name = "IFSdkDrivenAttr_%s_%s" % (item, item_attr)
-                print control_name
+                print(control_name)
                 pm.floatFieldGrp(
                     control_name,
                     numberOfFields=anim_curve.numKeys(),
@@ -627,8 +629,8 @@ class ImproveFacialSdk(common.Singleton):
         pm.setParent("..")
 
     def improve_sdk_curve(self, widget="", curve=""):
-        print pm.floatFieldGrp(widget, q=True, value=True)
-        print curve
+        print(pm.floatFieldGrp(widget, q=True, value=True))
+        print(curve)
 
     def _remove_selected_item(self):
         pass
@@ -866,7 +868,7 @@ class ExpressionStateSaver(common.Singleton):
     def selected_list_item(self):
         selected_item = pm.textScrollList(
             "esswChannelAttrList", q=True, si=True)[0]
-        print selected_item
+        print(selected_item)
 
         # 让所有通道属性归0，选择的属性数值设置为1
         self.zero_channel(selected_item)
@@ -904,7 +906,7 @@ class ExpressionStateSaver(common.Singleton):
         output_item = pm.textScrollList(
             "esswChannelAttrList", q=True, si=True)[0]
 
-        print output_item
+        print(output_item)
 
         target_joints = pm.textScrollList(
             "esswChannelAttrMap", q=True, ai=True)
@@ -912,7 +914,7 @@ class ExpressionStateSaver(common.Singleton):
         for target_joint in target_joints:
             str_key = target_joint
             attr_dict = {}
-            print str_key
+            print(str_key)
 
             attr_dict["translate"] = list(pm.PyNode(str_key).translate.get())
             attr_dict["rotate"] = list(pm.PyNode(str_key).rotate.get())
@@ -920,11 +922,11 @@ class ExpressionStateSaver(common.Singleton):
 
             output_map[str_key] = attr_dict
 
-        print output_map
+        print(output_map)
 
         common.write_json(dict_data=output_map, file_path=json_file)
 
-        print "Done!"
+        print("Done!")
 
     def load_data(self, file):
         if os.path.isfile(file):
@@ -932,7 +934,7 @@ class ExpressionStateSaver(common.Singleton):
             joint_list = dict_data.keys()
             pm.textScrollList("esswChannelAttrMap", e=True, ra=True)
             pm.textScrollList("esswChannelAttrMap", e=True, a=joint_list)
-            print dict_data
+            print(dict_data)
 
     def zero_channel(self, target_attr):
         # print self.controller
@@ -1167,7 +1169,7 @@ class CleanDefinitionAnim(common.Singleton):
                 pm.select("definition_*")
                 definition_jnts = []
                 for item in pm.ls(sl=True, type="joint"):
-                    print pm.PyNode(item).type()
+                    print(pm.PyNode(item).type())
             if pm.radioButtonGrp("cdaWorkOptions", q=True, sl=True) == 1:
                 namespace_list = pm.namespaceInfo(an=True, lon=True)
                 namespace_list.remove(":UI")
@@ -1184,12 +1186,12 @@ class CleanDefinitionAnim(common.Singleton):
     def save_search_field(self):
         self.search_field = pm.textFieldGrp(
             'cdaSearchField', q=True, text=True)
-        print self.search_field
+        print(self.search_field)
 
     def save_replace_field(self):
         self.replace_field = pm.textFieldGrp(
             'cdaReplaceField', q=True, text=True)
-        print self.replace_field
+        print(self.replace_field)
 
     def _remove_selected_item(self):
         selected_item = pm.textScrollList(

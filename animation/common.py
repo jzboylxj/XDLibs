@@ -65,8 +65,8 @@ def get_anim_range_from_node(node):
     """
     anim_curves = pm.listConnections(
         pm.PyNode(node), s=True, t='animCurve')
-    start_time = 0L
-    end_time = 0L
+    start_time = 0
+    end_time = 0
     if anim_curves:
         for anim_curve in anim_curves:
             if start_time < pm.keyframe(anim_curve, q=True, index=0):
@@ -120,7 +120,7 @@ def clean_unknown_node():
     """
     unknown_plugin_list = pm.unknownPlugin(query=True, list=True)
     if unknown_plugin_list:
-        print u"unknownPlugin个数为%s" % len(unknown_plugin_list)
+        print(u"unknownPlugin个数为%s" % len(unknown_plugin_list))
         for plugin_name in unknown_plugin_list:
             try:
                 pm.unknownPlugin(plugin_name, remove=True)
@@ -128,9 +128,9 @@ def clean_unknown_node():
                 # print e
                 print(plugin_name, u"无法清理")
                 # pass
-        print u"清理完成！"
+        print(u"清理完成！")
     else:
-        print u"unknownPlugin个数为0，不需要清理"
+        print(u"unknownPlugin个数为0，不需要清理")
 
 
 def moving_target(target, value=None):
@@ -283,3 +283,11 @@ def add_node_as_parent(
     else:
         pm.parent(target, new_parent_node)
     return new_parent_node
+
+def add_node_to_parent_ui():
+    if pm.window("addNodeToParentWnd", ex=True):
+        pm.deleteUI("addNodeToParentWnd")
+    pm.window("addNodeToParentWnd")
+    main_layout = pm.columnLayout(adj=1)
+
+    pm.showWindow("addNodeToParentWnd")

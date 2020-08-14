@@ -4,6 +4,7 @@
 # @Author  : Li XiaoJun
 # @Site    :
 # @File    : module_rig.py
+from imp import reload
 
 from pymel import core as pm
 # import maya.mel as mel
@@ -153,12 +154,12 @@ class ModuleRig(common.Singleton):
             module_name = pm.PyNode(config_node).attr("module").get()
             module_parent = pm.PyNode(config_node).attr("parentModule").get()
             new_item = [module_name, module_parent]
-            print new_item
+            print(new_item)
             pm.treeView(self.tree_view, e=True, addItem=new_item)
         return
 
     def refresh_tree_view(self):
-        print pm.treeView(self.tree_view, q=True, ch=True)
+        print(pm.treeView(self.tree_view, q=True, ch=True))
 
     def _closed_window_cmd(self):
         pass
@@ -576,14 +577,14 @@ class ModuleRig(common.Singleton):
 
     def create_ears_module(self):
         # todo 耳朵模块没有实现
-        print u"点击'创建耳朵模块按钮'"
+        print(u"点击'创建耳朵模块按钮'")
         return
 
 
 def selectTreeCallBack(*args):
-    print 'selection : ' + args[0] + ' onoff= ' + str(args[1])
+    print('selection : ' + args[0] + ' onoff= ' + str(args[1]))
     return True
 
 
 def pressTreeCallBack(*args):
-    print 'press :- str= ' + args[0] + ' onoff= ' + str(args[1])
+    print('press :- str= ' + args[0] + ' onoff= ' + str(args[1]))
