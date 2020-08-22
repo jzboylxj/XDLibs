@@ -820,7 +820,29 @@ class ModuleRig(common.Singleton):
         pass
 
     def create_module_head(self):
-        head_components = ["head_root"]
+        # 创建骨骼部分
+        if pm.objExists("skeleton"):
+            pm.select(cl=True)
+            head_jnt = pm.joint(name="facial_jnt")
+            pm.joint(name="facial_end_jnt", p=[0, 15, 0])
+            # pm.joint("facial_jnt", e=True, zso=True, oj="xyz")
+            pm.parent("facial_jnt", "skeleton")
+        else:
+            pm.error(u"添加module之前，需要创建rig的初始化结构")
+
+        # 创建控制部分
+        if pm.objExists("modules"):
+            head_mod = pm.createNode("transform", name="head_mod")
+            pm.parent(head_mod, "modules")
+
+            head_con = pm.circle(name="head_ctrl")
+            pm.parent(head_con, head_mod)
+
+
+        else:
+            pm.error(u"添加module之前，需要创建rig的初始化结构")
+
+        return
 
 
 def selectTreeCallBack(*args):
