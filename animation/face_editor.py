@@ -57,10 +57,10 @@ def build_driven(driver, axis_data, driver_attr):
         pm.PyNode(joint_name).translate.set(translate_dv)
         pm.PyNode(joint_name).rotate.set(rotate_dv)
         pm.PyNode(joint_name).scale.set(scale_dv)
-        pm.setDrivenKeyframe(
-            "{}.{}".format(joint_name, dv_attr),
-            cd="{}.{}".format(driver, driver_attr),
-            dv=1)
+        # pm.setDrivenKeyframe(
+        #     "{}.{}".format(joint_name, dv_attr),
+        #     cd="{}.{}".format(driver, driver_attr),
+        #     dv=1)
 
         pm.setDrivenKeyframe(
             "{}.{}".format(joint_name, dv_attr),
@@ -166,8 +166,15 @@ class FaceEditor(common.Singleton):
             "controller_list_grp", label="Controller List:", w=180, h=180)
         pm.textScrollList(
             "controller_list_widget",
-            sc=lambda
-                *args: self.action_selected_controller())  # 控制器列表(Controller list)控件
+            sc=lambda *args: self.action_selected_controller())  # 控制器列表(Controller list)控件
+        pm.popupMenu()
+        pm.menuItem(
+            label=u"添加新的模块")
+        pm.menuItem(
+            label=u"删除选择模板")
+        # pm.menuItem(divider=True)
+        # pm.menuItem(
+        #     label=u"恢复初始状态")
         pm.setParent("..")
 
         # Controller basic info frame
@@ -209,171 +216,7 @@ class FaceEditor(common.Singleton):
 
         axis_x_tab = self.axis_attr_tab(attr="x")
         axis_y_tab = self.axis_attr_tab(attr="y")
-        # axis_y_tab = pm.frameLayout(
-        #     p="axis_setting_grp", label="YAxis", lv=False)
-        # axis_y_form = pm.formLayout(p=axis_y_tab)
-        # self.axis_y_joint_list = pm.textScrollList(
-        #     p=axis_y_form,
-        #     w=174,
-        #     sc=lambda *args: self.action_axis_list(
-        #         widget=self.axis_y_joint_list))
-        # self.axis_y_test_widget = pm.floatSliderGrp(
-        #     enable=False,
-        #     label=u"滑竿测试",
-        #     field=True,
-        #     minValue=-1.0,
-        #     maxValue=1.0,
-        #     fieldMinValue=-1.0,
-        #     fieldMaxValue=1.0,
-        #     pre=3,
-        #     adj=3,
-        #     value=0,
-        #     cw3=[60, 60, 100])
-        # self.axis_y_max_range_widget = pm.frameLayout(
-        #     label="Max", p=axis_y_form, cll=True, cl=False, mw=5, mh=5,
-        #     bgs=True)
-        # self.axis_y_max_translate_field = pm.floatFieldGrp(
-        #     label="Translate", nf=3, cw4=[50, 80, 80, 80],
-        #     numberOfFields=3,
-        #     pre=3,
-        #     p=self.axis_y_max_range_widget)
-        # self.axis_y_max_rotate_field = pm.floatFieldGrp(
-        #     label="Rotate", nf=3, cw4=[50, 80, 80, 80],
-        #     numberOfFields=3,
-        #     pre=3,
-        #     p=self.axis_y_max_range_widget)
-        # self.axis_y_max_scale_field = pm.floatFieldGrp(
-        #     label="Scale", nf=3, cw4=[50, 80, 80, 80],
-        #     numberOfFields=3,
-        #     pre=3,
-        #     p=self.axis_y_max_range_widget)
-        # pm.button(label="Update", p=self.axis_y_max_range_widget)
-        #
-        # self.axis_y_min_range_widget = pm.frameLayout(
-        #     label="Min", p=axis_y_form, cll=True, cl=False, mw=5, mh=5,
-        #     bgs=True)
-        # self.axis_y_min_translate_field = pm.floatFieldGrp(
-        #     label="Translate", nf=3, cw4=[50, 80, 80, 80],
-        #     numberOfFields=3,
-        #     pre=3,
-        #     p=self.axis_y_min_range_widget)
-        # self.axis_y_min_rotate_field = pm.floatFieldGrp(
-        #     label="Rotate", nf=3, cw4=[50, 80, 80, 80],
-        #     numberOfFields=3,
-        #     pre=3,
-        #     p=self.axis_y_min_range_widget)
-        # self.axis_y_min_scale_field = pm.floatFieldGrp(
-        #     label="Scale", nf=3, cw4=[50, 80, 80, 80],
-        #     numberOfFields=3,
-        #     pre=3,
-        #     p=self.axis_y_min_range_widget)
-        # pm.button(label="Update", p=self.axis_y_min_range_widget)
-        # pm.formLayout(
-        #     axis_y_form, e=True,
-        #     attachForm=[
-        #         (self.axis_y_joint_list, 'left', 2),
-        #         (self.axis_y_joint_list, 'top', 5),
-        #         (self.axis_y_joint_list, 'bottom', 5),
-        #         (self.axis_y_test_widget, 'top', 5),
-        #         (self.axis_y_test_widget, 'right', 7),
-        #         (self.axis_y_max_range_widget, 'right', 2),
-        #         (self.axis_y_min_range_widget, 'right', 2),
-        #     ],
-        #     attachControl=[
-        #         (self.axis_y_test_widget, 'left', 5,
-        #          self.axis_y_joint_list),
-        #         (self.axis_y_max_range_widget, 'left', 5,
-        #          self.axis_y_joint_list),
-        #         (self.axis_y_max_range_widget, 'top', 5,
-        #          self.axis_y_test_widget),
-        #         (self.axis_y_min_range_widget, 'left', 5,
-        #          self.axis_y_joint_list),
-        #         (self.axis_y_min_range_widget, 'top', 5,
-        #          self.axis_y_max_range_widget),
-        #     ])
         axis_z_tab = self.axis_attr_tab(attr="z")
-        # axis_z_tab = pm.frameLayout(
-        #     p="axis_setting_grp", label="ZAxis", lv=False)
-        # axis_z_form = pm.formLayout(p=axis_z_tab)
-        # self.axis_z_joint_list = pm.textScrollList(
-        #     p=axis_z_form,
-        #     w=174,
-        #     sc=lambda *args: self.action_axis_list(
-        #         widget=self.axis_z_joint_list))
-        # self.axis_z_test_widget = pm.floatSliderGrp(
-        #     enable=False,
-        #     label=u"滑竿测试",
-        #     field=True,
-        #     minValue=-1.0,
-        #     maxValue=1.0,
-        #     fieldMinValue=-1.0,
-        #     fieldMaxValue=1.0,
-        #     pre=3,
-        #     adj=3,
-        #     value=0,
-        #     cw3=[60, 60, 100])
-        # self.axis_z_max_range_widget = pm.frameLayout(
-        #     label="Max", p=axis_z_form, cll=True, cl=False, mw=5, mh=5,
-        #     bgs=True)
-        # self.axis_z_max_translate_field = pm.floatFieldGrp(
-        #     label="Translate", nf=3, cw4=[50, 80, 80, 80],
-        #     numberOfFields=3,
-        #     pre=3,
-        #     p=self.axis_z_max_range_widget)
-        # self.axis_z_max_rotate_field = pm.floatFieldGrp(
-        #     label="Rotate", nf=3, cw4=[50, 80, 80, 80],
-        #     numberOfFields=3,
-        #     pre=3,
-        #     p=self.axis_z_max_range_widget)
-        # self.axis_z_max_scale_field = pm.floatFieldGrp(
-        #     label="Scale", nf=3, cw4=[50, 80, 80, 80],
-        #     numberOfFields=3,
-        #     pre=3,
-        #     p=self.axis_z_max_range_widget)
-        # pm.button(label="Update", p=self.axis_z_max_range_widget)
-        #
-        # self.axis_z_min_range_widget = pm.frameLayout(
-        #     label="Min", p=axis_z_form, cll=True, cl=False, mw=5, mh=5,
-        #     bgs=True)
-        # self.axis_z_min_translate_field = pm.floatFieldGrp(
-        #     label="Translate", nf=3, cw4=[50, 80, 80, 80],
-        #     numberOfFields=3,
-        #     pre=3,
-        #     p=self.axis_z_min_range_widget)
-        # self.axis_z_min_rotate_field = pm.floatFieldGrp(
-        #     label="Rotate", nf=3, cw4=[50, 80, 80, 80],
-        #     numberOfFields=3,
-        #     pre=3,
-        #     p=self.axis_z_min_range_widget)
-        # self.axis_z_min_scale_field = pm.floatFieldGrp(
-        #     label="Scale", nf=3, cw4=[50, 80, 80, 80],
-        #     numberOfFields=3,
-        #     pre=3,
-        #     p=self.axis_z_min_range_widget)
-        # pm.button(label="Update", p=self.axis_z_min_range_widget)
-        # pm.formLayout(
-        #     axis_z_form, e=True,
-        #     attachForm=[
-        #         (self.axis_z_joint_list, 'left', 2),
-        #         (self.axis_z_joint_list, 'top', 5),
-        #         (self.axis_z_joint_list, 'bottom', 5),
-        #         (self.axis_z_test_widget, 'right', 7),
-        #         (self.axis_z_test_widget, 'top', 5),
-        #         (self.axis_z_max_range_widget, 'right', 2),
-        #         (self.axis_z_min_range_widget, 'right', 2),
-        #     ],
-        #     attachControl=[
-        #         (self.axis_z_test_widget, 'left', 5,
-        #          self.axis_z_joint_list),
-        #         (self.axis_z_max_range_widget, 'top', 5,
-        #          self.axis_z_test_widget),
-        #         (self.axis_z_max_range_widget, 'left', 5,
-        #          self.axis_z_joint_list),
-        #         (self.axis_z_min_range_widget, 'left', 5,
-        #          self.axis_z_joint_list),
-        #         (self.axis_z_min_range_widget, 'top', 5,
-        #          self.axis_z_max_range_widget),
-        #     ])
 
         pm.tabLayout(
             "axis_setting_grp", e=True,
@@ -414,18 +257,10 @@ class FaceEditor(common.Singleton):
         pm.showWindow("faceEditorWnd")
 
     def axis_attr_tab(self, attr="x"):
-        label = None
-        if attr == "x":
-            label = "X"
-        if attr == "y":
-            label = "Y"
-        if attr == "z":
-            label = "Z"
-
         layout = pm.frameLayout(
             "axis_{}_tab".format(attr),
             p="axis_setting_grp",
-            label="{}Axis".format(label),
+            label="{}Axis".format(attr.capitalize()),
             lv=False)
         pm.formLayout(
             "axis_{}_form".format(attr),
@@ -440,10 +275,13 @@ class FaceEditor(common.Singleton):
         pm.menuItem(
             label=u"添加影响骨骼",
             c=lambda *args: self.axis_list_signal(attr=attr, method="post"))
-        pm.menuItem(divider=True)
         pm.menuItem(
             label=u"移除选择骨骼",
             c=lambda *args: self.axis_list_signal(attr=attr, method="delete"))
+        pm.menuItem(divider=True)
+        pm.menuItem(
+            label=u"恢复初始状态")
+
         pm.floatSliderGrp(
             "axis_{}_test_widget".format(attr),
             enable=False,
@@ -457,66 +295,76 @@ class FaceEditor(common.Singleton):
             adj=3,
             value=0,
             cw3=[60, 60, 100])
-        pm.frameLayout(
-            "axis_{}_max_range_widget".format(attr),
-            label="Max",
-            p="axis_{}_form".format(attr),
-            cll=True, cl=False, mw=5, mh=5,
-            bgs=True)
-        pm.floatFieldGrp(
-            "axis_{}_max_translate_field".format(attr),
-            label="Translate", nf=3, cw4=[50, 80, 80, 80],
-            numberOfFields=3,
-            pre=3,
-            p="axis_{}_max_range_widget".format(attr))
-        pm.floatFieldGrp(
-            "axis_{}_max_rotate_field".format(attr),
-            label="Rotate", nf=3, cw4=[50, 80, 80, 80],
-            numberOfFields=3,
-            pre=3,
-            p="axis_{}_max_range_widget".format(attr))
-        pm.floatFieldGrp(
-            "axis_{}_max_scale_field".format(attr),
-            label="Scale", nf=3, cw4=[50, 80, 80, 80],
-            numberOfFields=3,
-            pre=3,
-            p="axis_{}_max_range_widget".format(attr))
+
+        range_fields = ["max", "min"]
+        channel_fields = ["translate", "rotate", "scale"]
+
+        for range_field in range_fields:
+            pm.frameLayout(
+                "axis_{}_{}_range_widget".format(attr, range_field),
+                label=range_field.capitalize(),
+                p="axis_{}_form".format(attr),
+                cll=True, cl=False, mw=5, mh=5,
+                bgs=True)
+            for channel_field in channel_fields:
+                name = "axis_{}_{}_{}_field".format(attr, range_field,
+                                                    channel_field)
+                pm.floatFieldGrp(
+                    name,
+                    # label=name,
+                    label=channel_field.capitalize(),
+                    nf=3, cw4=[50, 80, 80, 80],
+                    numberOfFields=3,
+                    pre=3,
+                    p="axis_{}_{}_range_widget".format(attr, range_field))
         pm.button(
-            "axis_{}_max_update_btn".format(attr),
-            label="Update",
+            "axis_{}_max_update_scene_btn".format(attr),
+            label="Update(Apply Scene)",
+            # label="axis_{}_max_update_scene_btn".format(attr),
+            w=140,
             p="axis_{}_max_range_widget".format(attr),
             c=lambda *args: self.axis_list_signal(
-                attr=attr, method="update", update="Max"))
-        pm.frameLayout(
-            "axis_{}_min_range_widget".format(attr),
-            label="Min",
-            p="axis_{}_form".format(attr),
-            cll=True, cl=False, mw=5, mh=5,
-            bgs=True)
-        pm.floatFieldGrp(
-            "axis_{}_min_translate_field".format(attr),
-            label="Translate", nf=3, cw4=[50, 80, 80, 80],
-            numberOfFields=3,
-            pre=3,
-            p="axis_{}_min_range_widget".format(attr))
-        pm.floatFieldGrp(
-            "axis_{}_min_rotate_field".format(attr),
-            label="Rotate", nf=3, cw4=[50, 80, 80, 80],
-            numberOfFields=3,
-            pre=3,
-            p="axis_{}_min_range_widget".format(attr))
-        pm.floatFieldGrp(
-            "axis_{}_min_scale_field".format(attr),
-            label="Scale", nf=3, cw4=[50, 80, 80, 80],
-            numberOfFields=3,
-            pre=3,
-            p="axis_{}_min_range_widget".format(attr))
+                attr=attr,
+                method="update",
+                update="Max",
+                source="scene",
+            ))
         pm.button(
-            "axis_{}_min_update_btn".format(attr),
-            label="Update",
+            "axis_{}_max_update_panel_btn".format(attr),
+            label="Update(Apply Panel)",
+            # label="axis_{}_max_update_panel_btn".format(attr),
+            w=140,
+            p="axis_{}_max_range_widget".format(attr),
+            c=lambda *args: self.axis_list_signal(
+                attr=attr,
+                method="update",
+                update="Max",
+                source="panel",
+            ))
+        pm.button(
+            "axis_{}_min_update_scene_btn".format(attr),
+            label="Update(Apply Scene)",
+            # label="axis_{}_min_update_scene_btn".format(attr),
+            w=140,
             p="axis_{}_min_range_widget".format(attr),
             c=lambda *args: self.axis_list_signal(
-                attr=attr, method="update", update="Min"))
+                attr=attr,
+                method="update",
+                update="Min",
+                source="scene",
+            ))
+        pm.button(
+            "axis_{}_min_update_panel_btn".format(attr),
+            label="Update(Apply Panel)",
+            # label="axis_{}_min_update_panel_btn".format(attr),
+            w=140,
+            p="axis_{}_min_range_widget".format(attr),
+            c=lambda *args: self.axis_list_signal(
+                attr=attr,
+                method="update",
+                update="Min",
+                source="panel",
+            ))
         pm.formLayout(
             "axis_{}_form".format(attr),
             e=True,
@@ -924,21 +772,13 @@ class FaceEditor(common.Singleton):
         return
 
     def update_axis_widget(self, attr, data):
-        label = None
-        if attr == "x":
-            label = "X"
-        if attr == "y":
-            label = "Y"
-        if attr == "z":
-            label = "Z"
-
         if pm.textScrollList(
                 "axis_{}_joint_list".format(attr), q=True, ni=True) > 0:
             axis_index = int(pm.textScrollList(
                 "axis_{}_joint_list".format(attr), q=True, sii=True)[0])
             axis_attr_data = data[
-                "AxisControl"]["{}Axis".format(label)]["BoneRange"][
-                axis_index - 1]
+                "AxisControl"]["{}Axis".format(attr.capitalize())][
+                "BoneRange"][axis_index - 1]
             axis_max_value = axis_attr_data["Max"]
             # print("axis_a_max: {}".format(axis_a_max))
             pm.floatFieldGrp(
@@ -980,7 +820,7 @@ class FaceEditor(common.Singleton):
                 pm.connectControl(
                     "axis_{}_test_widget".format(attr),
                     pm.PyNode(data["controllerName"]).attr(
-                        "slider{}".format(label)))
+                        "slider{}".format(attr.capitalize())))
         return
 
     def action_change_module(self):
@@ -1135,20 +975,12 @@ class FaceEditor(common.Singleton):
         if tab_label == "ZAxis":
             self.update_axis_widget(attr="z", data=controller_data)
 
-    def axis_list_signal(self, attr="", method="", update=""):
+    def axis_list_signal(self, attr="", method="", update="", source=""):
         """
-        删除XAxis中的骨骼
+        XAxis内的控件的信号
 
         :return:
         """
-        label = ""
-        if attr == "x":
-            label = "X"
-        if attr == "y":
-            label = "Y"
-        if attr == "z":
-            label = "Z"
-
         current_module = pm.optionMenuGrp(
             "module_selector_widget", q=True, value=True)
         controller_index = int(pm.textScrollList(
@@ -1157,17 +989,11 @@ class FaceEditor(common.Singleton):
         axis_tab_list = pm.tabLayout("axis_setting_grp", q=True, tl=True)
         axis_tab_index = pm.tabLayout("axis_setting_grp", q=True, sti=True)
         axis_tab_label = axis_tab_list[axis_tab_index - 1]
-        # print("axis_tab_label:{}".format(axis_tab_label))
 
         if method == "delete":
             current_selected = int(pm.textScrollList(
                 "axis_{}_joint_list".format(attr),
                 q=True, sii=True)[0])
-            # print("current_selected:{}".format(current_selected))
-            # controller_data = self.face_data[
-            #     current_module][controller_index - 1]["AxisControl"][
-            #     axis_tab_label]["BoneRange"][current_selected-1]
-            # print("controller_data:{}".format(controller_data))
             self.face_data[current_module][controller_index - 1][
                 "AxisControl"][axis_tab_label]["BoneRange"].pop(
                 current_selected - 1)
@@ -1193,31 +1019,86 @@ class FaceEditor(common.Singleton):
                 "axis_{}_joint_list".format(attr), q=True, sii=True)[0])
             current_selected = pm.textScrollList(
                 "axis_{}_joint_list".format(attr), q=True, si=True)[0]
-            print("current_selected_index:{}".format(current_selected_index))
-            print("current_selected:{}".format(current_selected))
-            current_jnt_value = get_channel_values(current_selected)
-            print(current_jnt_value)
             default_jnt_value = self.face_data[current_module][
                 controller_index - 1]["AxisControl"][axis_tab_label][
                 "BoneRange"][current_selected_index - 1]["def"]
-            print(default_jnt_value)
-            offset_value = [
-                current_jnt_value[0] - default_jnt_value[0],
-                current_jnt_value[1] - default_jnt_value[1],
-                current_jnt_value[2] - default_jnt_value[2],
-                current_jnt_value[3] - default_jnt_value[3],
-                current_jnt_value[4] - default_jnt_value[4],
-                current_jnt_value[5] - default_jnt_value[5],
-                current_jnt_value[6],
-                current_jnt_value[7],
-                current_jnt_value[8],
-            ]
+
+            offset_value = None
+
             if update == "Max":
+                if source == "scene":
+                    current_jnt_value = get_channel_values(current_selected)
+                    offset_value = [
+                        current_jnt_value[0] - default_jnt_value[0],
+                        current_jnt_value[1] - default_jnt_value[1],
+                        current_jnt_value[2] - default_jnt_value[2],
+                        current_jnt_value[3] - default_jnt_value[3],
+                        current_jnt_value[4] - default_jnt_value[4],
+                        current_jnt_value[5] - default_jnt_value[5],
+                        current_jnt_value[6],
+                        current_jnt_value[7],
+                        current_jnt_value[8],
+                    ]
+                elif source == "panel":
+                    name = "axis_{}_max_translate_field".format(attr)
+                    offset_translate_value = pm.floatFieldGrp(
+                        name, q=True, value=True)
+                    name = "axis_{}_max_rotate_field".format(attr)
+                    offset_rotate_value = pm.floatFieldGrp(
+                        name, q=True, value=True)
+                    name = "axis_{}_max_scale_field".format(attr)
+                    offset_scale_value = pm.floatFieldGrp(
+                        name, q=True, value=True)
+                    offset_value = [
+                        offset_translate_value[0],
+                        offset_translate_value[1],
+                        offset_translate_value[2],
+                        offset_rotate_value[0],
+                        offset_rotate_value[1],
+                        offset_rotate_value[2],
+                        offset_scale_value[0],
+                        offset_scale_value[1],
+                        offset_scale_value[2],
+                    ]
                 self.face_data[current_module][
                     controller_index - 1]["AxisControl"][axis_tab_label][
                     "BoneRange"][current_selected_index - 1][
                     "Max"] = offset_value
             if update == "Min":
+                if source == "scene":
+                    current_jnt_value = get_channel_values(current_selected)
+                    offset_value = [
+                        current_jnt_value[0] - default_jnt_value[0],
+                        current_jnt_value[1] - default_jnt_value[1],
+                        current_jnt_value[2] - default_jnt_value[2],
+                        current_jnt_value[3] - default_jnt_value[3],
+                        current_jnt_value[4] - default_jnt_value[4],
+                        current_jnt_value[5] - default_jnt_value[5],
+                        current_jnt_value[6],
+                        current_jnt_value[7],
+                        current_jnt_value[8],
+                    ]
+                elif source == "panel":
+                    name = "axis_{}_min_translate_field".format(attr)
+                    offset_translate_value = pm.floatFieldGrp(
+                        name, q=True, value=True)
+                    name = "axis_{}_min_rotate_field".format(attr)
+                    offset_rotate_value = pm.floatFieldGrp(
+                        name, q=True, value=True)
+                    name = "axis_{}_min_scale_field".format(attr)
+                    offset_scale_value = pm.floatFieldGrp(
+                        name, q=True, value=True)
+                    offset_value = [
+                        offset_translate_value[0],
+                        offset_translate_value[1],
+                        offset_translate_value[2],
+                        offset_rotate_value[0],
+                        offset_rotate_value[1],
+                        offset_rotate_value[2],
+                        offset_scale_value[0],
+                        offset_scale_value[1],
+                        offset_scale_value[2],
+                    ]
                 self.face_data[current_module][
                     controller_index - 1]["AxisControl"][axis_tab_label][
                     "BoneRange"][current_selected_index - 1][
