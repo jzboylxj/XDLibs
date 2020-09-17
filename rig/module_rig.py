@@ -820,6 +820,7 @@ class ModuleRig(common.Singleton):
         pass
 
     def create_module_head(self):
+        head_jnt = None
         # 创建骨骼部分
         if pm.objExists("skeleton"):
             pm.select(cl=True)
@@ -835,10 +836,15 @@ class ModuleRig(common.Singleton):
             head_mod = pm.createNode("transform", name="head_mod")
             pm.parent(head_mod, "modules")
 
-            head_con = pm.circle(name="head_ctrl")
-            pm.parent(head_con, head_mod)
+            head_con = pm.circle(name="head_ctrl")[0]
+            head_grp = common.add_node_as_parent(
+                head_con,
+                search_field="_ctrl",
+                suffix="_GRP",
+                node_type="transform")
+            pm.parent(head_grp, head_mod)
 
-
+            pm.parentConstraint(head_con, head_jnt)
         else:
             pm.error(u"添加module之前，需要创建rig的初始化结构")
 

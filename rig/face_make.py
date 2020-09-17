@@ -2,7 +2,7 @@
 # coding: utf-8
 # @Time    : 2020/8/13 15:49
 # @Author  : Li XiaoJun
-# @Site    : 
+# @Site    :
 # @File    : face_make.py
 import json
 import os
@@ -25,23 +25,25 @@ class FaceMaker(common.Singleton):
     def __init__(self):
         super(FaceMaker, self).__init__()
 
+        # 数据配置文件夹存放路径
         self.json_folder = ''
+        # 模块片段数量
         self.module_sections = []
 
-        self.dict_data = list()
-        self.detail_data = dict()
+        # self.dict_data = list()
+        # self.detail_data = dict()
 
-        self.controller = {}
-        self.controller_detail = {}
+        # self.controller = {}
+        # self.controller_detail = {}
 
-        self.current_tab_index = 1
+        # self.current_tab_index = 1
 
         # 历史版本的json文件存放路径
-        self.brow_file_folder = ""
-        self.eye_file_folder = ""
-        self.nose_file_folder = ""
-        self.mouth_file_folder = ""
-        self.face_file_folder = ""
+        # self.brow_file_folder = ""
+        # self.eye_file_folder = ""
+        # self.nose_file_folder = ""
+        # self.mouth_file_folder = ""
+        # self.face_file_folder = ""
 
         self.show()
         self.initialize()
@@ -63,7 +65,7 @@ class FaceMaker(common.Singleton):
 
         self.menu_list()
 
-        main_layout = pm.columnLayout(adj=True, rs=5)
+        main_layout = pm.columnLayout(adj=True)
 
         self.config_input = pm.textFieldButtonGrp(
             label=u"配置文件",
@@ -74,7 +76,7 @@ class FaceMaker(common.Singleton):
             text=self.json_folder,
             bc=lambda *args: self.setting_json_folder())
 
-        self.custom_tab()
+        self.work_form()
 
         pm.showWindow("faceMakerWnd")
 
@@ -112,7 +114,7 @@ class FaceMaker(common.Singleton):
 
         return
 
-    def custom_tab(self):
+    def work_form(self):
         """
         标签栏之自定义捏脸栏
 
@@ -120,34 +122,37 @@ class FaceMaker(common.Singleton):
         """
         layout = pm.formLayout("customFormTab")
 
-        option_row = pm.rowColumnLayout(numberOfRows=1)
-        option_menu = self.option_menu_widget(parent_widget=option_row)
-        pm.setParent("..")
+        option_menu = self.option_menu_widget(parent_widget=layout)
+
+        line1 = pm.separator(height=5, style='in', p=layout)
 
         # frame_module = self.frame_module_list()
         # 控制器面板
-        controller_list_layout = self.tab_controller()
+        # controller_list_layout = self.tab_controller()
         # 影响骨骼面板
-        controller_detail_list_layout = self.tab_controller_joint()
+        # controller_detail_list_layout = self.tab_controller_joint()
         # 测试面板
         # controller_test_list_layout = self.tab_test_controller()
 
         pm.formLayout(
             layout, edit=True,
             attachForm=[
-                (option_row, 'top', 10),
-                (option_row, 'left', 5),
-                (option_row, 'right', 5),
-                (controller_list_layout, 'left', 5),
-                (controller_list_layout, 'bottom', 5),
-                (controller_detail_list_layout, 'right', 5),
-                (controller_detail_list_layout, 'bottom', 5),
+                (option_menu, 'top', 10),
+                (option_menu, 'left', 5),
+                (option_menu, 'right', 5),
+                (line1, 'left', 5),
+                (line1, 'right', 5),
+                # (controller_list_layout, 'left', 5),
+                # (controller_list_layout, 'bottom', 5),
+                # (controller_detail_list_layout, 'right', 5),
+                # (controller_detail_list_layout, 'bottom', 5),
             ],
             attachControl=[
-                (controller_list_layout, 'top', 5, option_row),
-                (controller_detail_list_layout, 'top', 5, option_row),
-                (controller_detail_list_layout, 'left', 5,
-                 controller_list_layout),
+                (line1, 'top', 5, option_menu),
+                # (controller_list_layout, 'top', 5, line1),
+                # (controller_detail_list_layout, 'top', 5, option_menu),
+                # (controller_detail_list_layout, 'left', 5,
+                #  controller_list_layout),
             ])
 
         pm.setParent("..")
@@ -396,7 +401,7 @@ class FaceMaker(common.Singleton):
             fileFilter="JSON File (*.json);;",
             fileMode=3, okc=u"选择文件夹")
 
-        print(json_folder)
+        # print(json_folder)
 
         if json_folder:
             self.json_folder = json_folder[0]
@@ -577,7 +582,7 @@ class FaceMaker(common.Singleton):
         controller_index = pm.scrollLayout(
             "controllerListLayout", q=True, nch=True)
         self.controller[controller_index] = (
-                "controllerGrp%s" % controller_index)
+            "controllerGrp%s" % controller_index)
         self.add_controller_widget(
             index=controller_index, parent="controllerListLayout")
 
@@ -1664,7 +1669,7 @@ class FaceMakerEditor(common.Singleton):
             value3=offset_value[2])
 
         if (self.dict_data[self.module_context][current_selected - 1][
-            "AxisControl"]["XAxis"]) != "":
+                "AxisControl"]["XAxis"]) != "":
             pm.textScrollList(
                 "controller%sAxis" % current_selected,
                 e=True,
@@ -1672,7 +1677,7 @@ class FaceMakerEditor(common.Singleton):
                     "AxisControl"]["XAxis"]
             )
         if (self.dict_data[self.module_context][current_selected - 1][
-            "AxisControl"]["YAxis"]) != "":
+                "AxisControl"]["YAxis"]) != "":
             pm.textScrollList(
                 "controller%sAxis" % current_selected,
                 e=True,
@@ -1680,7 +1685,7 @@ class FaceMakerEditor(common.Singleton):
                     "AxisControl"]["YAxis"]
             )
         if (self.dict_data[self.module_context][current_selected - 1][
-            "AxisControl"]["ZAxis"]) != "":
+                "AxisControl"]["ZAxis"]) != "":
             pm.textScrollList(
                 "controller%sAxis" % current_selected,
                 e=True,

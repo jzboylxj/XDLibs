@@ -4,14 +4,13 @@
 JSON数据管理工具
 
 """
-import os
-from pymel import core as pm
-import maya.cmds as cmds
-import maya.mel as mel
-
 import json
-import common
-import test_node
+import os
+from imp import reload
+
+from animation import common
+from animation import test_node
+from pymel import core as pm
 
 reload(common)
 reload(test_node)
@@ -32,18 +31,20 @@ def str_to_list(str):
     return str_list
 
 
-def list_to_str(list=[]):
+def list_to_str(data=None):
     """
     解析列表，将所有的成员转换成列表，中间用空格分隔开
 
-    :param list: 需要解析的字符串
+    :param data: 需要解析的字符串
     :return: string
     """
 
-    str = ""
-    for item in list:
-        str = str+" "+item
-    return str.strip()
+    if data is None:
+        data = []
+    str_data = ""
+    for item in data:
+        str_data = str_data + " " + item
+    return str_data.strip()
 
 
 def zero_locator(name):
@@ -212,7 +213,7 @@ class ChannelBoxSaver(common.Singleton):
 
     def _select_slider(self):
         current_select = pm.textScrollList("sliderKeyList", q=True, si=True)[0]
-        print current_select
+        # print(current_select)
         pm.textScrollList("rangeKeyList", e=True, ra=True)
         pm.textScrollList(
             "rangeKeyList", e=True, a=self.dict_data[current_select].keys())
@@ -223,7 +224,7 @@ class ChannelBoxSaver(common.Singleton):
     def _select_range(self):
         current_slider = pm.textScrollList("sliderKeyList", q=True, si=True)[0]
         current_range = pm.textScrollList("rangeKeyList", q=True, si=True)[0]
-        print "%s.%s" % (current_slider, current_range)
+        # print("%s.%s" % (current_slider, current_range))
         pm.textScrollList("jointKeyList", e=True, ra=True)
         pm.textScrollList(
             "jointKeyList",
@@ -234,11 +235,11 @@ class ChannelBoxSaver(common.Singleton):
     def _select_joints(self):
         pm.select(pm.textScrollList("jointKeyList", q=True, si=True))
 
-    def add_range_field(self, field, scrollList):
+    def add_range_field(self, field, scroll_list):
         current_slider = pm.textScrollList("sliderKeyList", q=True, si=True)[0]
 
-        if (not self._check_field_exists(field, scrollList)):
-            pm.textScrollList(scrollList, e=True, a=[field])
+        if not self._check_field_exists(field, scroll_list):
+            pm.textScrollList(scroll_list, e=True, a=[field])
             self.dict_data[current_slider][field] = dict()
 
     def _append_joints(self):
@@ -264,17 +265,17 @@ class ChannelBoxSaver(common.Singleton):
                     current_slider][current_range][jnt.name()] = jnt_value
         return
 
-    def _check_field_exists(self, field, scrollList):
-        scrollList = pm.textScrollList(scrollList, q=True, ai=True)
-        if field in scrollList:
+    def _check_field_exists(self, field, scroll_list):
+        scroll_list = pm.textScrollList(scroll_list, q=True, ai=True)
+        if field in scroll_list:
             return True
         else:
             return False
 
-    def add_slider_key(self, slider, scrollList):
-        if (not self._check_field_exists(slider, scrollList)):
-            pm.textScrollList(scrollList, e=True, a=slider)
-        for item in pm.textScrollList(scrollList, q=True, ai=True):
+    def add_slider_key(self, slider, scroll_list):
+        if not self._check_field_exists(slider, scroll_list):
+            pm.textScrollList(scroll_list, e=True, a=slider)
+        for item in pm.textScrollList(scroll_list, q=True, ai=True):
             self.dict_data[item] = dict()
         return
 
@@ -290,8 +291,8 @@ class ChannelBoxSaver(common.Singleton):
             self.output_path = output_path[0]
         return
 
-    def parse_str(self, str):
-        str_list = str.split(";")
+    def parse_str(self, str_data):
+        str_list = str_data.split(";")
         str_list = [x.strip() for x in str_list if x.strip() != '']
 
         return str_list
@@ -358,7 +359,7 @@ class ChannelBoxSaver(common.Singleton):
 
             json_name = ("%s/%s.json" % (folder, controller))
             common.write_json(dict_data=self.dict_data, file_path=json_name)
-            print u"%s 转化完毕" % controller
+            print(u"%s 转化完毕" % controller)
         return
 
     def _closed_window_cmd(self):
@@ -389,7 +390,7 @@ class CustomAttrHelper(common.Singleton):
 
         self.main_form = pm.formLayout()
         self.frame_layout = pm.frameLayout(
-            label="Custome Attr Helper", bgs=True)
+            label="Custom Attr Helper", bgs=True)
 
         self.form_layout = pm.formLayout()
         self.controller_field = pm.textFieldButtonGrp(
@@ -528,7 +529,7 @@ class CustomAttrHelper(common.Singleton):
             e=True,
             text=controller_name)
 
-        print controller_name
+        # print(controller_name)
         select_index = pm.radioButtonGrp(
             "customControllerAttrOptions", q=True, sl=True)
         select_attr = attr_list[select_index - 1]
@@ -915,14 +916,11 @@ class JsonManager(common.Singleton):
         return test_controller
 
     def add_slider_for_selected(self):
-        print pm.textScrollList("ARIDScrollList", q=True, si=True)[0]
-
+        # print(pm.textScrollList("ARIDScrollList", q=True, si=True)[0])
         selected_key = pm.textScrollList("ARIDScrollList", q=True, si=True)[0]
-        print self.ar_data[selected_key]
-
+        # print(self.ar_data[selected_key])
         if not pm.objExists(selected_key):
             self.create_slider_controller(name=selected_key)
-
         return
 
     def create_slider_controller(self, name):
@@ -1051,8 +1049,10 @@ class JsonManager(common.Singleton):
     def scanning_folder(self, return_type):
         """
         扫描文件件，将目录列取出来，如果目录下有对应的文件（例：文件夹名face, 对应的文件）
+        :param return_type: 返回类型
         """
         json_list = []
+        json_file = ""
         folder_list = []
         if self.json_folder != '':
             path_dir = os.listdir(self.json_folder)
@@ -1060,10 +1060,10 @@ class JsonManager(common.Singleton):
             for json_file in path_dir:
                 full_path = "%s/%s" % (self.json_folder, json_file)
                 if os.path.isdir(full_path):
-                    print "%s it's a directory" % full_path
+                    # print("%s it's a directory" % full_path)
                     folder_list.append(json_file)
                 elif os.path.isfile(full_path):
-                    print "%s it's a normal file" % full_path
+                    # print("%s it's a normal file" % full_path)
                     # 获取JSON文件的名字后，清理文件的后缀名
                     file_name = os.path.splitext(json_file)[0]
                     json_list.append(file_name)
@@ -1095,16 +1095,12 @@ class JsonManager(common.Singleton):
         """
         selected_controller = pm.optionMenuGrp(
             "faceModuleOptionsWidget", q=True, value=True)
-        print "selected controller: %s" % selected_controller
-
+        # print("selected controller: %s" % selected_controller)
         controller_file = "%s/%s/%sController.json" % (
             self.json_folder, module, module)
-
-        print controller_file
-
+        # print(controller_file)
         controller_list = pm.scrollLayout(
             "controllerListLayout", q=True, ca=True)
-
         detail_list = pm.scrollLayout(
             "controllerDetailListLayout", q=True, ca=True)
 
@@ -1112,7 +1108,6 @@ class JsonManager(common.Singleton):
             # print controller_list
             for child in controller_list:
                 pm.deleteUI(child)
-
         if detail_list is not None:
             for child in detail_list:
                 pm.deleteUI(child)
@@ -1120,13 +1115,12 @@ class JsonManager(common.Singleton):
         dict_data = None
         with open(controller_file, 'r') as data:
             dict_data = json.load(data)
-            print dict_data
+            # print(dict_data)
         controller_key = "%sController" % module
 
         for index in range(0, len(dict_data[controller_key])):
             self.add_controller_widget(
                 index=index, parent="controllerListLayout")
-
             pm.textFieldButtonGrp(
                 "controllerNameWidget%s" % index, e=True,
                 text=dict_data[controller_key][index]["controllerName"])
@@ -1136,7 +1130,6 @@ class JsonManager(common.Singleton):
             pm.textFieldButtonGrp(
                 "controllerBoneNameWidget%s" % index, e=True,
                 text=dict_data[controller_key][index]["ControllerBoneName"])
-
             offset_value = dict_data[
                 controller_key][index]["ControllerPositionOffset"]
             pm.floatFieldGrp(
@@ -1145,7 +1138,6 @@ class JsonManager(common.Singleton):
                 value1=offset_value[0],
                 value2=offset_value[1],
                 value3=offset_value[2])
-
             pm.textFieldGrp(
                 "controller%sAxisX" % index, e=True,
                 text=dict_data[controller_key][index]["AxisControl"]["XAxis"])
@@ -1169,8 +1161,7 @@ class JsonManager(common.Singleton):
 
         :return: True
         """
-
-        # 文件模模式
+        # 文件模式
         file_path = pm.fileDialog2(
             dialogStyle=2,
             fileFilter="JSON File (*.json);;",
@@ -1206,7 +1197,7 @@ class JsonManager(common.Singleton):
         controller_index = pm.scrollLayout(
             "controllerListLayout", q=True, nch=True)
         self.controller[controller_index] = (
-            "controllerGrp%s" % controller_index)
+                "controllerGrp%s" % controller_index)
         self.add_controller_widget(
             index=controller_index, parent="controllerListLayout")
 
@@ -1308,9 +1299,9 @@ class JsonManager(common.Singleton):
             control_name = pm.textFieldButtonGrp(
                 "controllerNameWidget%s" % index, q=True, text=True)
 
-            axia_X = pm.textFieldGrp(
+            axis_x = pm.textFieldGrp(
                 "controller%sAxisX" % index, q=True, text=True)
-            if axia_X != "" and axia_X is not None:
+            if axis_x != "" and axis_x is not None:
                 definition_joints = pm.PyNode(
                     control_name).attr("jointsX").get()
                 pm.textScrollList(
@@ -1318,9 +1309,9 @@ class JsonManager(common.Singleton):
                     e=True,
                     a=str_to_list(definition_joints))
 
-            axia_Y = pm.textFieldGrp(
+            axis_y = pm.textFieldGrp(
                 "controller%sAxisY" % index, q=True, text=True)
-            if axia_Y != "" and axia_Y is not None:
+            if axis_y != "" and axis_y is not None:
                 definition_joints = pm.PyNode(
                     control_name).attr("jointsY").get()
                 pm.textScrollList(
@@ -1328,9 +1319,9 @@ class JsonManager(common.Singleton):
                     e=True,
                     a=str_to_list(definition_joints))
 
-            axia_Z = pm.textFieldGrp(
+            axis_z = pm.textFieldGrp(
                 "controller%sAxisZ" % index, q=True, text=True)
-            if axia_Z != "" and axia_Z is not None:
+            if axis_z != "" and axis_z is not None:
                 definition_joints = pm.PyNode(
                     control_name).attr("jointsZ").get()
                 pm.textScrollList(
@@ -1432,8 +1423,8 @@ class JsonManager(common.Singleton):
         dict_data = {}
         self.detail_data = {}
 
-        print "Detail item : %s" % pm.scrollLayout(
-            "controllerDetailListLayout", q=True, nch=True)
+        # print("Detail item : %s" % pm.scrollLayout(
+        #     "controllerDetailListLayout", q=True, nch=True))
 
         for index in range(0, pm.scrollLayout(
                 "controllerDetailListLayout", q=True, nch=True)):
@@ -1450,9 +1441,9 @@ class JsonManager(common.Singleton):
 
             dict_data[key_name]["ControlGroup"] = []
 
-            axia_X = {}
-            axia_X["GroupName"] = "%s_X" % key_name
-            axia_X["BoneRange"] = []
+            axis_x = dict()
+            axis_x["GroupName"] = "%s_X" % key_name
+            axis_x["BoneRange"] = []
 
             for jnt in pm.textScrollList(
                     "controllerDetailSliderXBone%s" % index, q=True, ai=True):
@@ -1477,12 +1468,12 @@ class JsonManager(common.Singleton):
                         "controllerNameWidget%s" % index,
                         q=True, text=True)).attr("sliderX"), 0)
 
-                axia_X["BoneRange"].append(jnt_dict)
-            dict_data[key_name]["ControlGroup"].append(axia_X)
+                axis_x["BoneRange"].append(jnt_dict)
+            dict_data[key_name]["ControlGroup"].append(axis_x)
 
-            axia_Y = {}
-            axia_Y["GroupName"] = "%s_Y" % key_name
-            axia_Y["BoneRange"] = []
+            axis_y = dict()
+            axis_y["GroupName"] = "%s_Y" % key_name
+            axis_y["BoneRange"] = []
 
             for jnt in pm.textScrollList(
                     "controllerDetailSliderYBone%s" % index, q=True, ai=True):
@@ -1509,12 +1500,12 @@ class JsonManager(common.Singleton):
                         "controllerNameWidget%s" % index,
                         q=True, text=True)).attr("sliderY"), 0)
 
-                axia_Y["BoneRange"].append(jnt_dict)
-            dict_data[key_name]["ControlGroup"].append(axia_Y)
+                axis_y["BoneRange"].append(jnt_dict)
+            dict_data[key_name]["ControlGroup"].append(axis_y)
 
-            axia_Z = {}
-            axia_Z["GroupName"] = "%s_Z" % key_name
-            axia_Z["BoneRange"] = []
+            axis_z = dict()
+            axis_z["GroupName"] = "%s_Z" % key_name
+            axis_z["BoneRange"] = []
 
             for jnt in pm.textScrollList(
                     "controllerDetailSliderZBone%s" % index, q=True, ai=True):
@@ -1541,9 +1532,9 @@ class JsonManager(common.Singleton):
                         "controllerNameWidget%s" % index,
                         q=True, text=True)).attr("sliderZ"), 0)
 
-                axia_Z["BoneRange"].append(jnt_dict)
+                axis_z["BoneRange"].append(jnt_dict)
 
-            dict_data[key_name]["ControlGroup"].append(axia_Z)
+            dict_data[key_name]["ControlGroup"].append(axis_z)
 
         self.detail_data = dict_data
         return
@@ -1561,7 +1552,7 @@ class JsonManager(common.Singleton):
         control_file_path = "%s/%s/%sController.json" % (
             self.json_folder, menu_item_selected, menu_item_selected)
 
-        controller_data = {}
+        controller_data = dict()
         controller_data["%sController" % menu_item_selected] = self.dict_data
         with open(control_file_path, "w") as f:
             json.dump(controller_data, f, indent=4)
@@ -1572,7 +1563,7 @@ class JsonManager(common.Singleton):
         with open(detail_file_path, "w") as f:
             json.dump(self.detail_data, f, indent=4)
 
-        print u"保存成功"
+        print(u"保存成功")
 
         return
 
@@ -1763,7 +1754,7 @@ class JsonManager(common.Singleton):
         with open(file_path, "w") as f:
             json.dump(dict_data, f, indent=2)
 
-        print u"Brow通道：%s 数据保存成功！" % module_id
+        print(u"Brow通道：%s 数据保存成功！" % module_id)
 
         return
 
@@ -1798,7 +1789,7 @@ class JsonManager(common.Singleton):
         with open(file_path, "w") as f:
             json.dump(dict_data, f, indent=2)
 
-        print u"Eye通道：%s 数据保存成功！" % module_id
+        print(u"Eye通道：%s 数据保存成功！" % module_id)
 
         return
 
@@ -1828,7 +1819,7 @@ class JsonManager(common.Singleton):
         with open(file_path, "w") as f:
             json.dump(dict_data, f, indent=2)
 
-        print u"Nose通道：%s 数据保存成功！" % module_id
+        print(u"Nose通道：%s 数据保存成功！" % module_id)
 
         return
 
@@ -1900,13 +1891,10 @@ class JsonManager(common.Singleton):
         dict_data['BoneRange'] = {}
         for jnt in jnt_list:
             dict_data['BoneRange'][jnt] = self.joint_cb_list(jnt=jnt)
-
         file_path = "%s/%s.json" % (self.mouth_file_folder, module_id)
-
         with open(file_path, "w") as f:
             json.dump(dict_data, f, indent=2)
-
-        print u"Mouth通道：%s 数据保存成功！" % module_id
+        print(u"Mouth通道：%s 数据保存成功！" % module_id)
 
         return
 
@@ -1916,9 +1904,7 @@ class JsonManager(common.Singleton):
             self.discard_child_tab_layout,
             q=True,
             sti=True) - 1
-
-        print tab_array[current_tab_index]
-
+        # print(tab_array[current_tab_index])
         if tab_array[current_tab_index] == 'brow':
             self.save_brow_data_to_json()
         if tab_array[current_tab_index] == 'eye':
@@ -1936,10 +1922,9 @@ class JsonManager(common.Singleton):
 def join_list_item(list_data):
     output_str = ""
     for item in list_data:
-        print item
+        print(item)
         output_str = output_str + ":" + item
-        print output_str
-
+        print(output_str)
     return output_str
 
 
@@ -1949,6 +1934,8 @@ class DataPasteHelper(common.Singleton):
 
         self.expression_data = {}
         self.joint_number = 0
+
+        self.target_list = []
 
         self.show()
 
@@ -1964,29 +1951,60 @@ class DataPasteHelper(common.Singleton):
 
         column_layout = pm.columnLayout(adj=1, rs=2)
         self.work_mode_control = pm.radioButtonGrp(
+            p=column_layout,
             label=u"工作模式：",
             labelArray3=[u'镜像', u'翻转', u'粘贴'],
-            numberOfRadioButtons=3, cw4=[60, 60, 60, 60], sl=1)
-        self.label_control = pm.text(label=u"搜索和替换选项：", al="left")
+            numberOfRadioButtons=3,
+            cw4=[60, 60, 60, 60],
+            sl=1)
+
+        pm.frameLayout(p=column_layout, label=u"约束轴", mw=5, mh=5, bgs=True)
+        self.translate_offset_value = pm.checkBoxGrp(
+            label="Translate:",
+            numberOfCheckBoxes=3,
+            labelArray3=['X', 'Y', 'Z'],
+            va3=[True, False, False],
+            cw4=[60, 50, 50, 50])
+        self.rotate_offset_value = pm.checkBoxGrp(
+            label="Rotate:",
+            numberOfCheckBoxes=3,
+            labelArray3=['X', 'Y', 'Z'],
+            va3=[False, True, True],
+            cw4=[60, 50, 50, 50])
+        self.scale_offset_value = pm.checkBoxGrp(
+            label="Scale:",
+            numberOfCheckBoxes=3,
+            labelArray3=['X', 'Y', 'Z'],
+            va3=[False, False, False],
+            cw4=[60, 50, 50, 50])
+        pm.setParent("..")
+
+        self.label_control = pm.text(
+            p=column_layout, label=u"搜索和替换选项：", al="left")
         self.search_field_control = pm.textFieldGrp(
-            label=u"搜索：", cw2=[60, 240], text="_L_")
+            p=column_layout, label=u"搜索：", cw2=[60, 240], text="_L_")
         self.replace_field_control = pm.textFieldGrp(
-            label=u"替换：", cw2=[60, 240], text="_R_")
+            p=column_layout, label=u"替换：", cw2=[60, 240], text="_R_")
         self.task_info_control = pm.text(
+            p=column_layout,
             label=u"已经复制%s个对象的通道栏数据" % self.joint_number,
             w=300,
             al="left")
-        pm.setParent("..")
+        pm.setParent(column_layout)
 
         self.copy_button = pm.button(
+            p=form_layout,
             label=u"复制数据", w=80, c=lambda *args: self.copy_expression())
         self.select_source_button = pm.button(
+            p=form_layout,
             label=u"选择来源",
             w=80, c=lambda *args: self.select_source_object())
         self.select_target_button = pm.button(
+            p=form_layout,
             label=u"选择目标",
             w=80, c=lambda *args: self.select_target_object())
         self.paste_button = pm.button(
+            p=form_layout,
             label=u"拷贝数据", w=80, c=lambda *args: self.paste_expression())
 
         pm.formLayout(
@@ -2000,20 +2018,19 @@ class DataPasteHelper(common.Singleton):
                 (self.select_source_button, 'bottom', 10),
                 (self.select_target_button, 'bottom', 10),
                 (self.paste_button, 'bottom', 10),
-                # (self.paste_button, 'right', 10),
+                (self.paste_button, 'right', 10),
             ],
             attachControl=[
                 (column_layout, 'bottom', 10, self.copy_button),
                 (self.select_source_button, 'left', 10, self.copy_button),
-                (self.select_target_button, 'left', 10, self.select_source_button),
+                (self.select_target_button, 'left', 10,
+                 self.select_source_button),
                 (self.paste_button, 'left', 10, self.select_target_button),
             ])
-
         pm.showWindow("ExpressionHelper")
 
     def copy_expression(self):
         self.expression_data = {}
-
         sel_joints = pm.ls(sl=True)
         for jnt in sel_joints:
             self.expression_data[jnt.name()] = [
@@ -2027,15 +2044,10 @@ class DataPasteHelper(common.Singleton):
                 round(pm.PyNode(jnt).scaleY.get(), 5),
                 round(pm.PyNode(jnt).scaleZ.get(), 5),
             ]
-
         self.joint_number = len(sel_joints)
-
         pm.text(self.task_info_control,
                 e=True,
                 label=u"已经复制%s根骨骼的信息" % self.joint_number)
-
-        # print self.expression_data
-
         return True
 
     def select_source_object(self):
@@ -2048,47 +2060,179 @@ class DataPasteHelper(common.Singleton):
         pm.select(target_objects)
         return
 
+    def convert_check_list(self, check_list=[]):
+        new_list = [1, 1, 1]
+        if check_list[0]:
+            new_list[0] = -1
+        else:
+            new_list[0] = 1
+
+        if check_list[1]:
+            new_list[1] = -1
+        else:
+            new_list[1] = 1
+
+        if check_list[2]:
+            new_list[2] = -1
+        else:
+            new_list[2] = 1
+        return new_list
+
     def paste_expression(self):
         work_mode_list = ['mirror', 'flip', 'paste']
         current_mode_index = pm.radioButtonGrp(
             self.work_mode_control, q=True, sl=True)
         work_mode = work_mode_list[current_mode_index - 1]
-
+        translate_offset_value = self.convert_check_list(
+            pm.checkBoxGrp(self.translate_offset_value, q=True, va3=True))
+        rotate_offset_value = self.convert_check_list(
+            pm.checkBoxGrp(self.rotate_offset_value, q=True, va3=True))
+        scale_offset_value = self.convert_check_list(
+            pm.checkBoxGrp(self.scale_offset_value, q=True, va3=True))
         self.target_list = []
         for jnt in self.expression_data.keys():
             search_field = pm.textFieldGrp(
                 self.search_field_control, q=True, text=True)
             replace_field = pm.textFieldGrp(
                 self.replace_field_control, q=True, text=True)
-
+            target_jnt = jnt.replace(search_field, replace_field)
+            self.target_list.append(target_jnt)
             value = self.expression_data[jnt]
-
             if work_mode == 'mirror':
-                target_jnt = ''
-                if search_field in jnt:
-                    target_jnt = jnt.replace(search_field, replace_field)
-                    self.target_list.append(target_jnt)
-                elif replace_field in jnt:
-                    target_jnt = jnt.replace(replace_field, search_field)
-                    self.target_list.append(target_jnt)
-                else:
-                    target_jnt = jnt
-                    self.target_list.append(target_jnt)
-                common.moving_target(
-                    target=target_jnt,
-                    value=[
-                        value[0] * -1,
-                        value[1],
-                        value[2],
-                        value[3],
-                        value[4] * -1,
-                        value[5] * -1,
-                        value[6],
-                        value[7],
-                        value[8],
-                    ],
-                )
+                new_value = [
+                    value[0] * translate_offset_value[0],
+                    value[1] * translate_offset_value[1],
+                    value[2] * translate_offset_value[2],
+                    value[3] * rotate_offset_value[0],
+                    value[4] * rotate_offset_value[1],
+                    value[5] * rotate_offset_value[2],
+                    value[6] * scale_offset_value[0],
+                    value[7] * scale_offset_value[1],
+                    value[8] * scale_offset_value[2]
+                ]
+                pm.PyNode(target_jnt).translate.set(
+                    [new_value[0], new_value[1], new_value[2]])
+                pm.PyNode(target_jnt).rotate.set(
+                    [new_value[3], new_value[4], new_value[5]])
+                pm.PyNode(target_jnt).scale.set(
+                    [new_value[6], new_value[7], new_value[8]])
         else:
             pass
 
         return True
+
+
+class DataHelper(common.Singleton):
+    def __init__(self):
+        super(DataHelper, self).__init__()
+
+        self.show()
+
+    def sdk_layout(self, parent):
+        layout = pm.frameLayout(
+            p=parent, label="SDK Mirror Helper", bgs=True, mw=10, mh=10)
+        pm.textFieldGrp(label="Search", cw2=[80,150])
+        pm.textFieldGrp(label="Replace", cw2=[80,150])
+        pm.setParent(layout)
+        return layout
+
+    def show(self):
+        if pm.window("xdDataHelperWnd", ex=True):
+            pm.deleteUI("xdDataHelperWnd")
+        pm.window(
+            "xdDataHelperWnd",
+            t=u"数据镜像操作助手",
+            mb=True)
+
+        form_layout = pm.formLayout()
+
+        work_mode_layout = pm.rowColumnLayout(nr=1,p=form_layout)
+        pm.text(label=u"工作模式：")
+        collection1 = pm.radioCollection()
+        rb1 = pm.radioButton(label='SDK')
+        rb2 = pm.radioButton(label='Attribute')
+        pm.setParent('..')
+        pm.setParent(work_mode_layout)
+
+        container_layout = pm.columnLayout(adj=1, p=form_layout)
+        self.sdk_layout(parent=container_layout)
+        pm.setParent(container_layout)
+
+        mirror_btn = pm.button(label="Mirror", p=form_layout)
+
+        # column_layout = pm.columnLayout(adj=1, rs=2)
+        # self.work_mode_control = pm.radioButtonGrp(
+        #     p=column_layout,
+        #     label=u"工作模式：",
+        #     labelArray3=[u'镜像', u'翻转', u'粘贴'],
+        #     numberOfRadioButtons=3,
+        #     cw4=[60, 60, 60, 60],
+        #     sl=1)
+
+        # pm.frameLayout(p=column_layout, label=u"约束轴", mw=5, mh=5, bgs=True)
+        # self.translate_offset_value = pm.checkBoxGrp(
+        #     label="Translate:",
+        #     numberOfCheckBoxes=3,
+        #     labelArray3=['X', 'Y', 'Z'],
+        #     va3=[True, False, False],
+        #     cw4=[60, 50, 50, 50])
+        # self.rotate_offset_value = pm.checkBoxGrp(
+        #     label="Rotate:",
+        #     numberOfCheckBoxes=3,
+        #     labelArray3=['X', 'Y', 'Z'],
+        #     va3=[False, True, True],
+        #     cw4=[60, 50, 50, 50])
+        # self.scale_offset_value = pm.checkBoxGrp(
+        #     label="Scale:",
+        #     numberOfCheckBoxes=3,
+        #     labelArray3=['X', 'Y', 'Z'],
+        #     va3=[False, False, False],
+        #     cw4=[60, 50, 50, 50])
+        # pm.setParent("..")
+
+        # self.label_control = pm.text(
+        #     p=column_layout, label=u"搜索和替换选项：", al="left")
+        # self.search_field_control = pm.textFieldGrp(
+        #     p=column_layout, label=u"搜索：", cw2=[60, 240], text="_L_")
+        # self.replace_field_control = pm.textFieldGrp(
+        #     p=column_layout, label=u"替换：", cw2=[60, 240], text="_R_")
+        # self.task_info_control = pm.text(
+        #     p=column_layout,
+        #     label=u"已经复制%s个对象的通道栏数据" % self.joint_number,
+        #     w=300,
+        #     al="left")
+        # pm.setParent(column_layout)
+
+        # self.copy_button = pm.button(
+        #     p=form_layout,
+        #     label=u"复制数据", w=80, c=lambda *args: self.copy_expression())
+        # self.select_source_button = pm.button(
+        #     p=form_layout,
+        #     label=u"选择来源",
+        #     w=80, c=lambda *args: self.select_source_object())
+        # self.select_target_button = pm.button(
+        #     p=form_layout,
+        #     label=u"选择目标",
+        #     w=80, c=lambda *args: self.select_target_object())
+        # self.paste_button = pm.button(
+        #     p=form_layout,
+        #     label=u"拷贝数据", w=80, c=lambda *args: self.paste_expression())
+
+        pm.radioCollection(collection1, edit=True, select=rb1)
+
+        pm.formLayout(
+            form_layout, edit=True,
+            attachForm=[
+                (work_mode_layout, "top", 5),
+                (work_mode_layout, "left", 10),
+                (work_mode_layout, "right", 10),
+                (container_layout, 'left', 10),
+                (container_layout, 'right', 10),
+                (mirror_btn, 'left', 10),
+                (mirror_btn, 'right', 10),
+                (mirror_btn, 'bottom', 10),
+            ],
+            attachControl=[
+                (container_layout, 'top', 10, work_mode_layout),
+            ])
+        pm.showWindow("xdDataHelperWnd")

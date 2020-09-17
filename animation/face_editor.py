@@ -2,18 +2,17 @@
 # coding: utf-8
 # @Time    : 2020/9/7 9:39
 # @Author  : Li XiaoJun
-# @Site    : 
+# @Site    :
 # @File    : face_editor.py
 
-import os
 import json
+import os
 from imp import reload
 
-from animation.common import moving_target
-from animation.helper import str_to_list, manager_version, zero_locator
-from pymel import core as pm
 from animation import common
 from animation import test_node
+from animation.helper import manager_version
+from pymel import core as pm
 
 reload(common)
 reload(test_node)
@@ -119,7 +118,10 @@ class FaceEditor(common.Singleton):
         self.json_folder = ''
 
         self.face_data = {}
-        self.face = None
+        # self.face_node = None
+
+        self.current_module = None
+        self.current_controller_index = None
 
         self.pre_build_window()
         self.show()
@@ -151,27 +153,19 @@ class FaceEditor(common.Singleton):
             p="editor_main_layout",
             bc=lambda *args: self.action_json_folder())
 
-        pm.optionMenuGrp(
-            "module_selector_widget",
-            label="Module",
-            adj=2,
-            cw2=[50, 100],
-            p="editor_main_layout",
-            cc=lambda *args: self.action_change_module())
-        if len(self.face_data.keys()) > 0:
-            for menu_item in self.face_data.keys():
-                pm.menuItem(label=menu_item)
+        self.widget_module_selector()
 
         pm.frameLayout(
             "controller_list_grp", label="Controller List:", w=180, h=180)
         pm.textScrollList(
             "controller_list_widget",
-            sc=lambda *args: self.action_selected_controller())  # 控制器列表(Controller list)控件
+            sc=lambda *args: self.action_selected_controller())
         pm.popupMenu()
         pm.menuItem(
-            label=u"添加新的模块")
+            label=u"创建新的控制器",
+            c=lambda *args: self.new_controller_wnd())
         pm.menuItem(
-            label=u"删除选择模板")
+            label=u"删除选择控制器")
         # pm.menuItem(divider=True)
         # pm.menuItem(
         #     label=u"恢复初始状态")
@@ -181,32 +175,40 @@ class FaceEditor(common.Singleton):
         pm.frameLayout(
             "controller_info_grp",
             label="Controller Basic info:", bgs=True, mh=6)
-        pm.textFieldButtonGrp(
+        pm.textFieldGrp(
             "controller_name_widget",
             label=u"控制器名",
-            cw3=[60, 200, 140],
-            bl=u"更新")
-        pm.textFieldButtonGrp(
+            cw2=[60, 200])
+        pm.textFieldGrp(
             "controller_group_widget",
             label=u"控制器组",
-            cw3=[60, 200, 140],
-            bl=u"更新")
+            cw2=[60, 200],
+            # tcc=lambda *args: self.action_controller_group_widget()
+        )
         pm.textFieldButtonGrp(
             "controller_bone_widget",
             label=u"挂点位置",
             cw3=[60, 200, 140],
-            bl=u"更新")
+            bl=u"更新",
+            # bc=lambda *args: self.action_controller_bone_widget(
+            #     method="button"),
+            # tcc=lambda *args: self.action_controller_bone_widget(
+            #     method="text")
+        )
         pm.floatFieldGrp(
             "controller_offset_widget",
             numberOfFields=3,
             pre=3,
             label=u'挂点偏移',
-            cw4=[60, 50, 50, 50])
+            cw4=[60, 50, 50, 50],
+            # cc=lambda *args: self.action_controller_off_widget()
+        )
         pm.checkBoxGrp(
             "axis_group_widget",
             label=u"Axis:",
             labelArray3=['X', 'Y', 'Z'],
             cw4=[60, 50, 50, 50],
+            # cc=lambda *args: self.action_change_axis_state(),
             numberOfCheckBoxes=3)
         pm.setParent("..")
 
@@ -256,6 +258,37 @@ class FaceEditor(common.Singleton):
 
         pm.showWindow("faceEditorWnd")
 
+    def widget_module_selector(self):
+        pm.optionMenuGrp(
+            "module_selector_widget",
+            label="Module",
+            adj=2,
+            cw2=[50, 100],
+            p="editor_main_layout",
+            cc=lambda *args: self.action_change_module())
+        if len(self.face_data.keys()) > 0:
+            for menu_item in self.face_data.keys():
+                pm.menuItem(label=menu_item)
+
+    def action_change_module(self):
+        """
+        切换模块时调用的方法
+
+        :return:
+        """
+        selected_module = pm.optionMenuGrp(
+            "module_selector_widget", q=True, value=True)
+        # print(selected_module)
+        self.current_module = self.face_data[selected_module]
+        # print(self.select_module)
+        pm.textScrollList("controller_list_widget", e=True, ra=True)
+        self.clean_controller_widget_data()
+        self.clean_axis_widget("x")
+        self.clean_axis_widget("y")
+        self.clean_axis_widget("z")
+        self.init_system()
+        return
+
     def axis_attr_tab(self, attr="x"):
         layout = pm.frameLayout(
             "axis_{}_tab".format(attr),
@@ -268,6 +301,7 @@ class FaceEditor(common.Singleton):
         pm.textScrollList(
             "axis_{}_joint_list".format(attr),
             p="axis_{}_form".format(attr),
+            ams=True,
             w=174,
             sc=lambda *args: self.action_axis_list(
                 widget="axis_{}_joint_list".format(attr)))
@@ -277,10 +311,31 @@ class FaceEditor(common.Singleton):
             c=lambda *args: self.axis_list_signal(attr=attr, method="post"))
         pm.menuItem(
             label=u"移除选择骨骼",
-            c=lambda *args: self.axis_list_signal(attr=attr, method="delete"))
+            c=lambda *args: self.axis_list_signal(
+                attr=attr, method="delete", target="select"))
+        pm.menuItem(
+            label=u"移除所有骨骼",
+            c=lambda *args: self.axis_list_signal(
+                attr=attr, method="delete", target="all"))
         pm.menuItem(divider=True)
         pm.menuItem(
             label=u"恢复初始状态")
+        pm.menuItem(
+            label=u"更新Max范围数值",
+            c=lambda *args: self.axis_list_signal(
+                attr=attr,
+                method="update",
+                update="Max",
+                source="scene",
+            ))
+        pm.menuItem(
+            label=u"更新Min范围数值",
+            c=lambda *args: self.axis_list_signal(
+                attr=attr,
+                method="update",
+                update="Min",
+                source="scene",
+            ))
 
         pm.floatSliderGrp(
             "axis_{}_test_widget".format(attr),
@@ -397,22 +452,26 @@ class FaceEditor(common.Singleton):
 
         :return:
         """
-        pm.menu(label=u"设置", tearOff=False)
+        pm.menu(label=u"文件", tearOff=False)
         pm.menuItem(
-            label=u"设置Json存放目录",
-            c=lambda *args: self.setting_json_folder())
-        pm.menuItem(
-            label=u"调试模式", cb=False)
-
-        pm.menu(label=u"模块", tearOff=False)
+            label=u"保存数据",
+            c=lambda *args: self.save_face_data())
+        pm.menuItem(divider=True)
         pm.menuItem(
             label=u"创建新模块",
             c=lambda *args: self.new_module())
         pm.menuItem(
             label=u"创建控制器",
-            c=lambda *args: self.new_controller())
+            c=lambda *args: self.new_controller_wnd())
 
-        pm.menu(label=u"Test", tearOff=False)
+        # pm.menu(label=u"设置", tearOff=False)
+        # pm.menuItem(
+        #     label=u"设置Json存放目录",
+        #     c=lambda *args: self.setting_json_folder())
+        # pm.menuItem(
+        #     label=u"调试模式", cb=False)
+
+        pm.menu(label=u"测试", tearOff=False)
         pm.menuItem(
             label=u"创建测试用控制器",
             c=lambda *args: self.new_test_controller())
@@ -427,26 +486,27 @@ class FaceEditor(common.Singleton):
         """
         pm.textFieldButtonGrp(
             "config_file_widget", e=True, text=self.json_folder)
-
         # 填充controller list
         current_module = pm.optionMenuGrp(
             "module_selector_widget", q=True, value=True)
-        for controller in self.face_data[current_module]:
-            pm.textScrollList("controller_list_widget", e=True,
-                              a=controller["controllerName"])
 
-        pm.textScrollList("controller_list_widget", e=True, sii=1)
-
-        controller_index = int(pm.textScrollList(
-            "controller_list_widget", q=True, sii=True)[0])
-        controller_data = self.face_data[current_module][controller_index - 1]
-        self.update_controller_widget_data(data=controller_data)
+        self.current_module = self.face_data[current_module]
+        if len(self.current_module) > 0:
+            for controller in self.current_module:
+                pm.textScrollList(
+                    "controller_list_widget",
+                    e=True,
+                    a=controller["ControllerName"])
+            # textScrollList这个份控件的下标默认为1，和python列表默认下标为0不同
+            pm.textScrollList("controller_list_widget", e=True, sii=1)
+            self.update_controller_widget_data(
+                controller_data=self.face_data[current_module][0])
 
     def pre_build_window(self):
         if pm.optionVar(q='faceEditorConfig'):
             self.json_folder = pm.optionVar(q='faceEditorConfig')
             self.face_data = common.read_json(self.json_folder)
-            # self.face = FaceData(common.read_json(self.json_folder))
+            # self.face_node = FaceData(common.read_json(self.json_folder))
 
     def _closed_window_cmd(self):
         pm.optionVar(sv=('faceEditorConfig', self.json_folder))
@@ -597,7 +657,9 @@ class FaceEditor(common.Singleton):
         if pm.window("moduleBuilderWnd", ex=True):
             pm.deleteUI("moduleBuilderWnd")
 
-    def build_eye_controller(self, data=[]):
+    def build_eye_controller(self, data=None):
+        if data is None:
+            data = []
         face_data = common.read_json(self.json_folder)
         print(face_data)
 
@@ -606,7 +668,9 @@ class FaceEditor(common.Singleton):
         with open(self.json_folder, "w") as f:
             json.dump(face_data, f, indent=4)
 
-    def build_mouth_controller(self, data=[]):
+    def build_mouth_controller(self, data=None):
+        if data is None:
+            data = []
         face_data = common.read_json(self.json_folder)
         print(face_data)
 
@@ -615,44 +679,126 @@ class FaceEditor(common.Singleton):
         with open(self.json_folder, "w") as f:
             json.dump(face_data, f, indent=4)
 
-    def new_controller(self):
+    def new_controller_wnd(self):
         if pm.window("controllerBuilderWnd", ex=True):
             pm.deleteUI("controllerBuilderWnd")
 
-        pm.window("controllerBuilderWnd", title="Module Builder")
-        main_layout = pm.columnLayout(adj=1)
-        module_parent = pm.textFieldGrp(label="Module")
+        pm.window("controllerBuilderWnd", title="Controller Builder")
+        pm.columnLayout(adj=1)
 
-        # module_selector = pm.optionMenuGrp(
-        #     label="Module:", p=base_frame, cw2=[48, 150])
-        # pm.menuItem(label="eye")
-        # pm.menuItem(label="brow")
-        # pm.menuItem(label="nose")
-        # pm.menuItem(label="mouth")
-        # pm.menuItem(label="ear")
-        # pm.menuItem(label="feature")
-        #
-        # pm.button(
-        #     label="Build Module",
-        #     p=base_frame,
-        #     c=lambda *args: self.build_module(
-        #         module=pm.optionMenuGrp(module_selector, q=True, value=True)))
+        controller_info_grp = pm.frameLayout(
+            label="Controller Basic info:", bgs=True, mh=6, mw=6)
+        module_parent = pm.optionMenuGrp(
+            label="Module", adj=2,
+            cw2=[60, 100])
+        if len(self.face_data.keys()) > 0:
+            for menu_item in self.face_data.keys():
+                pm.menuItem(label=menu_item)
+        controller_name_widget = pm.textFieldGrp(
+            label=u"控制器名",
+            cw2=[60, 240])
+        controller_group_widget = pm.textFieldGrp(
+            label=u"控制器组",
+            cw2=[60, 240])
+        controller_bone_widget = pm.textFieldGrp(
+            label=u"挂点位置",
+            cw2=[60, 240])
+        controller_offset_widget = pm.floatFieldGrp(
+            numberOfFields=3,
+            pre=3,
+            label=u'挂点偏移',
+            cw4=[60, 50, 50, 50])
+        axis_group_widget = pm.checkBoxGrp(
+            label=u"Axis:",
+            labelArray3=['X', 'Y', 'Z'],
+            cw4=[60, 50, 50, 50],
+            numberOfCheckBoxes=3)
+
+        pm.button(
+            label="Add New Controller",
+            p=controller_info_grp,
+            c=lambda *args: add_controller())
+
+        pm.setParent("..")
 
         pm.showWindow("controllerBuilderWnd")
 
-        current_tab = pm.tabLayout("module_tabs", q=True, st=True)
-        pm.textFieldGrp(module_parent, e=True, text=current_tab)
+        menu_items_selected = pm.optionMenuGrp(
+            "module_selector_widget", q=True, sl=True)
+        pm.optionMenuGrp(module_parent, e=True, sl=menu_items_selected)
 
-    def clean_controller_widget_data(self, module):
+        # current_tab = pm.tabLayout("module_tabs", q=True, st=True)
+        # pm.textFieldGrp(module_parent, e=True, text=current_tab)
+
+        def add_controller():
+            module_selected = pm.optionMenuGrp(
+                module_parent, q=True, value=True)
+
+            controller_name = pm.textFieldGrp(
+                controller_name_widget, q=True, text=True)
+            controller_group = pm.textFieldGrp(
+                controller_group_widget, q=True, text=True)
+            controller_bone = pm.textFieldGrp(controller_bone_widget, q=True,
+                                              text=True)
+            controller_offset = pm.floatFieldGrp(controller_offset_widget,
+                                                 q=True, value=True)
+            axis_group = pm.checkBoxGrp(axis_group_widget, q=True, va3=True)
+
+            x_axis = ""
+            if axis_group[0]:
+                x_axis = "{}_X".format(controller_name)
+
+            y_axis = ""
+            if axis_group[1]:
+                y_axis = "{}_Y".format(controller_name)
+
+            z_axis = ""
+            if axis_group[2]:
+                z_axis = "{}_Z".format(controller_name)
+
+            new_controller = dict()
+            new_controller["ControllerName"] = controller_name
+            new_controller["ControllerGroupName"] = controller_group
+            new_controller["ControllerBoneName"] = controller_bone
+            new_controller["ControllerPositionOffset"] = [
+                controller_offset[0] * 0.01,
+                controller_offset[1] * 0.01,
+                controller_offset[2] * 0.01,
+            ]
+            new_controller["AxisControl"] = {
+                "ZAxis": {
+                    "BoneRange": [],
+                    "GroupName": z_axis
+                },
+                "XAxis": {
+                    "BoneRange": [],
+                    "GroupName": x_axis
+                },
+                "YAxis": {
+                    "BoneRange": [],
+                    "GroupName": y_axis
+                }
+            }
+
+            self.face_data[module_selected].append(new_controller)
+            common.write_json(dict_data=self.face_data,
+                              file_path=self.json_folder)
+
+            pm.deleteUI("controllerBuilderWnd")
+
+            pm.textScrollList(
+                "controller_list_widget", e=True, a=controller_name)
+            return
+
+    def clean_controller_widget_data(self):
         """
         清空控制器面板部件内的数据
 
-        :param module:
         :return:
         """
         # Controller Basic info frame
-        pm.textFieldButtonGrp("controller_name_widget", e=True, text="")
-        pm.textFieldButtonGrp("controller_group_widget", e=True, text="")
+        pm.textFieldGrp("controller_name_widget", e=True, text="")
+        pm.textFieldGrp("controller_group_widget", e=True, text="")
         pm.textFieldButtonGrp("controller_bone_widget", e=True, text="")
         pm.floatFieldGrp("controller_offset_widget", e=True,
                          value=[0, 0, 0, 0])
@@ -695,45 +841,44 @@ class FaceEditor(common.Singleton):
             e=True, v1=1, v2=1, v3=1)
         return
 
-    def update_controller_widget_data(self, data):
+    def update_controller_widget_data(self, controller_data):
         """
         为控制器面板部件填充数据
 
-        :param data: 单个控制器的字典类型数据
+        :param controller_data: 单个控制器的字典类型数据
         :return:
         """
-        pm.textFieldButtonGrp(
+        pm.textFieldGrp(
             "controller_name_widget",
-            e=True, text=data["controllerName"])
+            e=True, text=controller_data["ControllerName"])
+        pm.textFieldGrp(
+            "controller_group_widget", e=True,
+            text=controller_data["ControllerGroupName"])
         pm.textFieldButtonGrp(
-            "controller_group_widget",
-            e=True, text=data["ControllerGroupName"])
-        pm.textFieldButtonGrp(
-            "controller_bone_widget",
-            e=True, text=data["ControllerBoneName"])
+            "controller_bone_widget", e=True,
+            text=controller_data["ControllerBoneName"])
         pm.floatFieldGrp(
             "controller_offset_widget",
             e=True,
-            value=[
-                data["ControllerPositionOffset"][0],
-                data["ControllerPositionOffset"][1],
-                data["ControllerPositionOffset"][2], 0])
+            v1=controller_data["ControllerPositionOffset"][0] * 100,
+            v2=controller_data["ControllerPositionOffset"][1] * 100,
+            v3=controller_data["ControllerPositionOffset"][2] * 100)
 
-        if (data["AxisControl"]["XAxis"]["GroupName"]) == "":
+        if (controller_data["AxisControl"]["XAxis"]["GroupName"]) == "":
             pm.checkBoxGrp(
                 "axis_group_widget", e=True, v1=False)
         else:
             pm.checkBoxGrp(
                 "axis_group_widget", e=True, v1=True)
 
-        if (data["AxisControl"]["YAxis"]["GroupName"]) == "":
+        if (controller_data["AxisControl"]["YAxis"]["GroupName"]) == "":
             pm.checkBoxGrp(
                 "axis_group_widget", e=True, v2=False)
         else:
             pm.checkBoxGrp(
                 "axis_group_widget", e=True, v2=True)
 
-        if (data["AxisControl"]["ZAxis"]["GroupName"]) == "":
+        if (controller_data["AxisControl"]["ZAxis"]["GroupName"]) == "":
             pm.checkBoxGrp(
                 "axis_group_widget", e=True, v3=False)
         else:
@@ -741,33 +886,32 @@ class FaceEditor(common.Singleton):
                 "axis_group_widget", e=True, v3=True)
 
         # 为Axis部分填充数据
-        axis_x_joints_grp = data["AxisControl"]["XAxis"]
+        axis_x_joints_grp = controller_data["AxisControl"]["XAxis"]
         for axis_x_joint in axis_x_joints_grp["BoneRange"]:
             pm.textScrollList(
                 "axis_x_joint_list", e=True, a=axis_x_joint["BoneName"])
         if len(axis_x_joints_grp["BoneRange"]) > 0:
             pm.textScrollList("axis_x_joint_list", e=True, sii=1)
+        # 为XAxis骨骼的控制范围填充数据
+        self.update_axis_widget("x", controller_data)
 
-        axis_y_joints_grp = data["AxisControl"]["YAxis"]
+        axis_y_joints_grp = controller_data["AxisControl"]["YAxis"]
         for axis_y_joint in axis_y_joints_grp["BoneRange"]:
             pm.textScrollList(
                 "axis_y_joint_list", e=True, a=axis_y_joint["BoneName"])
         if len(axis_y_joints_grp["BoneRange"]) > 0:
             pm.textScrollList("axis_y_joint_list", e=True, sii=1)
+        # 为YAxis骨骼的控制范围填充数据
+        self.update_axis_widget("y", controller_data)
 
-        axis_z_joints_grp = data["AxisControl"]["ZAxis"]
+        axis_z_joints_grp = controller_data["AxisControl"]["ZAxis"]
         for axis_z_joint in axis_z_joints_grp["BoneRange"]:
             pm.textScrollList(
                 "axis_z_joint_list", e=True, a=axis_z_joint["BoneName"])
         if len(axis_z_joints_grp["BoneRange"]) > 0:
             pm.textScrollList("axis_z_joint_list", e=True, sii=1)
-
-        # 为XAxis骨骼的控制范围填充数据
-        self.update_axis_widget("x", data)
-        # 为YAxis骨骼的控制范围填充数据
-        self.update_axis_widget("y", data)
         # 为ZAxis骨骼的控制范围填充数据
-        self.update_axis_widget("z", data)
+        self.update_axis_widget("z", controller_data)
 
         return
 
@@ -784,25 +928,29 @@ class FaceEditor(common.Singleton):
             pm.floatFieldGrp(
                 "axis_{}_max_translate_field".format(attr),
                 e=True,
-                v1=axis_max_value[0], v2=axis_max_value[1],
-                v3=axis_max_value[2])
+                v1=axis_max_value[0] * 100,
+                v2=axis_max_value[1] * 100,
+                v3=axis_max_value[2] * 100)
             pm.floatFieldGrp(
                 "axis_{}_max_rotate_field".format(attr),
                 e=True,
-                v1=axis_max_value[3], v2=axis_max_value[4],
+                v1=axis_max_value[3],
+                v2=axis_max_value[4],
                 v3=axis_max_value[5])
             pm.floatFieldGrp(
                 "axis_{}_max_scale_field".format(attr),
                 e=True,
-                v1=axis_max_value[6], v2=axis_max_value[7],
+                v1=axis_max_value[6],
+                v2=axis_max_value[7],
                 v3=axis_max_value[8])
 
             axis_min_value = axis_attr_data["Min"]
             pm.floatFieldGrp(
                 "axis_{}_min_translate_field".format(attr),
                 e=True,
-                v1=axis_min_value[0], v2=axis_min_value[1],
-                v3=axis_min_value[2])
+                v1=axis_min_value[0] * 100,
+                v2=axis_min_value[1] * 100,
+                v3=axis_min_value[2] * 100)
             pm.floatFieldGrp(
                 "axis_{}_min_rotate_field".format(attr),
                 e=True,
@@ -814,24 +962,14 @@ class FaceEditor(common.Singleton):
                 v1=axis_min_value[6], v2=axis_min_value[7],
                 v3=axis_min_value[8])
 
-            if pm.objExists(data["controllerName"]):
+            if pm.objExists(data["ControllerName"]):
                 pm.floatSliderGrp(
                     "axis_{}_test_widget".format(attr), e=True, en=True)
                 pm.connectControl(
                     "axis_{}_test_widget".format(attr),
-                    pm.PyNode(data["controllerName"]).attr(
+                    pm.PyNode(data["ControllerName"]).attr(
                         "slider{}".format(attr.capitalize())))
         return
-
-    def action_change_module(self):
-        """
-        切换模块时调用的方法
-
-        :return:
-        """
-        selected_module = pm.optionMenuGrp(
-            "module_selector_widget", q=True, value=True)
-        print(selected_module)
 
     def action_selected_controller(self):
         """
@@ -841,18 +979,13 @@ class FaceEditor(common.Singleton):
         """
         current_module = pm.optionMenuGrp(
             "module_selector_widget", q=True, value=True)
-
         selected_index = int(pm.textScrollList(
             "controller_list_widget", q=True, sii=True)[0])
-        # print(selected_index)
-
         # 清除当前面板上面的数据
-        self.clean_controller_widget_data(module=current_module)
-
+        self.clean_controller_widget_data()
         # 填充数据
         controller_data = self.face_data[current_module][selected_index - 1]
-        # print(controller_data)
-        self.update_controller_widget_data(data=controller_data)
+        self.update_controller_widget_data(controller_data=controller_data)
 
     def new_test_controller(self):
         """
@@ -887,9 +1020,9 @@ class FaceEditor(common.Singleton):
             common.lock_and_hide_attr(
                 test_controller, translate=False, vis=True)
             test_controller.translate.set([
-                controller_offset[0] * 100,
-                controller_offset[1] * 100,
-                controller_offset[2] * 100])
+                controller_offset[0],
+                controller_offset[1],
+                controller_offset[2]])
 
             current_module = pm.optionMenuGrp(
                 "module_selector_widget", q=True, value=True)
@@ -923,6 +1056,7 @@ class FaceEditor(common.Singleton):
                 pm.setAttr("{}.sliderY".format(test_controller), e=True,
                            keyable=True)
                 driver_data_list = axis_data["YAxis"]["BoneRange"]
+                # print(driver_data_list)
                 for driver_data in driver_data_list:
                     build_driven(
                         driver=test_controller,
@@ -949,10 +1083,13 @@ class FaceEditor(common.Singleton):
                 pm.connectControl(
                     "axis_z_test_widget",
                     test_controller.attr("sliderZ"))
-
-            print(controller_offset)
-
+            # print(controller_offset)
+        print("Done!")
+        pm.deleteUI("controllerBuilderWnd")
         return
+
+    def update_test_controller(self):
+        pass
 
     def action_axis_list(self, widget):
         current_module = pm.optionMenuGrp(
@@ -962,7 +1099,7 @@ class FaceEditor(common.Singleton):
         controller_data = self.face_data[current_module][controller_index - 1]
 
         current_axis_selected = pm.textScrollList(widget, q=True, si=True)
-        pm.select(current_axis_selected[0])
+        pm.select(current_axis_selected)
         # print(current_axis_selected)
         axis_tab_list = pm.tabLayout("axis_setting_grp", q=True, tl=True)
         axis_tab_index = pm.tabLayout("axis_setting_grp", q=True, sti=True)
@@ -975,7 +1112,8 @@ class FaceEditor(common.Singleton):
         if tab_label == "ZAxis":
             self.update_axis_widget(attr="z", data=controller_data)
 
-    def axis_list_signal(self, attr="", method="", update="", source=""):
+    def axis_list_signal(self, attr="", method="",
+                         update="", source="", target="select"):
         """
         XAxis内的控件的信号
 
@@ -991,118 +1129,141 @@ class FaceEditor(common.Singleton):
         axis_tab_label = axis_tab_list[axis_tab_index - 1]
 
         if method == "delete":
-            current_selected = int(pm.textScrollList(
-                "axis_{}_joint_list".format(attr),
-                q=True, sii=True)[0])
-            self.face_data[current_module][controller_index - 1][
-                "AxisControl"][axis_tab_label]["BoneRange"].pop(
-                current_selected - 1)
-            pm.textScrollList("axis_{}_joint_list".format(attr), e=True, rii=1)
+            if target == "select":
+                current_selected = int(pm.textScrollList(
+                    "axis_{}_joint_list".format(attr),
+                    q=True, sii=True)[0])
+                self.face_data[current_module][controller_index - 1][
+                    "AxisControl"][axis_tab_label]["BoneRange"].pop(
+                    current_selected - 1)
+                pm.textScrollList(
+                    "axis_{}_joint_list".format(attr),
+                    e=True, rii=current_selected)
+            elif target == "all":
+                self.face_data[current_module][controller_index - 1][
+                    "AxisControl"][axis_tab_label]["BoneRange"] = []
+                pm.textScrollList(
+                    "axis_{}_joint_list".format(attr), e=True, ra=True)
         if method == "post":
-            new_jnt = pm.ls(sl=True)[0]
-            new_jnt_default_value = get_channel_values(new_jnt.name())
-            new_jnt_data = {
-                "BoneName": new_jnt.name(),
-                "Max": [0, 0, 0, 0, 0, 0, 1, 1, 1],
-                "Min": [0, 0, 0, 0, 0, 0, 1, 1, 1],
-                "def": new_jnt_default_value,
-            }
-            self.face_data[current_module][controller_index - 1][
-                "AxisControl"][axis_tab_label]["BoneRange"].append(
-                new_jnt_data)
-            pm.textScrollList(
-                "axis_{}_joint_list".format(attr), e=True, a=new_jnt.name())
-            pm.textScrollList(
-                "axis_{}_joint_list".format(attr), e=True, si=new_jnt.name())
+            for new_jnt in pm.ls(sl=True):
+                # new_jnt = pm.ls(sl=True)[0]
+                if new_jnt.name() not in (pm.textScrollList(
+                        "axis_{}_joint_list".format(attr), q=True, ai=True)):
+                    new_jnt_default_value = get_channel_values(new_jnt.name())
+                    new_jnt_data = {
+                        "BoneName": new_jnt.name(),
+                        "Max": [0, 0, 0, 0, 0, 0, 1, 1, 1],
+                        "Min": [0, 0, 0, 0, 0, 0, 1, 1, 1],
+                        "def": new_jnt_default_value,
+                    }
+                    self.face_data[current_module][controller_index - 1][
+                        "AxisControl"][axis_tab_label]["BoneRange"].append(
+                        new_jnt_data)
+                    pm.textScrollList(
+                        "axis_{}_joint_list".format(attr), e=True,
+                        a=new_jnt.name())
+                    pm.textScrollList(
+                        "axis_{}_joint_list".format(attr), e=True,
+                        si=new_jnt.name())
         if method == "update":
-            current_selected_index = int(pm.textScrollList(
-                "axis_{}_joint_list".format(attr), q=True, sii=True)[0])
-            current_selected = pm.textScrollList(
-                "axis_{}_joint_list".format(attr), q=True, si=True)[0]
-            default_jnt_value = self.face_data[current_module][
-                controller_index - 1]["AxisControl"][axis_tab_label][
-                "BoneRange"][current_selected_index - 1]["def"]
-
-            offset_value = None
-
-            if update == "Max":
-                if source == "scene":
-                    current_jnt_value = get_channel_values(current_selected)
-                    offset_value = [
-                        current_jnt_value[0] - default_jnt_value[0],
-                        current_jnt_value[1] - default_jnt_value[1],
-                        current_jnt_value[2] - default_jnt_value[2],
-                        current_jnt_value[3] - default_jnt_value[3],
-                        current_jnt_value[4] - default_jnt_value[4],
-                        current_jnt_value[5] - default_jnt_value[5],
-                        current_jnt_value[6],
-                        current_jnt_value[7],
-                        current_jnt_value[8],
-                    ]
-                elif source == "panel":
-                    name = "axis_{}_max_translate_field".format(attr)
-                    offset_translate_value = pm.floatFieldGrp(
-                        name, q=True, value=True)
-                    name = "axis_{}_max_rotate_field".format(attr)
-                    offset_rotate_value = pm.floatFieldGrp(
-                        name, q=True, value=True)
-                    name = "axis_{}_max_scale_field".format(attr)
-                    offset_scale_value = pm.floatFieldGrp(
-                        name, q=True, value=True)
-                    offset_value = [
-                        offset_translate_value[0],
-                        offset_translate_value[1],
-                        offset_translate_value[2],
-                        offset_rotate_value[0],
-                        offset_rotate_value[1],
-                        offset_rotate_value[2],
-                        offset_scale_value[0],
-                        offset_scale_value[1],
-                        offset_scale_value[2],
-                    ]
-                self.face_data[current_module][
+            update_joints_index = pm.textScrollList(
+                "axis_{}_joint_list".format(attr), q=True, sii=True)
+            all_controller = pm.textScrollList(
+                "axis_{}_joint_list".format(attr), q=True, ai=True)
+            for update_joint_index in update_joints_index:
+                current_selected_index = int(update_joint_index)
+                current_selected = all_controller[current_selected_index - 1]
+                default_jnt_value = self.face_data[current_module][
                     controller_index - 1]["AxisControl"][axis_tab_label][
-                    "BoneRange"][current_selected_index - 1][
-                    "Max"] = offset_value
-            if update == "Min":
-                if source == "scene":
-                    current_jnt_value = get_channel_values(current_selected)
-                    offset_value = [
-                        current_jnt_value[0] - default_jnt_value[0],
-                        current_jnt_value[1] - default_jnt_value[1],
-                        current_jnt_value[2] - default_jnt_value[2],
-                        current_jnt_value[3] - default_jnt_value[3],
-                        current_jnt_value[4] - default_jnt_value[4],
-                        current_jnt_value[5] - default_jnt_value[5],
-                        current_jnt_value[6],
-                        current_jnt_value[7],
-                        current_jnt_value[8],
-                    ]
-                elif source == "panel":
-                    name = "axis_{}_min_translate_field".format(attr)
-                    offset_translate_value = pm.floatFieldGrp(
-                        name, q=True, value=True)
-                    name = "axis_{}_min_rotate_field".format(attr)
-                    offset_rotate_value = pm.floatFieldGrp(
-                        name, q=True, value=True)
-                    name = "axis_{}_min_scale_field".format(attr)
-                    offset_scale_value = pm.floatFieldGrp(
-                        name, q=True, value=True)
-                    offset_value = [
-                        offset_translate_value[0],
-                        offset_translate_value[1],
-                        offset_translate_value[2],
-                        offset_rotate_value[0],
-                        offset_rotate_value[1],
-                        offset_rotate_value[2],
-                        offset_scale_value[0],
-                        offset_scale_value[1],
-                        offset_scale_value[2],
-                    ]
-                self.face_data[current_module][
-                    controller_index - 1]["AxisControl"][axis_tab_label][
-                    "BoneRange"][current_selected_index - 1][
-                    "Min"] = offset_value
+                    "BoneRange"][current_selected_index - 1]["def"]
+                offset_value = None
+
+                if update == "Max":
+                    if source == "scene":
+                        current_jnt_value = get_channel_values(
+                            current_selected)
+                        offset_value = [
+                            current_jnt_value[0] - default_jnt_value[0],
+                            current_jnt_value[1] - default_jnt_value[1],
+                            current_jnt_value[2] - default_jnt_value[2],
+                            current_jnt_value[3] - default_jnt_value[3],
+                            current_jnt_value[4] - default_jnt_value[4],
+                            current_jnt_value[5] - default_jnt_value[5],
+                            current_jnt_value[6],
+                            current_jnt_value[7],
+                            current_jnt_value[8],
+                        ]
+                        self.face_data[current_module][
+                            controller_index - 1]["AxisControl"][
+                            axis_tab_label]["BoneRange"][
+                            current_selected_index - 1][
+                            "Max"] = offset_value
+                    elif source == "panel":
+                        name = "axis_{}_max_translate_field".format(attr)
+                        offset_translate_value = pm.floatFieldGrp(
+                            name, q=True, value=True)
+                        name = "axis_{}_max_rotate_field".format(attr)
+                        offset_rotate_value = pm.floatFieldGrp(
+                            name, q=True, value=True)
+                        name = "axis_{}_max_scale_field".format(attr)
+                        offset_scale_value = pm.floatFieldGrp(
+                            name, q=True, value=True)
+                        offset_value = [
+                            offset_translate_value[0] * 0.01,
+                            offset_translate_value[1] * 0.01,
+                            offset_translate_value[2] * 0.01,
+                            offset_rotate_value[0],
+                            offset_rotate_value[1],
+                            offset_rotate_value[2],
+                            offset_scale_value[0],
+                            offset_scale_value[1],
+                            offset_scale_value[2],
+                        ]
+                        self.face_data[current_module][
+                            controller_index - 1]["AxisControl"][
+                            axis_tab_label][
+                            "BoneRange"][current_selected_index - 1][
+                            "Max"] = offset_value
+                if update == "Min":
+                    if source == "scene":
+                        current_jnt_value = get_channel_values(
+                            current_selected)
+                        offset_value = [
+                            current_jnt_value[0] - default_jnt_value[0],
+                            current_jnt_value[1] - default_jnt_value[1],
+                            current_jnt_value[2] - default_jnt_value[2],
+                            current_jnt_value[3] - default_jnt_value[3],
+                            current_jnt_value[4] - default_jnt_value[4],
+                            current_jnt_value[5] - default_jnt_value[5],
+                            current_jnt_value[6],
+                            current_jnt_value[7],
+                            current_jnt_value[8],
+                        ]
+                    elif source == "panel":
+                        name = "axis_{}_min_translate_field".format(attr)
+                        offset_translate_value = pm.floatFieldGrp(
+                            name, q=True, value=True)
+                        name = "axis_{}_min_rotate_field".format(attr)
+                        offset_rotate_value = pm.floatFieldGrp(
+                            name, q=True, value=True)
+                        name = "axis_{}_min_scale_field".format(attr)
+                        offset_scale_value = pm.floatFieldGrp(
+                            name, q=True, value=True)
+                        offset_value = [
+                            offset_translate_value[0] * 0.01,
+                            offset_translate_value[1] * 0.01,
+                            offset_translate_value[2] * 0.01,
+                            offset_rotate_value[0],
+                            offset_rotate_value[1],
+                            offset_rotate_value[2],
+                            offset_scale_value[0],
+                            offset_scale_value[1],
+                            offset_scale_value[2],
+                        ]
+                    self.face_data[current_module][
+                        controller_index - 1]["AxisControl"][axis_tab_label][
+                        "BoneRange"][current_selected_index - 1][
+                        "Min"] = offset_value
 
         common.write_json(dict_data=self.face_data, file_path=self.json_folder)
 
@@ -1112,6 +1273,79 @@ class FaceEditor(common.Singleton):
 
         return
 
+    def action_change_axis_state(self):
+        current_module = pm.optionMenuGrp(
+            "module_selector_widget", q=True, value=True)
+        controller_index = int(pm.textScrollList(
+            "controller_list_widget", q=True, sii=True)[0])
+
+        axis_control = self.face_data[current_module][controller_index - 1][
+            "AxisControl"]
+
+        state_array = pm.checkBoxGrp("axis_group_widget", q=True, va3=True)
+        if state_array[0]:
+            axis_control["XAxis"]["GroupName"] = "{}_X".format(
+                self.face_data[current_module][controller_index - 1][
+                    "ControllerName"])
+        else:
+            axis_control["XAxis"]["GroupName"] = ""
+
+        if state_array[1]:
+            axis_control["YAxis"]["GroupName"] = "{}_Y".format(
+                self.face_data[current_module][controller_index - 1][
+                    "ControllerName"])
+        else:
+            axis_control["YAxis"]["GroupName"] = ""
+
+        if state_array[2]:
+            axis_control["ZAxis"]["GroupName"] = "{}_Z".format(
+                self.face_data[current_module][controller_index - 1][
+                    "ControllerName"])
+        else:
+            axis_control["ZAxis"]["GroupName"] = ""
+        # common.write_json(dict_data=self.face_data, file_path=self.json_folder)
+
+        return
+
+    def action_controller_group_widget(self):
+        current_module = pm.optionMenuGrp(
+            "module_selector_widget", q=True, value=True)
+        controller_index = int(pm.textScrollList(
+            "controller_list_widget", q=True, sii=True)[0])
+        text = pm.textFieldGrp("controller_group_widget", q=True, text=True)
+        self.face_data[current_module][controller_index - 1][
+            "ControllerGroupName"] = text
+        # common.write_json(dict_data=self.face_data, file_path=self.json_folder)
+        return
+
+    def action_controller_bone_widget(self, method):
+        current_module = pm.optionMenuGrp(
+            "module_selector_widget", q=True, value=True)
+        controller_index = int(pm.textScrollList(
+            "controller_list_widget", q=True, sii=True)[0])
+        if method == "text":
+            value = pm.textFieldButtonGrp(
+                "controller_bone_widget", q=True, text=True)
+            self.face_data[current_module][controller_index - 1][
+                "ControllerBoneName"] = value
+        if method == "button":
+            value = pm.ls(sl=True)[0].name()
+            print(value)
+            pm.textFieldButtonGrp("controller_bone_widget", e=True, text=value)
+            self.face_data[current_module][controller_index - 1][
+                "ControllerBoneName"] = value
+        # common.write_json(dict_data=self.face_data, file_path=self.json_folder)
+        return
+
+    def action_controller_off_widget(self):
+        pass
+
+    def save_face_data(self):
+        common.write_json(
+            dict_data=self.face_data,
+            file_path=self.json_folder)
+        return
+
 
 class FaceData:
     def __init__(self, data):
@@ -1119,7 +1353,7 @@ class FaceData:
         self.brow = None
         self.nose = None
         self.mouth = None
-        self.feature = None
+        self.face = None
 
         self.init_from_data(data)
 
@@ -1128,6 +1362,12 @@ class FaceData:
             self.eye = Controller(data=data["eyeController"])
         if "mouthController" in data.keys():
             self.mouth = Controller(data=data["mouthController"])
+        if "browController" in data.keys():
+            self.brow = Controller(data=data["browController"])
+        if "noseController" in data.keys():
+            self.mouth = Controller(data=data["noseController"])
+        if "faceController" in data.keys():
+            self.face = Controller(data=data["faceController"])
 
 
 class Controller:
@@ -1143,7 +1383,7 @@ class Controller:
     def init_from_dict(self, dict_data=None):
         if dict_data is None:
             dict_data = {}
-        self.controllerName = dict_data["controllerName"]
+        self.controllerName = dict_data["ControllerName"]
         self.controllerGroupName = dict_data["ControllerGroupName"]
         self.controllerBoneName = dict_data["ControllerBoneName"]
         self.controllerPositionOffset = dict_data["ControllerPositionOffset"]
