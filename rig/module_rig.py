@@ -4,6 +4,7 @@
 # @Author  : Li XiaoJun
 # @Site    :
 # @File    : module_rig.py
+from imp import reload
 
 from pymel import core as pm
 # import maya.mel as mel
@@ -16,7 +17,7 @@ reload(common)
 reload(helper)
 reload(node)
 
-tool_version = 0.3
+tool_version = 0.4
 
 icon_path = "C:/Users/86181/Documents/maya/2016.5/zh_CN/prefs/icons/"
 head_icon = icon_path + "head.png"
@@ -55,51 +56,254 @@ class ModuleRig(common.Singleton):
             mb=True,
             cc=lambda *args: self._closed_window_cmd())
         self.menu_bar()
-        main_layout = pm.formLayout()
 
+        self.main_layout()
+
+        pm.showWindow("xdModuleRigUI")
+
+    def initialize(self):
+        """
+        初始化窗口的数值
+        :return:
+        """
+        if pm.objExists("head_config"):
+            self.init_tree_view()
+            self.head_config_node = "head_config"
+
+    def main_layout(self):
+        self.main_form_layout = pm.formLayout(vis=False)
         tool_tab_bar = pm.tabLayout(
-            innerMarginWidth=5, innerMarginHeight=5, p=main_layout)
-
-        face_action_bar = pm.rowColumnLayout(p=tool_tab_bar, nr=1)
-        pm.symbolButton(
-            image=head_icon,
-            ann=u"创建头部根骨骼模块",
-            c=lambda *args: self.create_head_root_module())
-
-        pm.symbolButton(
-            image=eye_icon,
-            ann=u"创建眼睛绑定模块",
-            c=lambda *args: self.create_eye_module())
-        pm.separator(w=2)
-        pm.button(
-            label="Jaw And Mouth",
-            ann=u"创建下巴和舌头、牙齿模块",
-            c=lambda *args: self.create_jaw_and_chin_module())
-        pm.separator(w=2)
-        pm.button(
-            label="Nose",
-            ann=u"创建鼻子模块",
-            c=lambda *args: self.create_nose_module())
-        pm.separator(w=2)
-        pm.button(
-            label="Ears",
-            ann=u"创建耳朵模块",
-            c=lambda *args: self.create_ears_module())
-
+            innerMarginWidth=5, innerMarginHeight=5, p=self.main_form_layout)
+        # rig_tab = self.tab_rig(parent=tool_tab_bar)
+        module_tab = self.tab_module(parent=tool_tab_bar)
+        add_controls_tab = self.tab_add_controls(parent=tool_tab_bar)
         pm.tabLayout(
             tool_tab_bar,
             edit=True,
             tabLabel=(
-                (face_action_bar, u'组件'),
+                # (rig_tab, u"Rig"),
+                (module_tab, u"Module"),
+                (add_controls_tab, u"Add Controls"),
             ))
+        pm.formLayout(
+            self.main_form_layout, edit=True,
+            attachForm=[
+                (tool_tab_bar, "top", 0),
+                (tool_tab_bar, "left", 0),
+                (tool_tab_bar, "right", 0),
+                (tool_tab_bar, "bottom", 0),
+            ],
+            attachControl=[
+                # (data_form, 'top', 2, tool_tab_bar),
+            ])
 
-        data_form = pm.paneLayout(configuration='vertical2', p=main_layout)
+        if self.has_rig():
+            pm.formLayout(self.main_form_layout, e=True, vis=True)
+
+        return self.main_form_layout
+
+    def has_rig(self):
+        has_main_node = pm.objExists("main")
+        if has_main_node:
+            has_name_attr = pm.attributeQuery("name", node="main", ex=True)
+            if (has_name_attr and
+                    (pm.PyNode("main").attr("name").get() == "character")):
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    def init_tree_view(self):
+        """
+        初始化
+        :return:
+        """
+        config_list = pm.PyNode("head_config").getChildren()
+        for config_node in config_list:
+            module_name = pm.PyNode(config_node).attr("module").get()
+            module_parent = pm.PyNode(config_node).attr("parentModule").get()
+            new_item = [module_name, module_parent]
+            print(new_item)
+            pm.treeView(self.tree_view, e=True, addItem=new_item)
+        return
+
+    def refresh_tree_view(self):
+        print(pm.treeView(self.tree_view, q=True, ch=True))
+
+    def _closed_window_cmd(self):
+        pass
+
+    def menu_bar(self):
+        menu_rig = pm.menu(label="Rig", tearOff=False)
+        pm.menuItem(
+            label=u"New Rig",
+            ann=u"单击此按钮创建初始Rig结构。在这之后，你可以添加module和执行其他actions",
+            c=lambda *args: self.action_create_rig_structure())
+
+        menu_module = pm.menu(label="Module", tearOff=False)
+        submenu_module_base = pm.menuItem(
+            subMenu=True, label="Base", p=menu_module)
+        pm.menuItem(
+            label="Root",
+            p=submenu_module_base,
+            c=lambda *args: self.create_module_root())
+        submenu_module_body = pm.menuItem(
+            subMenu=True, label="Body", p=menu_module)
+        pm.menuItem(
+            label="Head",
+            p=submenu_module_body,
+            c=lambda *args: self.create_module_head())
+
+        submenu_module_face = pm.menuItem(
+            subMenu=True, label="Face", p=menu_module)
+
+        menu_preset = pm.menu(label="Preset", tearOff=False)
+        submenu_preset_quadrupped = pm.menuItem(
+            subMenu=True, label="Quadrupped", p=menu_preset)
+        submenu_preset_human = pm.menuItem(
+            subMenu=True, label="Body", p=menu_preset)
+        submenu_preset_face = pm.menuItem(
+            subMenu=True, label="Face", p=menu_preset)
+        pm.menuItem(divider=True, p=menu_preset)
+        submenu_preset_delete = pm.menuItem(
+            subMenu=True, label="Delete", p=menu_preset)
+
+        pm.menu(label="Display", tearOff=False)
+        pm.menu(label="Tools", tearOff=False)
+        pm.menu(label="Options", tearOff=False)
+        pm.menu(label="Helps", tearOff=False)
+
+        # pm.menu(label=u"工具", tearOff=False)
+        # pm.menuItem(
+        #     label=u"Add LOC",
+        #     ann=u"为选择对线添加一个locator作为它的父节点",
+        #     # c=lambda *args: add_node_as_parent()
+        # )
+        #
+        # pm.menu(label=u"骨架", tearOff=False)
+        # pm.menuItem(
+        #     label=u"Create three layout bone",
+        #     ann=u"创建一个具有三层结构的骨骼",
+        #     # c=lambda *args: add_node_as_parent()
+        # )
+        #
+        # pm.menu(label=u"组件", tearOff=False)
+        # pm.menuItem(
+        #     label=u"Create head root",
+        #     # ann=u"创建一个具有三层结构的骨骼",
+        #     # c=lambda *args: add_node_as_parent()
+        # )
+        # pm.menuItem(
+        #     label=u"Create eye socket",
+        #     ann=u"创建眼睛绑定模块",
+        #     c=lambda *args: self.create_eye_module()
+        # )
+        # pm.menuItem(
+        #     label=u"Create jaw and mouth socket",
+        #     ann=u"创建下巴和舌头、牙齿模块",
+        #     c=lambda *args: self.create_jaw_and_chin_module()
+        # )
+        # pm.menuItem(
+        #     label=u"Create nose socket",
+        #     ann=u"创建鼻子模块",
+        #     c=lambda *args: self.create_nose_module()
+        # )
+        # pm.menuItem(
+        #     label=u"Create ears socket",
+        #     ann=u"创建耳朵模块",
+        #     c=lambda *args: self.create_jaw_and_chin_module()
+        # )
+        #
+        # pm.menu(label=u"窗口", tearOff=False)
+        # pm.menuItem(
+        #     "facialComponentView",
+        #     label=u"Component View",
+        #     ann=u"绑定组件树结构窗口显示",
+        #     cb=True,
+        #     c=lambda *args: self.change_component_view_state()
+        # )
+
+    def action_create_rig_structure(self):
+        if self.create_rig_structure():
+            pm.formLayout(self.main_form_layout, e=True, vis=True)
+
+    def tab_rig(self, parent=None):
+        if parent is not None:
+            layout = pm.formLayout(p=parent)
+        else:
+            layout = pm.formLayout()
+
+        new_rig_layout = pm.columnLayout(adj=1, p=layout)
+        self.new_rig_btn = pm.button(
+            label="New",
+            p=new_rig_layout,
+            c=lambda *args: self.create_rig_structure())
+        pm.separator(style="in", h=10, p=new_rig_layout)
+        self.delete_rig_btn = pm.button(
+            label="Delete",
+            p=new_rig_layout,
+            c=lambda *args: self.delete_rig())
+
+        pm.separator(style="none", h=20, p=new_rig_layout)
+
+        pm.button(label="Publish Rig", p=new_rig_layout)
+        pm.separator(style="in", h=10, p=new_rig_layout)
+        pm.button(label="Select Skin Joint", p=new_rig_layout)
+        pm.separator(style="in", h=10, p=new_rig_layout)
+        pose_row_layout = pm.rowColumnLayout(
+            nc=3,
+            p=new_rig_layout,
+            w=pm.columnLayout(new_rig_layout, q=True, w=True))
+        save_pose_btn = pm.button(
+            label="Save Pose",
+            w=pm.rowColumnLayout(pose_row_layout, q=True, w=True) / 2 - 1,
+            p=pose_row_layout)
+        pm.separator(style="none", w=2, p=pose_row_layout)
+        reset_pose_btn = pm.button(
+            label="Reset Pose",
+            w=pm.rowColumnLayout(pose_row_layout, q=True, w=True) / 2 - 1,
+            p=pose_row_layout)
+
+        pm.separator(style="none", h=20, p=new_rig_layout)
+
+        pm.floatSliderGrp(
+            label="Posers Size",
+            field=True, p=new_rig_layout, cw3=[62, 50, 50])
+        pm.floatSliderGrp(
+            label="Joints Size",
+            field=True, p=new_rig_layout, cw3=[62, 50, 50])
+
+        pm.formLayout(
+            layout, edit=True,
+            attachForm=[
+                (new_rig_layout, "top", 10),
+                (new_rig_layout, "left", 10),
+                (new_rig_layout, "right", 10),
+            ],
+            attachControl=[
+            ])
+
+        pm.setParent(layout)
+
+        return layout
+
+    def tab_module(self, parent=None):
+        if parent is not None:
+            layout = pm.formLayout(p=parent)
+        else:
+            layout = pm.formLayout()
+
+        pane_layout = pm.paneLayout(configuration='vertical2', p=layout)
+
         tree_view_frame = pm.frameLayout(
-            label=u"组件栏",
+            label=u"Models Tree",
             mw=5, mh=5,
             bgs=True,
-            p=data_form,
+            # bv=True,
+            p=pane_layout,
             w=200)
+
         self.tree_view = pm.treeView(
             w=200,
             vis=True,
@@ -115,69 +319,54 @@ class ModuleRig(common.Singleton):
             # selectCommand=selectTreeCallBack
         )
 
-        data_frame = pm.frameLayout(
-            label=u"数据栏", mw=5, mh=5, bgs=True, p=data_form)
+        module_tab_options = pm.tabLayout(
+            innerMarginWidth=5, innerMarginHeight=5, p=pane_layout)
+
+        module_frame = pm.frameLayout(
+            label="Info", p=module_tab_options)
+        pm.setParent(module_frame)
+
+        options_frame = pm.frameLayout(
+            label="Module Options", p=module_tab_options)
+        pm.setParent(module_frame)
+
+        controls_frame = pm.frameLayout(
+            label="Controls", p=module_tab_options)
+        pm.setParent(module_frame)
+
+        pm.tabLayout(
+            module_tab_options,
+            edit=True,
+            tabLabel=(
+                # (face_action_bar, u'组件'),
+                (module_frame, u"Modules"),
+                (options_frame, u"Options"),
+                (controls_frame, u"Controls"),
+            ))
 
         pm.formLayout(
-            main_layout, edit=True,
+            layout, edit=True,
             attachForm=[
-                (tool_tab_bar, "top", 0),
-                (tool_tab_bar, "left", 0),
-                (tool_tab_bar, "right", 0),
-                (data_form, "left", 0),
-                (data_form, "right", 0),
-                (data_form, "bottom", 0),
+                (pane_layout, "top", 10),
+                (pane_layout, "left", 10),
+                (pane_layout, "right", 10),
+                (pane_layout, "bottom", 10),
             ],
             attachControl=[
-                (data_form, 'top', 2, tool_tab_bar),
+                # (data_form, 'top', 2, tool_tab_bar),
             ])
 
-        pm.showWindow("xdModuleRigUI")
+        pm.setParent(layout)
 
-    def initialize(self):
-        """
-        初始化窗口的数值
-        :return:
-        """
-        if pm.objExists("head_config"):
-            self.init_tree_view()
-            self.head_config_node = "head_config"
+        return layout
 
-    def init_tree_view(self):
-        """
-        初始化
-        :return:
-        """
-        config_list = pm.PyNode("head_config").getChildren()
-        for config_node in config_list:
-            module_name = pm.PyNode(config_node).attr("module").get()
-            module_parent = pm.PyNode(config_node).attr("parentModule").get()
-            new_item = [module_name, module_parent]
-            print new_item
-            pm.treeView(self.tree_view, e=True, addItem=new_item)
-        return
+    def tab_add_controls(self, parent=None):
+        if parent is not None:
+            layout = pm.formLayout(p=parent)
+        else:
+            layout = pm.formLayout()
 
-    def refresh_tree_view(self):
-        print pm.treeView(self.tree_view, q=True, ch=True)
-
-    def _closed_window_cmd(self):
-        pass
-
-    def menu_bar(self):
-        pm.menu(label=u"工具", tearOff=False)
-        pm.menuItem(
-            label=u"Add LOC",
-            ann=u"为选择对线添加一个locator作为它的父节点",
-            # c=lambda *args: add_node_as_parent()
-        )
-        pm.menu(label=u"窗口", tearOff=False)
-        pm.menuItem(
-            "facialComponentView",
-            label=u"Component View",
-            ann=u"绑定组件树结构窗口显示",
-            cb=True,
-            c=lambda *args: self.change_component_view_state()
-        )
+        return layout
 
     def change_component_view_state(self):
         if pm.menuItem("facialComponentView", q=True, cb=True):
@@ -575,14 +764,97 @@ class ModuleRig(common.Singleton):
         return True
 
     def create_ears_module(self):
-        print u"点击'创建耳朵模块按钮'"
+        # todo 耳朵模块没有实现
+        print(u"点击'创建耳朵模块按钮'")
+        return
+
+    def create_rig_structure(self):
+        structure_nodes = [
+            "main", "geo", "rig", "modules", "skeleton", "twists"]
+        for structure_node in structure_nodes:
+            pm.createNode("transform", name=structure_node)
+
+        pm.parent("geo", "main")
+        pm.parent("rig", "main")
+
+        pm.parent("modules", "rig")
+        pm.parent("skeleton", "rig")
+        pm.parent("twists", "rig")
+
+        self.quick_add_attr(node="main", attr="nodeType", value="rs_rig")
+        self.quick_add_attr(node="main", attr="name", value="character")
+        self.quick_add_attr(node="main", attr="rs_version", value="2.0")
+        self.quick_add_attr(node="main", attr="posersSize", value="1.0")
+        self.quick_add_attr(node="main", attr="jointsSize", value="1.0")
+        self.quick_add_attr(
+            node="main", type="bool", attr="posersAxises", value=False)
+        self.quick_add_attr(
+            node="main", type="bool", attr="jointsAxises", value=False)
+
+        pm.setAttr("skeleton.template", 1)
+
+        pm.PyNode("main").attr("nodeType").lock()
+        pm.PyNode("main").attr("name").lock()
+        pm.PyNode("main").attr("posersAxises").lock()
+        pm.PyNode("main").attr("jointsAxises").lock()
+
+        pm.select(cl=True)
+
+        return True
+
+    def quick_add_attr(self, node="", type="string", attr="", value=None):
+        if type == "string":
+            pm.addAttr(node, ln=attr, dt="string")
+        if type == "bool":
+            pm.addAttr(node, ln=attr, at="bool")
+        pm.setAttr("%s.%s" % (node, attr), e=True, keyable=True)
+        pm.setAttr("%s.%s" % (node, attr), value)
+        return
+
+    def delete_rig(self):
+        if pm.objExists("main"):
+            pm.delete("main")
+        return
+
+    def create_module_root(self):
+        pass
+
+    def create_module_head(self):
+        head_jnt = None
+        # 创建骨骼部分
+        if pm.objExists("skeleton"):
+            pm.select(cl=True)
+            head_jnt = pm.joint(name="facial_jnt")
+            pm.joint(name="facial_end_jnt", p=[0, 15, 0])
+            # pm.joint("facial_jnt", e=True, zso=True, oj="xyz")
+            pm.parent("facial_jnt", "skeleton")
+        else:
+            pm.error(u"添加module之前，需要创建rig的初始化结构")
+
+        # 创建控制部分
+        if pm.objExists("modules"):
+            head_mod = pm.createNode("transform", name="head_mod")
+            pm.parent(head_mod, "modules")
+
+            head_con = pm.circle(name="head_ctrl")[0]
+            head_grp = common.add_node_as_parent(
+                head_con,
+                search_field="_ctrl",
+                suffix="_GRP",
+                node_type="transform")
+            pm.parent(head_grp, head_mod)
+
+            pm.parentConstraint(head_con, head_jnt)
+        else:
+            pm.error(u"添加module之前，需要创建rig的初始化结构")
+
         return
 
 
 def selectTreeCallBack(*args):
-    print 'selection : ' + args[0] + ' onoff= ' + str(args[1])
+    print('selection : ' + args[0] + ' onoff= ' + str(args[1]))
     return True
 
 
 def pressTreeCallBack(*args):
-    print 'press :- str= ' + args[0] + ' onoff= ' + str(args[1])
+    print('press :- str= ' + args[0] + ' onoff= ' + str(args[1]))

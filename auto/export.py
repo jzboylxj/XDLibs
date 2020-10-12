@@ -5,6 +5,8 @@
 """
 
 import os
+from imp import reload
+
 from pymel import core as pm
 import maya.cmds as cmds
 import maya.mel as mel
@@ -52,10 +54,26 @@ class ExportFBXMaster(common.Singleton):
             of2=lambda *args: self.fbx_optimize_state(state=False),
             on3=lambda *args: self.fbx_optimize_state(state=True),
             numberOfRadioButtons=3)
+        fbx_optimize_layout = pm.columnLayout(adj=1)
         self.fbx_optimize = pm.checkBoxGrp(
+            numberOfCheckBoxes=3,
             label=u"优化选项：",
-            label1=u"清除头部动画曲线",
-            cw2=[60, 100])
+            labelArray3=[u"清理头部动画", u"清理单个骨骼动画", u"清理模型组和控制器组"],
+            cw4=[60, 100, 120, 100])
+        self.face_make_node_check = pm.checkBox(label=u"优化捏脸骨骼")
+        pm.setParent(fbx_optimize_layout)
+
+        optimize_target_joint_layout = pm.columnLayout(p=self.form_layout)
+        self.optimize_target = pm.textFieldGrp(
+            label=u"骨骼名称：", cw2=[60, 300])
+        self.offset_target = pm.floatFieldGrp(
+            numberOfFields=3,
+            cw4=[60, 100, 100, 100],
+            label=u'偏移参数：',
+            value1=0,
+            value2=0,
+            value3=0)
+        pm.setParent("..")
         self.task_scroll_label = pm.text(
             label=u"任务列表：", al="left")
         self.task_scroll = pm.textScrollList(ams=True, w=200)
@@ -91,8 +109,10 @@ class ExportFBXMaster(common.Singleton):
                 (self.work_mode, 'top', 0),
                 (self.work_mode, 'left', 0),
                 (self.work_mode, 'right', 0),
-                (self.fbx_optimize, 'left', 0),
-                (self.fbx_optimize, 'right', 0),
+                (fbx_optimize_layout, 'left', 0),
+                (fbx_optimize_layout, 'right', 0),
+                (optimize_target_joint_layout, 'left', 0),
+                (optimize_target_joint_layout, 'right', 0),
                 (self.ouput_path_field, 'left', 0),
                 (self.ouput_path_field, 'right', 0),
                 (self.excute_btn, 'left', 0),
@@ -100,11 +120,14 @@ class ExportFBXMaster(common.Singleton):
                 (self.excute_btn, 'bottom', 10)
             ],
             attachControl=[
-                (self.fbx_optimize, 'top', 5, self.work_mode),
-                (self.task_scroll_label, 'top', 5, self.fbx_optimize),
+                (fbx_optimize_layout, 'top', 5, self.work_mode),
+                (optimize_target_joint_layout, 'top', 5, fbx_optimize_layout),
+                (self.task_scroll_label, 'top', 5,
+                 optimize_target_joint_layout),
                 (self.task_scroll, 'top', 5, self.task_scroll_label),
                 (self.task_scroll, 'bottom', 5, self.ouput_path_field),
-                (self.output_scroll_label, 'top', 5, self.fbx_optimize),
+                (self.output_scroll_label, 'top', 5,
+                 optimize_target_joint_layout),
                 (self.output_scroll_label, 'left', 5, self.task_scroll),
                 (self.output_scroll, 'top', 5, self.output_scroll_label),
                 (self.output_scroll, 'left', 5, self.task_scroll),
@@ -191,18 +214,18 @@ class ExportFBXMaster(common.Singleton):
         if len(self.output_files) < 1:
             pm.error(u"任务列表不能为空")
         else:
-            if model_selected == 1:
+            if model_selected == 1:  # 输出FBX
                 self.export_to_fbx(self.output_files)
-            if model_selected == 2:
+            if model_selected == 2:  # FBX优化
                 self.start_optimize_fbx(self.output_files)
-            if model_selected == 3:
+            if model_selected == 3:  # 全流程
                 if self.export_to_fbx(self.output_files):
                     self.move_to_task_scroll()
                     self.output_files = pm.textScrollList(
                         self.task_scroll, q=True, ai=True)
                     self.start_optimize_fbx(self.output_files)
 
-        print u"输出成功"
+        print(u"输出成功")
 
         return
 
@@ -226,7 +249,7 @@ class ExportFBXMaster(common.Singleton):
             cmds.file(export_file, o=True)
             file_name = cmds.file(
                 q=1, sceneName=True, shortName=True).split('.')[0]
-            print (file_name + ' already open!')
+            print(file_name + ' already open!')
 
             # 将MAYA的时间格式改成ntsc(30帧每秒)
             common.set_time_unit(unit='ntsc')
@@ -243,6 +266,7 @@ class ExportFBXMaster(common.Singleton):
             if pm.objExists("character_Group"):
                 pm.delete("character_Group")
 
+            # 清理头部动画
             if pm.checkBoxGrp(self.fbx_optimize, q=True, v1=True):
                 pm.select("head_JNT", hi=True)
                 for jnt in pm.ls(sl=True):
@@ -252,7 +276,66 @@ class ExportFBXMaster(common.Singleton):
                             anim_attr, jnt.name())
                         mel.eval(cmd)
 
+            # 清理指定骨骼的动画
+            if pm.checkBoxGrp(self.fbx_optimize, q=True, v2=True):
+                target_joint = pm.textFieldGrp(
+                    self.optimize_target, q=True, text=True)
+                if pm.objExists(target_joint):
+                    # pm.select(target_joint)
+                    anim_attrs = pm.listAttr(target_joint, k=True)
+                    for anim_attr in anim_attrs:
+                        cmd = '''cutKey -cl -t ":" -f ":" -at %s %s;''' % (
+                            anim_attr, target_joint)
+                        mel.eval(cmd)
+                    offset_value = pm.floatFieldGrp(
+                        self.offset_target, q=True, value=True)
+                    pm.PyNode(target_joint).translate.set(offset_value)
+
             export_file_name = "%s/%s.fbx" % (self.output_path, file_name)
+
+            # 清理模型组
+            if pm.checkBoxGrp(self.fbx_optimize, q=True, v3=True):
+                if pm.objExists("MotionSystem"):
+                    pm.delete("MotionSystem")
+                if pm.objExists("Geometry"):
+                    pm.delete("Geometry")
+                if len(pm.ls(type="mesh")) > 0:
+                    for item in pm.ls(type="mesh"):
+                        parent_node = item.getParent()
+                        pm.delete(parent_node)
+
+            # 清理捏脸骨骼动画
+            if pm.checkBox(self.face_make_node_check, q=True, value=True):
+                faceMakeSets = []
+                extraSets = []
+
+                extraSets = ["L_eyeBall_socket", "L_eyeBall_socket_sdk",
+                             "R_eyeBall_socket", "R_eyeBall_socket_sdk",
+                             "headTipEnd_JNT", "facial_C_Nose_JNT",
+                             "facial_C_NoseBase_JNT", "head_JNT",
+                             "L_browMid_JNT", "L_browIn_JNT", "L_browOut_JNT",
+                             "L_brow_JNT",
+                             "R_browMid_JNT", "R_browIn_JNT", "R_browOut_JNT",
+                             "R_brow_JNT", ]
+
+                pm.select("head_JNT", hi=True)
+
+                for item in pm.ls(sl=True):
+                    if "definition_" in item.name() and item.type() == "joint":
+                        faceMakeSets.append(item)
+
+                for item in extraSets:
+                    if pm.objExists(item):
+                        faceMakeSets.append(item)
+
+                pm.select(faceMakeSets)
+
+                for jnt in pm.ls(sl=True):
+                    anim_attrs = pm.listAttr(jnt, k=True)
+                    for anim_attr in anim_attrs:
+                        cmd = '''cutKey -cl -t ":" -f ":" -at %s %s;''' % (
+                            anim_attr, jnt.name())
+                        mel.eval(cmd)
 
             cmds.file(export_file_name,
                       force=True,
@@ -281,7 +364,7 @@ class ExportFBXMaster(common.Singleton):
             cmds.file(export_file, o=True)
             file_name = cmds.file(
                 q=1, sceneName=True, shortName=True).split('.')[0]
-            print (file_name + ' already open!')
+            print(file_name + ' already open!')
 
             # 将MAYA的时间格式改成ntsc(30帧每秒)
             common.set_time_unit(unit='ntsc')
@@ -296,14 +379,14 @@ class ExportFBXMaster(common.Singleton):
             for name in system_namespace:
                 all_namespace_list.remove(name)
 
-            print u"所有的命名空间：%s" % all_namespace_list
+            print(u"所有的命名空间：%s" % all_namespace_list)
 
             fbx_files = []
             # 角色输出时需要包含的两个组
             export_grp = ["character_root", "final_model_grp"]
 
             for cha_name in all_namespace_list:
-                print "cha name: %s" % cha_name
+                print("cha name: %s" % cha_name)
                 scene_export_grp = []
                 # 制作过程中有可能引用非角色对象，例如道具，
                 # 这个时候就需要用程序来判断使用该命名空间的对象是否为一个角色
@@ -312,11 +395,11 @@ class ExportFBXMaster(common.Singleton):
                     for export_item in export_grp:
                         scene_export_grp.append(
                             "%s:%s" % (cha_name, export_item))
-                    print u"%s需要输出的组：%s" % (cha_name, scene_export_grp)
+                    print(u"%s需要输出的组：%s" % (cha_name, scene_export_grp))
                     pm.select("%s:character_root" % cha_name, hi=True)
                     bake_nodes = pm.ls(sl=True)
 
-                    print u"--------- 开始烘焙动画开始 --------------"
+                    print(u"--------- 开始烘焙动画开始 --------------")
 
                     pm.bakeResults(
                         bake_nodes,

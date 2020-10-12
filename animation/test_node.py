@@ -95,11 +95,12 @@ class TestEditorController:
 
         return
 
-    def sdk_locator_with_joint(self, locator, bone_range, slider_attr):
+    @staticmethod
+    def sdk_locator_with_joint(locator, bone_range, slider_attr):
         attr_list = ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz"]
 
         for jnt_dict in bone_range:
-            print "Bone Name: %s" % jnt_dict["BoneName"]
+            print("Bone Name: %s" % jnt_dict["BoneName"])
             for dv_attr in attr_list:
                 moving_target(jnt_dict["BoneName"])
                 pm.setDrivenKeyframe(

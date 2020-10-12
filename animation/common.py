@@ -65,8 +65,8 @@ def get_anim_range_from_node(node):
     """
     anim_curves = pm.listConnections(
         pm.PyNode(node), s=True, t='animCurve')
-    start_time = 0L
-    end_time = 0L
+    start_time = 0
+    end_time = 0
     if anim_curves:
         for anim_curve in anim_curves:
             if start_time < pm.keyframe(anim_curve, q=True, index=0):
@@ -120,7 +120,7 @@ def clean_unknown_node():
     """
     unknown_plugin_list = pm.unknownPlugin(query=True, list=True)
     if unknown_plugin_list:
-        print u"unknownPlugin个数为%s" % len(unknown_plugin_list)
+        print(u"unknownPlugin个数为%s" % len(unknown_plugin_list))
         for plugin_name in unknown_plugin_list:
             try:
                 pm.unknownPlugin(plugin_name, remove=True)
@@ -128,9 +128,9 @@ def clean_unknown_node():
                 # print e
                 print(plugin_name, u"无法清理")
                 # pass
-        print u"清理完成！"
+        print(u"清理完成！")
     else:
-        print u"unknownPlugin个数为0，不需要清理"
+        print(u"unknownPlugin个数为0，不需要清理")
 
 
 def moving_target(target, value=None):
@@ -250,12 +250,48 @@ def create_three_layout_bone(name="", parent="", offset_value=None):
     return bone
 
 
+def create_three_layout_bone_ui():
+    if pm.window("createThreeLayoutBoneUI", ex=True):
+        pm.deleteUI("createThreeLayoutBoneUI")
+    pm.window("createThreeLayoutBoneUI")
+    pm.columnLayout(adj=1, rs=2)
+    joint_name = pm.textFieldGrp(label="Joint name:")
+    parent = pm.textFieldGrp(label=u"Parent node:")
+    offset = pm.floatFieldGrp(
+        numberOfFields=3,
+        label='Offset:',
+        value1=0,
+        value2=1,
+        value3=0)
+
+    pm.button(
+        label="Create and close", c=lambda *args: create_bone())
+
+    def create_bone():
+        name = pm.textFieldGrp(joint_name, q=True, text=True)
+        parent_node = pm.textFieldGrp(parent, q=True, text=True)
+
+        offset_value = pm.floatFieldGrp(offset, q=True, value=True)
+
+        create_three_layout_bone(
+            name=name,
+            parent=parent_node,
+            offset_value=offset_value
+        )
+
+        return
+
+    pm.showWindow("createThreeLayoutBoneUI")
+
+
 def add_node_as_parent(
         target, search_field="_BND", suffix="_LOC", node_type="locator"):
     """
     为目标节点添加一个指定节点作为它的父节点
 
     这个函数常用来将目标节点的通道栏参数归零
+    :param suffix:
+    :param search_field:
     :param target: 目标节点
     :param node_type: 节点类型
     :return: 新的创建的节点
@@ -283,3 +319,118 @@ def add_node_as_parent(
     else:
         pm.parent(target, new_parent_node)
     return new_parent_node
+
+
+def add_node_to_parent_ui():
+    if pm.window("addNodeToParentWnd", ex=True):
+        pm.deleteUI("addNodeToParentWnd")
+    pm.window("addNodeToParentWnd")
+    pm.columnLayout(adj=1, rs=2)
+
+    pm.rowColumnLayout(nr=1)
+    pm.text(label=u"后缀模式：")
+    collection1 = pm.radioCollection()
+    rb1 = pm.radioButton(label=u'直接添加')
+    rb2 = pm.radioButton(label=u'搜索替换')
+    pm.setParent('..')
+
+    search_field = pm.textFieldGrp(
+        label=u"Search:", text="_BND")
+    replace_field = pm.textFieldGrp(
+        label=u"Replace:", text="_LOC")
+    node_options_menu = pm.optionMenuGrp(label="Node options:")
+    pm.menuItem(label="locator")
+    pm.menuItem(label="circle")
+    pm.menuItem(label="transform")
+    pm.button(
+        label="Create and close", c=lambda *args: add_node())
+    pm.showWindow("addNodeToParentWnd")
+    pm.radioCollection(collection1, edit=True, select=rb2)
+
+    def add_node():
+        suffix_mode = pm.radioCollection(collection1, q=True, select=True)
+        print(suffix_mode)
+        print("rb1:{}".format(rb1))
+        print("rb2:{}".format(rb2))
+        if suffix_mode == pm.radioButton(rb1):
+            print("Test")
+        elif suffix_mode == pm.radioButton(rb2):
+            search_txt = pm.textFieldGrp(search_field, q=True, text=True)
+            replace_txt = pm.textFieldGrp(replace_field, q=True, text=True)
+            node_type = pm.optionMenuGrp(node_options_menu, q=True, value=True)
+
+            target = None
+            if len(pm.ls(sl=True)) > 0:
+                target = pm.ls(sl=True)[0].name()
+            else:
+                pm.error(u"请至少选择一个对象")
+
+            # print target, search_txt, replace_txt, node_type
+            add_node_as_parent(
+                target,
+                search_field=search_txt,
+                suffix=replace_txt,
+                node_type=node_type
+            )
+
+        return
+
+
+class PySideuicTools(Singleton):
+    def __init__(self):
+        super(PySideuicTools, self).__init__()
+
+        self.ui_file = ""
+        self.output_file = ""
+
+        self.show()
+
+    def show(self):
+        if pm.window("PySideuicTools", ex=True):
+            pm.deleteUI("PySideuicTools")
+        pm.window("PySideuicTools", title="Ui Tool Converter")
+        pm.frameLayout(mw=10, mh=10, lv=False)
+        self.file_location = pm.textFieldButtonGrp(
+            label="Ui File",
+            cw3=[70, 100, 50],
+            adj=2,
+            bl="  Get  ",
+            bc=lambda *args: self.set_file_location())
+        self.ouput_file_control = pm.textFieldButtonGrp(
+            label="Output File",
+            cw3=[70, 100, 50],
+            adj=2,
+            bl="  Set  ",
+            bc=lambda *args: self.set_output_location())
+        pm.button(label="Convert!", c=lambda *args: self.convert_ui())
+        pm.setParent("..")
+
+        pm.showWindow("PySideuicTools")
+
+    def set_file_location(self):
+        ui_location = pm.fileDialog2(
+            dialogStyle=2,
+            fileFilter="UI File (*.ui);;",
+            fileMode=1, okc=u"选择文件")
+        pm.textFieldButtonGrp(
+            self.file_location, e=True, text=ui_location[0])
+        self.ui_file = ui_location[0]
+        return
+
+    def convert_ui(self):
+        import sys, pprint
+        from pyside2uic import compileUi
+        file = open(self.output_file, 'w')
+        compileUi(self.ui_file, file, False, 4, False)
+        file.close()
+        return
+
+    def set_output_location(self):
+        ui_location = pm.fileDialog2(
+            dialogStyle=2,
+            fileFilter="Python File (*.py);;",
+            fileMode=0, okc=u"选择文件")
+        pm.textFieldButtonGrp(
+            self.ouput_file_control, e=True, text=ui_location[0])
+        self.output_file = ui_location[0]
+        return

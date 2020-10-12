@@ -8,12 +8,15 @@
 
 """
 import os
+from imp import reload
+
 import maya.cmds as cmds
-from pymel.core import mel
+import maya.mel as mel
+# from pymel.core import mel
 
 from pymel import core as pm
 
-import common
+from animation import common
 
 reload(common)
 
@@ -360,7 +363,7 @@ class MainWindow:
                 os.makedirs(self.output_path)
 
             time_range = common.get_anim_range_from_node("chaC:Bip001")
-            print time_range
+            print(time_range)
 
             fk_controllers = []
             if pm.objExists("FKControllers"):
@@ -492,4 +495,4 @@ class MainWindow:
             namespace=atom_namespace,
             options=options)
 
-        print "Done!"
+        print("Done!")

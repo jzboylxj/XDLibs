@@ -1,7 +1,8 @@
 # coding=utf-8
 import os
+from imp import reload
 
-import common
+from animation import common
 from pymel import core as pm
 
 reload(common)
@@ -110,14 +111,14 @@ class TransferAnimTool(common.Singleton):
 
     def transfer_anim(self):
         dict_data = common.read_json(file_path=self.template_path)
-        print dict_data
+        print(dict_data)
         # print self.namespace
         source_attrs = dict_data.keys()
-        print source_attrs
+        print(source_attrs)
         for source_attr in source_attrs:
             source_anim_curves = pm.PyNode(
                 "%s%s" % (self.namespace, source_attr)).inputs()
-            if len(source_anim_curves)>0:
+            if len(source_anim_curves) > 0:
                 target_anim_curve = source_anim_curves[0].name()
                 # print target_anim_curve
                 # print source_attr.split(".")[0]
@@ -135,7 +136,7 @@ class TransferAnimTool(common.Singleton):
                     "%s%s" % (self.namespace, dict_data[source_attr]),
                     f=True)
 
-                print "Done!"
+                print("Done!")
 
         return
 
@@ -337,14 +338,14 @@ class TemplateBuilder(common.Singleton):
         )
 
         item = "%s:%s" % (key, value)
-        print item
+        print(item)
 
         current_items = pm.textScrollList(
             "outputItemScrollList", q=True, ai=True)
         if item not in current_items:
             pm.textScrollList("outputItemScrollList", e=True, a=item)
 
-        print "--------------"
+        print("--------------")
 
     def set_namespace(self):
         self.namespace = pm.textFieldGrp("namespaceField", q=True, text=True)
@@ -372,12 +373,12 @@ class TemplateBuilder(common.Singleton):
             "outputItemScrollList", q=True, ai=True)
         for output_item in output_items:
             key, value = output_item.split(":")
-            print key, value
+            print(key, value)
             output_map[key] = value
 
         common.write_json(dict_data=output_map, file_path=self.output_path)
 
-        print "Done!"
+        print("Done!")
 
     def load_dict_data(self):
         item_list = []
@@ -393,7 +394,7 @@ class TemplateBuilder(common.Singleton):
 
     @staticmethod
     def print_selected_item(widget=None):
-        print pm.textScrollList(widget, q=True, si=True)
+        print(pm.textScrollList(widget, q=True, si=True))
 
     @staticmethod
     def comparison_attrs():
@@ -404,7 +405,7 @@ class TemplateBuilder(common.Singleton):
 
         comparison_attrs = list(
             set(source_attrs).intersection(set(target_attrs)))
-        print comparison_attrs
+        print(comparison_attrs)
 
         current_items = pm.textScrollList(
             "outputItemScrollList", q=True, ai=True)
