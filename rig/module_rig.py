@@ -576,37 +576,37 @@ class ModuleRig(common.Singleton):
             elif user_confirm == "Cancel":
                 pass
         else:
-            self.head_grp = pm.createNode("transform", name="head_GRP").name()
+            self.head_grp = pm.createNode("transform", name="head_GRP")
             # 创建配置节点来存储头部绑定的一些配置信息
             if not pm.objExists("head_config"):
-                self.head_config_node = common.null_node(name="head_config")
-                pm.parent(self.head_config_node, self.head_grp)
+                self.head_config_node = common.null_node(
+                    name="head_config", parent=self.head_grp)
             else:
-                self.head_config_node = "head_config"
+                self.head_config_node = pm.PyNode("head_config")
 
-            head = node.DoJointGrp(name="head")
-            head.build_mode_3(parent=self.head_grp, have_sub=True)
-            head.setting_config_node("parentModule", "")
-            pm.parent(head.config_node, self.head_config_node)
-            pm.treeView(self.tree_view,
-                        e=True, addItem=["head", ""])
+            # head = node.DoJointGrp(name="head")
+            # head.build_mode_3(parent=self.head_grp, have_sub=True)
+            # head.setting_config_node("parentModule", "")
+            # pm.parent(head.config_node, self.head_config_node)
+            # pm.treeView(self.tree_view,
+            #             e=True, addItem=["head", ""])
 
-            # 创建头部上半部分的根骨骼
-            head_top = node.DoJointGrp(name="headTop")
-            head_top.build_mode_3(parent=head.bnd_name, offset_value=[0, 2, 2])
-            head_top.setting_config_node(attr="parentModule", value=head.name)
-            pm.parent(head_top.config_node, self.head_config_node)
-            pm.treeView(self.tree_view,
-                        e=True, addItem=["headTop", "head"])
+            # # 创建头部上半部分的根骨骼
+            # head_top = node.DoJointGrp(name="headTop")
+            # head_top.build_mode_3(parent=head.bnd_name, offset_value=[0, 2, 2])
+            # head_top.setting_config_node(attr="parentModule", value=head.name)
+            # pm.parent(head_top.config_node, self.head_config_node)
+            # pm.treeView(self.tree_view,
+            #             e=True, addItem=["headTop", "head"])
 
-            # 创建头部下半部分的根骨骼
-            head_bot = node.DoJointGrp(name="headBottom")
-            head_bot.build_mode_3(parent=head.bnd_name,
-                                  offset_value=[0, 1.5, 2])
-            head_bot.setting_config_node(attr="parentModule", value=head.name)
-            pm.parent(head_bot.config_node, self.head_config_node)
-            pm.treeView(self.tree_view,
-                        e=True, addItem=["headBottom", "head"])
+            # # 创建头部下半部分的根骨骼
+            # head_bot = node.DoJointGrp(name="headBottom")
+            # head_bot.build_mode_3(parent=head.bnd_name,
+            #                       offset_value=[0, 1.5, 2])
+            # head_bot.setting_config_node(attr="parentModule", value=head.name)
+            # pm.parent(head_bot.config_node, self.head_config_node)
+            # pm.treeView(self.tree_view,
+            #             e=True, addItem=["headBottom", "head"])
 
         return True
 
