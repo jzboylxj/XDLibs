@@ -2,7 +2,7 @@
 # coding: utf-8
 # @Time    : 2020/10/12 23:26
 # @Author  : Li XiaoJun
-# @Site    : 
+# @Site    :
 # @File    : main.py
 
 from pymel import core as pm
@@ -23,6 +23,9 @@ class Creator(common.Singleton):
         pass
 
     def initialize(self):
+        pass
+
+    def build(self):
         pass
 
 
@@ -190,5 +193,43 @@ class EyeCreator(Creator):
             nsp=4,
             ch=1)
         pm.delete(left_eyeball_geo, )
+
+        return
+
+
+class MouthCreator(Creator):
+
+    def __init__(self):
+        super(MouthCreator, self).__init__()
+
+    def build(self):
+        print("Build mouth rig")
+
+    def location_on_mouth_surface_to_follicle(self):
+        mouth_surface = "MD_Mouth_01_Surface"
+        for side_prefix in ["LF", "RT"]:
+            corner_locator = "{}_Mouth_01_Ctrl_Loc".format(side_prefix)
+
+            cpos_node = pm.createNode(
+                "closestPointOnSurface",
+                name="{}_Mouth_01_Ctrl_CPOS".format(side_prefix))
+            corner_locator_shape = pm.PyNode(corner_locator).getShape()
+            corner_locator_shape.attr("worldPosition[0]").connect(
+                cpos_node.attr("inPosition"))
+
+            mouth_surface_shape = pm.PyNode(mouth_surface).getShape()
+            mouth_surface_shape.attr("worldSpace[0]").connect(
+                cpos_node.attr("inputSurface"))
+
+            follicle = "{}_Mouth_01_Ctrl_Jnt_Follicle".format(side_prefix)
+            follicle_shape = pm.PyNode(follicle).getShape()
+            mouth_surface_shape.attr("local").connect(
+                follicle_shape.attr("inputSurface"))
+            mouth_surface_shape.attr("worldMatrix[0]").connect(
+                follicle_shape.attr("inputWorldMatrix"))
+            cpos_node.attr("parameterU").connect(
+                follicle_shape.attr("parameterU"))
+            cpos_node.attr("parameterV").connect(
+                follicle_shape.attr("parameterV"))
 
         return
