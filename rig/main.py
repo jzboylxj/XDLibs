@@ -262,6 +262,8 @@ class MouthCreator(Creator):
     def build(self):
         self.__mouth_surface_location()
 
+        self.rig_base_curve()
+
     def __mouth_surface_location(self):
         """利用mouth surface定位毛囊，
         并利用毛囊的位移节点（父节点）对控制嘴唇的骨骼的组节点进行目标约束
