@@ -4,6 +4,7 @@
 # @Author  : Li XiaoJun
 # @Site    :
 # @File    : main.py
+from imp import reload
 
 from pymel import core as pm
 from animation import common
@@ -131,14 +132,16 @@ class EyeCreator(Creator):
             bl=u"Setting",
             adj=2,
             cw3=[70, 100, 100],
-            bc=lambda *args: self.curve_setting(self.left_low_out_curve_setter))
+            bc=lambda *args: self.curve_setting(
+                self.left_low_out_curve_setter))
 
         self.right_up_out_curve_setter = pm.textFieldButtonGrp(
             label=u"Right Up:",
             bl=u"Setting",
             adj=2,
             cw3=[70, 100, 100],
-            bc=lambda *args: self.curve_setting(self.right_up_out_curve_setter))
+            bc=lambda *args: self.curve_setting(
+                self.right_up_out_curve_setter))
         self.right_low_out_curve_setter = pm.textFieldButtonGrp(
             label=u"Right Down:",
             bl=u"Setting",
@@ -197,6 +200,60 @@ class EyeCreator(Creator):
         return
 
 
+def mouth_bind_jnt_grp_translate_bc_connect(bind_jnt_grp="", old_min=0.0,
+                                            old_max=0.0):
+    lf_lip_sew_ctrl_follicle_shape = pm.PyNode(
+        "LF_Mouth_01_LipSew_Ctrl_FollicleShape")
+    rt_lip_sew_ctrl_follicle_shape = pm.PyNode(
+        "RT_Mouth_01_LipSew_Ctrl_FollicleShape")
+
+    set_range = pm.createNode("setRange",
+                              name=bind_jnt_grp.replace("_Grp", "_LipSew_SR"))
+    lf_lip_sew_ctrl_follicle_shape.attr("parameterU").connect(
+        "{}.value.valueX".format(set_range.name())
+    )
+    rt_lip_sew_ctrl_follicle_shape.attr("parameterU").connect(
+        "{}.value.valueY".format(set_range.name())
+    )
+    set_range.attr("oldMinX").set(old_min)
+    set_range.attr("oldMinY").set(old_min)
+    set_range.attr("oldMaxX").set(old_max)
+    set_range.attr("oldMaxY").set(old_max)
+
+    adl_node = pm.createNode("addDoubleLinear",
+                             name=bind_jnt_grp.replace("_Grp", "_Jnt_ADL"))
+    set_range.attr("outValueX").connect(adl_node.attr("input1"))
+    set_range.attr("outValueY").connect(adl_node.attr("input2"))
+
+    cmp_node = pm.createNode("clamp",
+                             name=bind_jnt_grp.replace("_Grp", "_LipSew_CMP"))
+    adl_node.attr("output").connect(cmp_node.attr("inputR"))
+
+    pma_node = pm.createNode("plusMinusAverage",
+                             name=bind_jnt_grp.replace("_Grp", "_LipSew_PMA"))
+    cmp_node.attr("outputR").connect(pma_node.attr("input1D[1]"))
+    pma_node.attr("input1D[0]").set(1.0)
+    pma_node.attr("output1D").connect(
+        "{}.blender".format(bind_jnt_grp.replace("_Grp", "_Translate_BC"))
+    )
+    return
+
+
+def connect_targets_spec_attr(source="", source_attr="", targets=None,
+                              target_attrs=None):
+    if target_attrs is None:
+        target_attrs = []
+    if targets is None:
+        targets = []
+
+    for target in targets:
+        for target_attr in target_attrs:
+            pm.PyNode(source).attr(source_attr).connect(
+                "{}.{}".format(target, target_attr)
+            )
+    return
+
+
 class MouthCreator(Creator):
 
     def __init__(self):
@@ -205,23 +262,62 @@ class MouthCreator(Creator):
     def build(self):
         print("Build mouth rig")
 
+    def mouth_surface_location(self):
+        """利用mouth surface定位毛囊，并利用毛囊的位移节点（父节点）对控制嘴唇的骨骼的组节点进行目标约束"""
+        self.location_on_mouth_surface_to_follicle()
+
+        self.follicle_output_translate_rotate_to_parent(
+            ["MD_Mouth_01_Master_Ctrl_FollicleShape",
+             "LF_Mouth_01_Ctrl_Jnt_FollicleShape",
+             "RT_Mouth_01_Ctrl_Jnt_FollicleShape"])
+
+        for side in ["LF", "RT"]:
+            for pos in ["Up", "Low"]:
+                if side == "LF":
+                    flip_up = -1.0
+                elif side == "RT":
+                    flip_up = 1.0
+                aim_constraint_target(
+                    source="{}_Mouth_01_Ctrl_Jnt_Follicle".format(side),
+                    target="{}_Mouth_01_Ctrl_{}_Jnt_Grp".format(side, pos),
+                    aim_vector=[0, 0, -1],
+                    up_vector=[0, 1 * flip_up, 0],
+                    world_up_type="object",
+                    world_up_object="{}_Mouth_01_Ctrl_Jnt".format(pos))
+        return
+
     def location_on_mouth_surface_to_follicle(self):
+        """求出locator（为控制嘴唇整体的三根骨骼进行定位）在mouth surface上面的位置（参数U，V），
+        然后将这个位置信息与控制嘴角骨骼的毛囊体的参数 U 和 V 进行连接，
+        毛囊体会根据参数移动到相应的位置，
+        这样控制了locator， 就控制了毛囊体，也就间接的控制了骨骼
+        """
         mouth_surface = "MD_Mouth_01_Surface"
-        for side_prefix in ["LF", "RT"]:
-            corner_locator = "{}_Mouth_01_Ctrl_Loc".format(side_prefix)
+        for side_prefix in ["LF", "RT", "MD"]:
+            if side_prefix == "MD":
+                corner_locator = "{}_Mouth_01_Master_Ctrl_Loc".format(
+                    side_prefix)
+            else:
+                corner_locator = "{}_Mouth_01_Ctrl_Loc".format(side_prefix)
 
             cpos_node = pm.createNode(
                 "closestPointOnSurface",
                 name="{}_Mouth_01_Ctrl_CPOS".format(side_prefix))
             corner_locator_shape = pm.PyNode(corner_locator).getShape()
             corner_locator_shape.attr("worldPosition[0]").connect(
+
                 cpos_node.attr("inPosition"))
 
             mouth_surface_shape = pm.PyNode(mouth_surface).getShape()
             mouth_surface_shape.attr("worldSpace[0]").connect(
                 cpos_node.attr("inputSurface"))
 
-            follicle = "{}_Mouth_01_Ctrl_Jnt_Follicle".format(side_prefix)
+            if side_prefix == "MD":
+                follicle = "{}_Mouth_01_Master_Ctrl_Follicle".format(
+                    side_prefix)
+            else:
+                follicle = "{}_Mouth_01_Ctrl_Jnt_Follicle".format(side_prefix)
+
             follicle_shape = pm.PyNode(follicle).getShape()
             mouth_surface_shape.attr("local").connect(
                 follicle_shape.attr("inputSurface"))
@@ -233,3 +329,23 @@ class MouthCreator(Creator):
                 follicle_shape.attr("parameterV"))
 
         return
+
+    def follicle_output_translate_rotate_to_parent(self, follicle_shapes=[]):
+        for follicle_shape in follicle_shapes:
+            follicle_shape_parent = pm.PyNode(follicle_shape).getParent()
+            pm.PyNode(follicle_shape).attr("outTranslate").connect(
+                follicle_shape_parent.attr("translate")
+            )
+            pm.PyNode(follicle_shape).attr("outRotate").connect(
+                follicle_shape_parent.attr("rotate")
+            )
+        return
+
+
+def aim_constraint_target(source="", target="",
+                          aim_vector=[], up_vector=[],
+                          world_up_type="", world_up_object=""):
+    pm.aimConstraint(source, target,
+                     aimVector=aim_vector, upVector=up_vector,
+                     worldUpType=world_up_type, worldUpObject=world_up_object)
+    return
