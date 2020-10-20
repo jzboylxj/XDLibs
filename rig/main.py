@@ -260,13 +260,15 @@ class MouthCreator(Creator):
         super(MouthCreator, self).__init__()
 
     def build(self):
-        print("Build mouth rig")
+        self.__mouth_surface_location()
 
-    def mouth_surface_location(self):
-        """利用mouth surface定位毛囊，并利用毛囊的位移节点（父节点）对控制嘴唇的骨骼的组节点进行目标约束"""
-        self.location_on_mouth_surface_to_follicle()
+    def __mouth_surface_location(self):
+        """利用mouth surface定位毛囊，
+        并利用毛囊的位移节点（父节点）对控制嘴唇的骨骼的组节点进行目标约束
+        """
+        self.__location_on_mouth_surface_to_follicle()
 
-        self.follicle_output_translate_rotate_to_parent(
+        self.__follicle_output_translate_rotate_to_parent(
             ["MD_Mouth_01_Master_Ctrl_FollicleShape",
              "LF_Mouth_01_Ctrl_Jnt_FollicleShape",
              "RT_Mouth_01_Ctrl_Jnt_FollicleShape"])
@@ -286,7 +288,22 @@ class MouthCreator(Creator):
                     worldUpObject="{}_Mouth_01_Ctrl_Jnt".format(pos))
         return
 
-    def location_on_mouth_surface_to_follicle(self):
+    def rig_base_curve(self):
+        curve_prefix_list = ["Up", "Low"]
+        for prefix in curve_prefix_list:
+            base_curve = pm.PyNode(
+                "MD_Mouth_01_{}_Base_Curve".format(prefix))
+            base_curve_skin_items = [
+                "{}_Mouth_01_Ctrl_Jnt".format(prefix),
+                base_curve.getShape()]
+            for ctrl_jnt_item in ["LF", "RT"]:
+                base_curve_skin_items.append(
+                    "{}_Mouth_01_Ctrl_{}_Jnt".format(ctrl_jnt_item, prefix))
+            pm.skinCluster(base_curve_skin_items,
+                           name="MD_Mouth_01_{}_Base_Curve_SC".format(prefix))
+        return
+
+    def __location_on_mouth_surface_to_follicle(self):
         """求出locator（为控制嘴唇整体的三根骨骼进行定位）在mouth surface上面的位置（参数U，V），
         然后将这个位置信息与控制嘴角骨骼的毛囊体的参数 U 和 V 进行连接，
         毛囊体会根据参数移动到相应的位置，
@@ -330,7 +347,7 @@ class MouthCreator(Creator):
 
         return
 
-    def follicle_output_translate_rotate_to_parent(self, follicle_shapes=[]):
+    def __follicle_output_translate_rotate_to_parent(self, follicle_shapes=[]):
         for follicle_shape in follicle_shapes:
             follicle_shape_parent = pm.PyNode(follicle_shape).getParent()
             pm.PyNode(follicle_shape).attr("outTranslate").connect(
