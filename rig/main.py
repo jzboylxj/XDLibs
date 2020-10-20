@@ -277,13 +277,13 @@ class MouthCreator(Creator):
                     flip_up = -1.0
                 elif side == "RT":
                     flip_up = 1.0
-                aim_constraint_target(
-                    source="{}_Mouth_01_Ctrl_Jnt_Follicle".format(side),
-                    target="{}_Mouth_01_Ctrl_{}_Jnt_Grp".format(side, pos),
-                    aim_vector=[0, 0, -1],
-                    up_vector=[0, 1 * flip_up, 0],
-                    world_up_type="object",
-                    world_up_object="{}_Mouth_01_Ctrl_Jnt".format(pos))
+                pm.aimConstraint(
+                    "{}_Mouth_01_Ctrl_Jnt_Follicle".format(side),
+                    "{}_Mouth_01_Ctrl_{}_Jnt_Grp".format(side, pos),
+                    aimVector=[0, 0, -1],
+                    upVector=[0, 1 * flip_up, 0],
+                    worldUpType="object",
+                    worldUpObject="{}_Mouth_01_Ctrl_Jnt".format(pos))
         return
 
     def location_on_mouth_surface_to_follicle(self):
@@ -340,12 +340,3 @@ class MouthCreator(Creator):
                 follicle_shape_parent.attr("rotate")
             )
         return
-
-
-def aim_constraint_target(source="", target="",
-                          aim_vector=[], up_vector=[],
-                          world_up_type="", world_up_object=""):
-    pm.aimConstraint(source, target,
-                     aimVector=aim_vector, upVector=up_vector,
-                     worldUpType=world_up_type, worldUpObject=world_up_object)
-    return
