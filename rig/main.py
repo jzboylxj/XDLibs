@@ -261,8 +261,8 @@ class MouthCreator(Creator):
 
     def build(self):
         self.__mouth_surface_location()
-
-        self.rig_base_curve()
+        self.__rig_base_ctrl_out()
+        self.__add_bind_jnt_follicle_on_tweak_surface()
 
     def __mouth_surface_location(self):
         """利用mouth surface定位毛囊，
@@ -290,7 +290,7 @@ class MouthCreator(Creator):
                     worldUpObject="{}_Mouth_01_Ctrl_Jnt".format(pos))
         return
 
-    def rig_base_curve(self):
+    def __rig_base_curve(self):
         curve_prefix_list = ["Up", "Low"]
         for prefix in curve_prefix_list:
             base_curve = pm.PyNode(
@@ -303,6 +303,98 @@ class MouthCreator(Creator):
                     "{}_Mouth_01_Ctrl_{}_Jnt".format(ctrl_jnt_item, prefix))
             pm.skinCluster(base_curve_skin_items,
                            name="MD_Mouth_01_{}_Base_Curve_SC".format(prefix))
+        return
+
+    def __corner_ctrl_connect_cpos_loc(self):
+        """将左右嘴角控制器与cpos（嘴角位置定位loc）连接起来"""
+        cpos_locs = ["LF_Mouth_01_Ctrl_Loc", "RT_Mouth_01_Ctrl_Loc"]
+        for cpos_name in cpos_locs:
+            ctrl = pm.PyNode(cpos_name.replace("_Loc", ""))
+            ctrl.translate.connect("{}.translate".format(cpos_name))
+
+        pm.PyNode("MD_Mouth_01_Master_Ctrl").translate.connect(
+            "MD_Mouth_01_Master_Ctrl_Loc.translate")
+        return
+
+    def __lip_ctrl_connect_ctrl_jnt(self):
+        """连接嘴唇控制器"""
+        base_ctrl_grp = pm.PyNode("MD_Mouth_01_Base_Ctrl_Grp")
+        ctrl_jnts = ["Up_Mouth_01_Ctrl_Jnt", "Low_Mouth_01_Ctrl_Jnt"]
+        for ctrl_jnt in ctrl_jnts:
+            ctrl = pm.PyNode(ctrl_jnt.replace("_Jnt", ""))
+            md_node = pm.createNode("multiplyDivide",
+                                    name=ctrl_jnt.replace("_Jnt", "_Scale_MD"))
+            md_node.attr("operation").set(1)
+            ctrl.attr("translate").connect(md_node.attr("input1"))
+            base_ctrl_grp.attr("scale").connect(md_node.attr("input2"))
+            md_node.attr("output").connect("{}.translate".format(ctrl_jnt))
+            ctrl.rotate.connect("{}.rotate".format(ctrl_jnt))
+
+        # 　连接base ctrl grp， 让嘴巴的模块控制器能够工作
+        mouth_master_ctrl = pm.PyNode("MD_Mouth_01_Master_Ctrl")
+        mouth_master_ctrl.attr("localScale").connect(
+            base_ctrl_grp.attr("scaleX"))
+        mouth_master_ctrl.attr("localScale").connect(
+            base_ctrl_grp.attr("scaleY"))
+        mouth_master_ctrl.attr("localScale").connect(
+            base_ctrl_grp.attr("scaleZ"))
+        pm.parentConstraint("MD_Mouth_01_Master_Ctrl_Null", base_ctrl_grp)
+
+        mouth_master_ctrl.attr("translateZ").connect(
+            "MD_Mouth_01_Master_Ctrl_Null.translateZ")
+        mouth_master_ctrl.attr("rotateZ").connect(
+            "MD_Mouth_01_Master_Ctrl_Null.rotateZ")
+
+        base_ctrl_grp.translate.connect(
+            "MD_Mouth_01_Base_Ctrl_Out_Grp.translate")
+        base_ctrl_grp.rotate.connect("MD_Mouth_01_Base_Ctrl_Out_Grp.rotate")
+
+        return
+
+    def __rig_base_ctrl_out(self):
+        self.__rig_base_curve()
+        self.__corner_ctrl_connect_cpos_loc()
+        self.__lip_ctrl_connect_ctrl_jnt()
+
+    def __add_bind_jnt_follicle_on_tweak_surface(self):
+        # 嘴唇一侧的段数，例如上嘴唇左侧为5段，右侧也为5段，加上左右嘴角，
+        # 那么控制上嘴唇的骨骼数就是 5+5+2=12
+        segment = 5
+        for location in ["Up", "Low"]:
+            tweak_surface = pm.PyNode(
+                "MD_Mouth_01_{}_Tweak_Surface".format(location))
+            for side in ["LF", "RT"]:
+                for index in range(1, segment + 1):
+                    # Todo: 模块化绑定模式时，改为创建节点
+                    follicle_shape = pm.PyNode(
+                        "{}_Mouth_01_{}Lip_{}_Jnt_FollicleShape".format(
+                            side, location, "{0:02d}".format(index)))
+                    # 通过调整参数为定位毛囊的位置
+                    follicle_shape.attr("parameterU").set(0.5)
+                    parameter_value = 0.0
+                    if side == "LF":
+                        if index < 5:
+                            parameter_value = 0.111 * (segment - index)
+                        elif index == 5:
+                            parameter_value = 0.037
+                        follicle_shape.attr("parameterV").set(parameter_value)
+                    elif side == "RT":
+                        parameter_value = pm.getAttr(
+                            "LF_Mouth_01_{}Lip_{}_Jnt_FollicleShape"
+                            ".parameterV".format(location,
+                                                 "{0:02d}".format(index)))
+                        follicle_shape.attr("parameterV").set(
+                            1 - parameter_value)
+
+                    tweak_surface.getShape().attr("local").connect(
+                        follicle_shape.attr("inputSurface"))
+                    tweak_surface.getShape().attr("worldMatrix[0]").connect(
+                        follicle_shape.attr("inputWorldMatrix"))
+                    follicle = follicle_shape.getParent()
+                    follicle_shape.attr("outTranslate").connect(
+                        follicle.translate)
+                    follicle_shape.attr("outRotate").connect(
+                        follicle.rotate)
         return
 
     def __location_on_mouth_surface_to_follicle(self):
