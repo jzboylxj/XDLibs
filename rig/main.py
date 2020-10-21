@@ -364,6 +364,19 @@ class MouthCreator(Creator):
             tweak_surface = pm.PyNode(
                 "MD_Mouth_01_{}_Tweak_Surface".format(location))
             for side in ["LF", "RT"]:
+                if location == "Up":
+                    follicle_shape = pm.PyNode(
+                        "{}_Mouth_01_Lip_Jnt_FollicleShape".format(side))
+                    tweak_surface.getShape().attr("local").connect(
+                        follicle_shape.attr("inputSurface"))
+                    tweak_surface.getShape().attr("worldMatrix[0]").connect(
+                        follicle_shape.attr("inputWorldMatrix"))
+                    follicle = follicle_shape.getParent()
+                    follicle_shape.attr("outTranslate").connect(
+                        follicle.translate)
+                    follicle_shape.attr("outRotate").connect(
+                        follicle.rotate)
+
                 for index in range(1, segment + 1):
                     # Todo: 模块化绑定模式时，改为创建节点
                     follicle_shape = pm.PyNode(
