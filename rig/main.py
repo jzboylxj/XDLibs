@@ -325,6 +325,7 @@ class MouthCreator(Creator):
         self.__use_dm_node_to_tweak_ctrl_parent_and_jnt_02_grp()
         self.__skin_tweak_surface()
         self.__skin_lip_sew_surface_and_connect_follicle_shape()
+        # self.__lip_sew_ctrl_drive_follicle_shape()
 
     def __mouth_surface_location(self):
         """利用mouth surface定位毛囊，
@@ -784,18 +785,18 @@ class MouthCreator(Creator):
                 side)
 
             if side == "LF":
-                value = [-0.814, 1]
-                driver_value = [1, 0]
+                driver_value = [-0.814, 0]
+                value = [1, 0]
             else:
-                value = [-0.814, 0]
-                driver_value = [0, 1]
+                driver_value = [-0.814, 0]
+                value = [0, 1]
 
             pm.setDrivenKeyframe(
                 follicle_shape,
                 at="parameterU",
                 cd="{}.{}".format(lip_sew_ctrl, "translateX"),
-                dv=0.0,
-                value=0.0,
+                dv=driver_value[0],
+                value=value[0],
                 itt="linear",
                 ott="linear",
             )
@@ -804,8 +805,8 @@ class MouthCreator(Creator):
                 follicle_shape,
                 at="parameterU",
                 cd="{}.{}".format(lip_sew_ctrl, "translateX"),
-                dv=-0.814,
-                value=1.0,
+                dv=driver_value[1],
+                value=value[1],
                 itt="linear",
                 ott="linear",
             )
