@@ -325,7 +325,8 @@ class MouthCreator(Creator):
         self.__use_dm_node_to_tweak_ctrl_parent_and_jnt_02_grp()
         self.__skin_tweak_surface()
         self.__skin_lip_sew_surface_and_connect_follicle_shape()
-        # self.__lip_sew_ctrl_drive_follicle_shape()
+        self.__lip_sew_ctrl_drive_follicle_shape()
+        self.__make_bind_jnt_work()
 
     def __mouth_surface_location(self):
         """利用mouth surface定位毛囊，
@@ -778,7 +779,7 @@ class MouthCreator(Creator):
             follicle_shape_out_for_parent(pm.PyNode(follicle).getShape())
         return
 
-    def lip_sew_ctrl_drive_follicle_shape(self):
+    def __lip_sew_ctrl_drive_follicle_shape(self):
         for side in ["LF", "RT"]:
             lip_sew_ctrl = "{}_Mouth_01_LipSew_Ctrl".format(side)
             follicle_shape = "{}_Mouth_01_LipSew_Ctrl_FollicleShape".format(
@@ -811,7 +812,7 @@ class MouthCreator(Creator):
                 ott="linear",
             )
 
-    def make_bind_jnt_work(self):
+    def __make_bind_jnt_work(self):
         """让蒙皮骨骼能够工作
 
         :return:
@@ -819,20 +820,21 @@ class MouthCreator(Creator):
         seg = 5
         master_ctrl = "MD_Mouth_01_Master_Ctrl"
         for side in ["LF", "RT"]:
-            bind_jnt_root = "{}_Mouth_01_Lip_Jnt_Grp".format(side)
+            corner_bind_jnt_root = "{}_Mouth_01_Lip_Jnt_Grp".format(side)
             # 因为 localScale 是单属性，scale是一组属性，
             # 所以必须得逐一连接属性：scaleX， scaleY， scaleZ
             pm.PyNode(master_ctrl).attr("localScale").connect(
-                pm.PyNode(bind_jnt_root).scaleX, f=True)
+                pm.PyNode(corner_bind_jnt_root).scaleX, f=True)
             pm.PyNode(master_ctrl).attr("localScale").connect(
-                pm.PyNode(bind_jnt_root).scaleY, f=True)
+                pm.PyNode(corner_bind_jnt_root).scaleY, f=True)
             pm.PyNode(master_ctrl).attr("localScale").connect(
-                pm.PyNode(bind_jnt_root).scaleZ, f=True)
+                pm.PyNode(corner_bind_jnt_root).scaleZ, f=True)
 
             # 位移部分
-            follicle = pm.PyNode(bind_jnt_root.replace("_Grp", "_Follicle"))
-            follicle.getShape().attr("outTranslate").connect(
-                pm.PyNode(bind_jnt_root).translate, f=True)
+            corner_follicle = pm.PyNode(
+                corner_bind_jnt_root.replace("_Grp", "_Follicle"))
+            corner_follicle.getShape().attr("outTranslate").connect(
+                pm.PyNode(corner_bind_jnt_root).translate, f=True)
 
             # 旋转部分
             base_ctrl_out_grp = pm.PyNode("MD_Mouth_01_Base_Ctrl_Out_Grp")
@@ -840,28 +842,35 @@ class MouthCreator(Creator):
             null_vp = "MD_Mouth_01_Master_Ctrl_Null_VP"
             if not pm.objExists(null_vp):
                 pm.createNode("vectorProduct", name=null_vp)
+                pm.PyNode(null_vp).attr("operation").set(3)
+                pm.PyNode(null_vp).attr("input1X").set(1.0)
 
             if (pm.PyNode(null_vp) not in pm.PyNode(base_ctrl_out_grp).attr(
                     "worldMatrix[0]").outputs()):
                 pm.PyNode(base_ctrl_out_grp).attr("worldMatrix[0]").connect(
                     pm.PyNode(null_vp).attr("matrix"), f=True)
 
-            jnt_vp = follicle.name().replace("_Follicle", "_VP")
+            jnt_vp = corner_follicle.name().replace("_Follicle", "_VP")
             if not pm.objExists(jnt_vp):
                 pm.createNode("vectorProduct", name=jnt_vp)
-            follicle.attr("worldMatrix[0]").connect(
+                pm.PyNode(jnt_vp).attr("operation").set(3)
+                pm.PyNode(jnt_vp).attr("input1X").set(1.0)
+
+            corner_follicle.attr("worldMatrix[0]").connect(
                 pm.PyNode(jnt_vp).attr("matrix"), f=True)
 
-            jnt_3rd_vp = follicle.name().replace("_Follicle", "_3rd_VP")
+            jnt_3rd_vp = corner_follicle.name().replace("_Follicle", "_3rd_VP")
             if not pm.objExists(jnt_3rd_vp):
                 pm.createNode("vectorProduct", name=jnt_3rd_vp)
+                pm.PyNode(jnt_3rd_vp).attr("operation").set(2)
 
             pm.PyNode(null_vp).attr("output").connect(
                 pm.PyNode(jnt_3rd_vp).attr("input1"), f=True)
             pm.PyNode(jnt_vp).attr("output").connect(
                 pm.PyNode(jnt_3rd_vp).attr("input2"), f=True)
 
-            jnt_FBFM_node = follicle.name().replace("_Follicle", "_FBFM")
+            jnt_FBFM_node = corner_follicle.name().replace("_Follicle",
+                                                           "_FBFM")
             if not pm.objExists(jnt_FBFM_node):
                 pm.createNode("fourByFourMatrix", name=jnt_FBFM_node)
             pm.PyNode(null_vp).attr("outputX").connect(
@@ -885,25 +894,185 @@ class MouthCreator(Creator):
             pm.PyNode(jnt_vp).attr("outputZ").connect(
                 pm.PyNode(jnt_FBFM_node).attr("in22"), f=True)
 
-            jnt_dm_node = follicle.name().replace("_Follicle", "_DM")
+            jnt_dm_node = corner_follicle.name().replace("_Follicle", "_DM")
             if not pm.objExists(jnt_dm_node):
                 jnt_dm_node = pm.createNode(
                     "decomposeMatrix", name=jnt_dm_node)
             pm.PyNode(jnt_FBFM_node).attr("output").connect(
-                pm.PyNode(jnt_dm_node).attr("inputMatrix"))
+                pm.PyNode(jnt_dm_node).attr("inputMatrix"), f=True)
 
             pm.PyNode(jnt_dm_node).attr("outputRotate").connect(
-                pm.PyNode(bind_jnt_root).attr("rotate"))
+                pm.PyNode(corner_bind_jnt_root).attr("rotate"), f=True)
 
             for location in ["Up", "Low"]:
                 for index in range(1, seg + 1):
-                    bind_jnt_root = ("{}_Mouth_01_{}Lip_{}_Jnt_Grp".format(
+                    # 缩放部分
+                    bind_jnt_root = (
+                        "{}_Mouth_01_{}Lip_{}_Jnt_Grp".format(
+                            side, location, "{0:02d}".format(index)))
+                    pm.PyNode(master_ctrl).attr("localScale").connect(
+                        pm.PyNode(bind_jnt_root).scaleX, f=True)
+                    pm.PyNode(master_ctrl).attr("localScale").connect(
+                        pm.PyNode(bind_jnt_root).scaleY, f=True)
+                    pm.PyNode(master_ctrl).attr("localScale").connect(
+                        pm.PyNode(bind_jnt_root).scaleZ, f=True)
+
+                    # 位移部分
+                    translate_bc_node = (
+                        "{}_Mouth_01_{}Lip_{}_Jnt_Translate_BC".format(
+                            side, location, "{0:02d}".format(index)))
+                    if not pm.objExists(translate_bc_node):
+                        pm.createNode("blendColors", name=translate_bc_node)
+                    low_follicle_shape = (
+                        "{}_Mouth_01_LowLip_{}_Jnt_FollicleShape".format(
+                            side, "{0:02d}".format(index)))
+                    up_follicle_shape = (
+                        "{}_Mouth_01_UpLip_{}_Jnt_FollicleShape".format(
+                            side, "{0:02d}".format(index)))
+                    pm.PyNode(up_follicle_shape).attr("outTranslate").connect(
+                        pm.PyNode(translate_bc_node).attr("color1"), f=True)
+                    pm.PyNode(low_follicle_shape).attr("outTranslate").connect(
+                        pm.PyNode(translate_bc_node).attr("color2"), f=True)
+                    pm.PyNode(translate_bc_node).attr("output").connect(
+                        pm.PyNode(bind_jnt_root).translate, f=True)
+
+                    lf_sew_follicle_shape = (
+                        "LF_Mouth_01_LipSew_Ctrl_FollicleShape")
+                    rt_sew_follicle_shape = (
+                        "RT_Mouth_01_LipSew_Ctrl_FollicleShape")
+
+                    sew_sr_node = (
+                        "{}_Mouth_01_{}Lip_{}_Jnt_LipSew_SR".format(
+                            side, location, "{0:02d}".format(index)))
+                    if not pm.objExists(sew_sr_node):
+                        pm.createNode("setRange", name=sew_sr_node)
+                        pm.PyNode(sew_sr_node).attr("minY").set(0.5)
+                        pm.PyNode(sew_sr_node).attr("maxX").set(0.5)
+                        if side == "LF":
+                            pm.PyNode(sew_sr_node).attr("oldMinX").set(
+                                0.5 - index * 0.1)
+                            pm.PyNode(sew_sr_node).attr("oldMinY").set(
+                                0.5 - index * 0.1)
+                            pm.PyNode(sew_sr_node).attr("oldMaxX").set(
+                                0.5 + 0.1 - index * 0.1)
+                            pm.PyNode(sew_sr_node).attr("oldMaxY").set(
+                                0.5 + 0.1 - index * 0.1)
+                        elif side == "RT":
+                            pm.PyNode(sew_sr_node).attr("oldMinX").set(
+                                0.5 - 0.1 + index * 0.1)
+                            pm.PyNode(sew_sr_node).attr("oldMinY").set(
+                                0.5 - 0.1 + index * 0.1)
+                            pm.PyNode(sew_sr_node).attr("oldMaxX").set(
+                                0.5 + index * 0.1)
+                            pm.PyNode(sew_sr_node).attr("oldMaxY").set(
+                                0.5 + index * 0.1)
+                    pm.PyNode(lf_sew_follicle_shape).attr(
+                        "parameterU").connect(
+                        pm.PyNode(sew_sr_node).attr("valueX"), f=True)
+                    pm.PyNode(rt_sew_follicle_shape).attr(
+                        "parameterU").connect(
+                        pm.PyNode(sew_sr_node).attr("valueY"), f=True)
+
+                    adl_node = ("{}_Mouth_01_{}Lip_{}_Jnt_ADL".format(
                         side, location, "{0:02d}".format(index)))
-                    pm.PyNode(master_ctrl).attr("localScale").connect(
-                        pm.PyNode(bind_jnt_root).scaleX)
-                    pm.PyNode(master_ctrl).attr("localScale").connect(
-                        pm.PyNode(bind_jnt_root).scaleY)
-                    pm.PyNode(master_ctrl).attr("localScale").connect(
-                        pm.PyNode(bind_jnt_root).scaleZ)
+                    if not pm.objExists(adl_node):
+                        pm.createNode("addDoubleLinear", name=adl_node)
+                    pm.PyNode(sew_sr_node).attr("outValueX").connect(
+                        pm.PyNode(adl_node).attr("input1"), f=True)
+                    pm.PyNode(sew_sr_node).attr("outValueY").connect(
+                        pm.PyNode(adl_node).attr("input2"), f=True)
+
+                    cmp_node = ("{}_Mouth_01_{}Lip_{}_Jnt_LipSew_CMP".format(
+                        side, location, "{0:02d}".format(index)))
+                    if not pm.objExists(cmp_node):
+                        pm.createNode("clamp", name=cmp_node)
+                        pm.PyNode(cmp_node).attr("maxR").set(0.5)
+                    pm.PyNode(adl_node).attr("output").connect(
+                        pm.PyNode(cmp_node).attr("inputR"), f=True)
+
+                    if location == "Up":
+                        pma_node = (
+                            "{}_Mouth_01_{}Lip_{}_Jnt_LipSew_PMA".format(
+                                side, location, "{0:02d}".format(index)))
+                        if not pm.objExists(pma_node):
+                            pm.createNode("plusMinusAverage", name=pma_node)
+                            pm.PyNode(pma_node).attr("operation").set(2)
+                            pm.PyNode(pma_node).attr("input1D[0]").set(1)
+                        pm.PyNode(cmp_node).attr("outputR").connect(
+                            pm.PyNode(pma_node).attr("input1D[1]"), f=True)
+                        pm.PyNode(pma_node).attr("output1D").connect(
+                            pm.PyNode(translate_bc_node).attr("blender"),
+                            f=True)
+                    else:
+                        pm.PyNode(cmp_node).attr("outputR").connect(
+                            pm.PyNode(translate_bc_node).attr("blender"),
+                            f=True)
+
+                    # 旋转部分
+                    follicle_node = (
+                        "{}_Mouth_01_{}Lip_{}_Jnt_Follicle".format(
+                            side, location, "{0:02d}".format(index)))
+
+                    side_jnt_vp = ("{}_Mouth_01_{}Lip_{}_Jnt_VP".format(
+                        side, location, "{0:02d}".format(index)))
+                    if not pm.objExists(side_jnt_vp):
+                        pm.createNode("vectorProduct", name=side_jnt_vp)
+                        pm.PyNode(side_jnt_vp).attr("operation").set(3)
+                        pm.PyNode(side_jnt_vp).attr("input1X").set(1.0)
+                    pm.PyNode(follicle_node).attr("worldMatrix[0]").connect(
+                        pm.PyNode(side_jnt_vp).attr("matrix"), f=True)
+
+                    side_3rd_vp_node = (
+                        "{}_Mouth_01_{}Lip_{}_Jnt_3rd_VP".format(
+                            side, location, "{0:02d}".format(index)))
+                    if not pm.objExists(side_3rd_vp_node):
+                        pm.createNode("vectorProduct", name=side_3rd_vp_node)
+                        pm.PyNode(side_3rd_vp_node).attr("operation").set(2)
+                    pm.PyNode(side_jnt_vp).attr("output").connect(
+                        pm.PyNode(side_3rd_vp_node).attr("input2"), f=True)
+
+                    side_jnt_FBFM_node = (
+                        "{}_Mouth_01_{}Lip_{}_Jnt_FBFM".format(
+                            side, location, "{0:02d}".format(index)))
+                    if not pm.objExists(side_jnt_FBFM_node):
+                        pm.createNode("fourByFourMatrix",
+                                      name=side_jnt_FBFM_node)
+
+                    pm.PyNode(side_jnt_vp).attr("outputX").connect(
+                        pm.PyNode(side_jnt_FBFM_node).attr("in20"), f=True)
+                    pm.PyNode(side_jnt_vp).attr("outputY").connect(
+                        pm.PyNode(side_jnt_FBFM_node).attr("in21"), f=True)
+                    pm.PyNode(side_jnt_vp).attr("outputZ").connect(
+                        pm.PyNode(side_jnt_FBFM_node).attr("in22"), f=True)
+
+                    ctrl_null_vp = "MD_Mouth_01_Master_Ctrl_Null_VP"
+                    # if not pm.objExists(ctrl_null_vp):
+                    #     pm.createNode("vectorProduct", name=ctrl_null_vp)
+                    #     pm.PyNode(ctrl_null_vp).attr("operation").set(3)
+                    pm.PyNode(ctrl_null_vp).attr("output").connect(
+                        pm.PyNode(side_3rd_vp_node).attr("input1"), f=True)
+                    pm.PyNode(ctrl_null_vp).attr("outputX").connect(
+                        pm.PyNode(side_jnt_FBFM_node).attr("in00"), f=True)
+                    pm.PyNode(ctrl_null_vp).attr("outputY").connect(
+                        pm.PyNode(side_jnt_FBFM_node).attr("in01"), f=True)
+                    pm.PyNode(ctrl_null_vp).attr("outputZ").connect(
+                        pm.PyNode(side_jnt_FBFM_node).attr("in02"), f=True)
+
+                    pm.PyNode(side_3rd_vp_node).attr("outputX").connect(
+                        pm.PyNode(side_jnt_FBFM_node).attr("in10"), f=True)
+                    pm.PyNode(side_3rd_vp_node).attr("outputY").connect(
+                        pm.PyNode(side_jnt_FBFM_node).attr("in11"), f=True)
+                    pm.PyNode(side_3rd_vp_node).attr("outputZ").connect(
+                        pm.PyNode(side_jnt_FBFM_node).attr("in12"), f=True)
+
+                    side_jnt_dm_node = ("{}_Mouth_01_{}Lip_{}_Jnt_DM".format(
+                        side, location, "{0:02d}".format(index)))
+                    if not pm.objExists(side_jnt_dm_node):
+                        pm.createNode("decomposeMatrix", name=side_jnt_dm_node)
+                    pm.PyNode(side_jnt_FBFM_node).attr("output").connect(
+                        pm.PyNode(side_jnt_dm_node).attr("inputMatrix"),
+                        f=True)
+                    pm.PyNode(side_jnt_dm_node).attr("outputRotate").connect(
+                        pm.PyNode(bind_jnt_root).rotate, f=True)
 
         return
