@@ -59,8 +59,7 @@ def connect_targets_spec_attr(source="", source_attr="", targets=None, target_at
 
     for target in targets:
         for target_attr in target_attrs:
-            pm.PyNode(source).attr(source_attr).connect(
-                "{}.{}".format(target, target_attr))
+            pm.PyNode(source).attr(source_attr).connect("{}.{}".format(target, target_attr))
     return
 
 
@@ -78,7 +77,7 @@ def follicle_shape_out_for_parent(follicle_shape):
 
 
 def check_constraint(target, source):
-    """检查约束状态
+    u"""检查约束状态
 
     :param target: 被约束目标
     :param source: 约束目标
@@ -89,7 +88,7 @@ def check_constraint(target, source):
         for target_input in target_inputs:
             if target_input.type() in ["parentConstraint", "pointConstraint", "scaleConstraint", "aimConstraint",
                                        "orientConstraint"]:
-                if (target in list(set(target_input.inputs())) and source in list(set(target_input.inputs()))):
+                if target in list(set(target_input.inputs())) and source in list(set(target_input.inputs())):
                     return True
                 else:
                     return False
@@ -98,7 +97,7 @@ def check_constraint(target, source):
 
 
 def make_follicle_work_on_surface(surface, follicle, param_u=0.0, param_v=0.0):
-    """让毛囊在曲面上能够起作用（工作）
+    u"""让毛囊在曲面上能够起作用（工作）
 
     :param surface: 曲面
     :param follicle: 毛囊
@@ -109,8 +108,7 @@ def make_follicle_work_on_surface(surface, follicle, param_u=0.0, param_v=0.0):
     surface_shape = pm.PyNode(surface).getShape()
     follicle_shape = pm.PyNode(follicle).getShape()
     surface_shape.attr("local").connect(follicle_shape.attr("inputSurface"))
-    surface_shape.attr("worldMatrix[0]").connect(
-        follicle_shape.attr("inputWorldMatrix"))
+    surface_shape.attr("worldMatrix[0]").connect(follicle_shape.attr("inputWorldMatrix"))
     follicle_shape.attr("parameterU").set(param_u)
     follicle_shape.attr("parameterV").set(param_v)
     return
@@ -121,8 +119,7 @@ def imported_object(file_path):
 
     :return: list of new object
     """
-    imported = cmds.file(file_path, ignoreVersion=True,
-                         i=True, type="mayaBinary", rnn=True)
+    imported = cmds.file(file_path, ignoreVersion=True, i=True, type="mayaBinary", rnn=True)
     for transform_node in imported:
         if pm.PyNode(transform_node).type() == "transform":
             return transform_node
@@ -151,16 +148,14 @@ def yellow_component(name="", shape_type="", translate=(0, 0, 0), parent_node=No
     :return: grp
     """
     if shape_type == "nurbsPlane":
-        pm.nurbsPlane(name=name, p=[0, 0, 0], ax=[
-            0, 0, 1], w=1, lr=1, d=3, u=1, v=1, ch=1)
+        pm.nurbsPlane(name=name, p=[0, 0, 0], ax=[0, 0, 1], w=1, lr=1, d=3, u=1, v=1, ch=1)
     if shape_type == "locator":
         pm.spaceLocator(name=name)
     if shape_type == "joint":
         pm.select(cl=True)
         pm.joint(name=name)
     if shape_type == "sphere":
-        pm.sphere(name=name, p=[0, 0, 0], ax=[0, 1, 0], ssw=0,
-                  esw=360, r=1, d=3, ut=0, tol=0.01, s=4, nsp=2, ch=1)
+        pm.sphere(name=name, p=[0, 0, 0], ax=[0, 1, 0], ssw=0, esw=360, r=1, d=3, ut=0, tol=0.01, s=4, nsp=2, ch=1)
     if shape_type == "cone":
         pm.cone(name=name, p=[0, 0, 0], ax=[-1, 0, 0], ssw=0, esw=360, r=0.45, hr=2, d=1, ut=0, tol=0.01, s=4, nsp=1,
                 ch=0)
@@ -173,8 +168,7 @@ def yellow_component(name="", shape_type="", translate=(0, 0, 0), parent_node=No
     pm.parent(name, "{}_02_Grp".format(name))
 
     if have_loc:
-        pm.parent(pm.spaceLocator(name="{}_Roll_Loc".format(name)),
-                  "{}_Grp".format(name))
+        pm.parent(pm.spaceLocator(name="{}_Roll_Loc".format(name)), "{}_Grp".format(name))
 
     pm.PyNode("{}_Grp".format(name)).translate.set(translate)
 
@@ -196,8 +190,7 @@ def cyan_control(name="", shape_type="sphere", translate=(0, 0, 0), parent_node=
     if shape_type == "sphere":
         base_ctrl = pm.sphere(name=name, p=[0, 0, 0], ax=[0, 1, 0], ssw=0, esw=360, r=1, d=1, ut=0, tol=0.01, s=4,
                               nsp=2, ch=0)
-    pm.parent(base_ctrl, pm.createNode(
-        "transform", name="{}_Grp".format(name)))
+    pm.parent(base_ctrl, pm.createNode("transform", name="{}_Grp".format(name)))
 
     pm.PyNode("{}_Grp".format(name)).translate.set(translate)
 
@@ -239,14 +232,13 @@ def xd_follicle_node(name, worldMatrixInput=None, surfaceInput=None, paramUInput
     :param paramVInput:
     :param outTranslateToParent:
     :param outRotateToParent:
-    :param parentNode: 
+    :param parentNode:
     :return:
     """
     follicle = pm.rename(pm.createNode("follicle").getParent(), name)
 
     if worldMatrixInput is not None:
-        pm.connectAttr(worldMatrixInput,
-                       follicle.getShape().attr("inputWorldMatrix"))
+        pm.connectAttr(worldMatrixInput, follicle.getShape().attr("inputWorldMatrix"))
 
     if surfaceInput is not None:
         pm.connectAttr(surfaceInput, follicle.getShape().attr("inputSurface"))
@@ -258,12 +250,10 @@ def xd_follicle_node(name, worldMatrixInput=None, surfaceInput=None, paramUInput
         pm.connectAttr(paramVInput, follicle.getShape().attr("parameterV"))
 
     if outTranslateToParent:
-        pm.PyNode(follicle).getShape().attr(
-            "outTranslate").connect(pm.PyNode(follicle).translate)
+        pm.PyNode(follicle).getShape().attr("outTranslate").connect(pm.PyNode(follicle).translate)
 
     if outRotateToParent:
-        pm.PyNode(follicle).getShape().attr(
-            "outRotate").connect(pm.PyNode(follicle).rotate)
+        pm.PyNode(follicle).getShape().attr("outRotate").connect(pm.PyNode(follicle).rotate)
 
     if parentNode is not None:
         if not pm.objExists(parentNode):
@@ -288,16 +278,14 @@ def jnt_or_control_grp(name, object_type="joint", parent_node=None, have_loc=Fal
     if object_type == "joint":
         pm.joint(name=name),
     if object_type == "plane":
-        pm.nurbsPlane(name=name, p=[0, 0, 0], ax=[
-            0, 0, 1], w=1, lr=0.6, d=1, u=1, v=1, ch=0),
+        pm.nurbsPlane(name=name, p=[0, 0, 0], ax=[0, 0, 1], w=1, lr=0.6, d=1, u=1, v=1, ch=0),
     if object_type == "tours":
         pm.torus(name=name, p=[0, 0, 0], ax=[0, 0, 1],
                  ssw=0, esw=360, msw=360, r=1, hr=0.5, d=3, ut=0, tol=0.01, s=8, nsp=4, ch=1),
     if object_type == "locator":
         pm.spaceLocator(name=name)
     if object_type == "sphere":
-        pm.sphere(name=name, p=[0, 0, 0], ax=[0, 1, 0], ssw=0,
-                  esw=360, r=1, d=3, ut=0, tol=0.01, s=4, nsp=2, ch=1)
+        pm.sphere(name=name, p=[0, 0, 0], ax=[0, 1, 0], ssw=0, esw=360, r=1, d=3, ut=0, tol=0.01, s=4, nsp=2, ch=1)
 
     pm.parent(name, pm.createNode("transform", name="{}_Grp".format(name)))
 
@@ -321,8 +309,7 @@ def control_grp_have_joint(name, object_type="plane", parent_node=None):
     """
     grp = pm.createNode("transform", name="{}_Grp".format(name))
     if object_type == "plane":
-        pm.parent(pm.nurbsPlane(name=name, p=[0, 0, 0], ax=[
-            0, 0, 1], w=1, lr=1, d=1, u=1, v=1, ch=0), grp)
+        pm.parent(pm.nurbsPlane(name=name, p=[0, 0, 0], ax=[0, 0, 1], w=1, lr=1, d=1, u=1, v=1, ch=0), grp)
     pm.select(cl=True)
     jnt = pm.joint(name="{}_Jnt".format(name))
     pm.parent(jnt, name)
@@ -368,13 +355,11 @@ def chain_ctrl_null_grp(name, segment=3, parent_node=None):
     pm.parent(null, null_grp)
 
     for index in range(1, segment):
-        null_seg = pm.createNode("transform", name="{}_{}_Grp".format(
-            name, "{0:02d}".format(index + 1)))
+        null_seg = pm.createNode("transform", name="{}_{}_Grp".format(name, "{0:02d}".format(index + 1)))
         if index == 1:
             pm.parent(null_seg, null_grp)
         else:
-            pm.parent(null_seg, "{}_{}_Grp".format(
-                name, "{0:02d}".format(index)))
+            pm.parent(null_seg, "{}_{}_Grp".format(name, "{0:02d}".format(index)))
 
     if parent_node is not None:
         pm.parent(null_grp, parent_node)
@@ -390,15 +375,12 @@ def symmetry_surface(source, target):
     :param target:
     :return:
     """
-    num_u = pm.PyNode(source).getShape().attr("degreeU").get(
-    ) + pm.PyNode(source).getShape().attr("spansU").get()
-    num_v = pm.PyNode(source).getShape().attr("degreeV").get(
-    ) + pm.PyNode(source).getShape().attr("spansV").get()
+    num_u = pm.PyNode(source).getShape().attr("degreeU").get() + pm.PyNode(source).getShape().attr("spansU").get()
+    num_v = pm.PyNode(source).getShape().attr("degreeV").get() + pm.PyNode(source).getShape().attr("spansV").get()
 
     for index_u in range(0, num_u):
         for index_v in range(0, num_v):
-            source_position = pm.pointPosition(
-                '{}.cv[{}][{}]'.format(source, index_u, index_v), w=True)
+            source_position = pm.pointPosition('{}.cv[{}][{}]'.format(source, index_u, index_v), w=True)
             pm.move(source_position[0] * -1, source_position[1], source_position[2],
                     pm.PyNode("{}.cv[{}][{}]".format(target, index_u, index_v)))
     return True
@@ -1080,6 +1062,7 @@ class EyeCreator(Creator):
 
     def build_aim_ctrl_group(self):
         print("build aim ctrl group")
+
 
 class BrowCreator(Creator):
     def __init__(self):
@@ -1794,6 +1777,8 @@ class MouthCreator(Creator):
         :return:
         """
 
+        prefix = "MD_{}".format(self.module_name)
+
         parameter = 0.5
 
         if not pm.objExists(self.up_base_curve):
@@ -1802,19 +1787,14 @@ class MouthCreator(Creator):
         if not pm.objExists(self.low_base_curve):
             pm.error("{}丢失".format(self.low_base_curve))
 
-        up_curve_center_position = point_on_curve_position(
-            curve=self.up_base_curve, parameter=parameter)
-        low_curve_center_position = point_on_curve_position(
-            curve=self.low_base_curve, parameter=parameter)
-        pos_x = (low_curve_center_position[0] + (
-                up_curve_center_position[0] - low_curve_center_position[0]) / 2)
-        pos_y = (low_curve_center_position[1] + (
-                up_curve_center_position[1] - low_curve_center_position[1]) / 2)
-        pos_z = (low_curve_center_position[2] + (
-                up_curve_center_position[2] - low_curve_center_position[2]) / 2)
+        up_curve_center_position = point_on_curve_position(curve=self.up_base_curve, parameter=parameter)
+        low_curve_center_position = point_on_curve_position(curve=self.low_base_curve, parameter=parameter)
+        pos_x = (low_curve_center_position[0] + (up_curve_center_position[0] - low_curve_center_position[0]) / 2)
+        pos_y = (low_curve_center_position[1] + (up_curve_center_position[1] - low_curve_center_position[1]) / 2)
+        pos_z = (low_curve_center_position[2] + (up_curve_center_position[2] - low_curve_center_position[2]) / 2)
         offset = 4.0
 
-        master_ctrl = "MD_{}_Master_Ctrl".format(self.module_name)
+        master_ctrl = "{}_Master_Ctrl".format(prefix)
         if not pm.objExists(master_ctrl):
             cyan_control(
                 name=master_ctrl,
@@ -1829,9 +1809,10 @@ class MouthCreator(Creator):
                 translate=(pos_x, pos_y, pos_z + offset),
                 parent_node="MD_{}_Deformer_Grp".format(self.module_name))
 
-        pm.PyNode(master_ctrl).translate.connect(
-            pm.PyNode(master_ctrl_loc).translate, f=True)
+        if not pm.isConnected(pm.PyNode(master_ctrl).translate, pm.PyNode(master_ctrl_loc).translate):
+            pm.PyNode(master_ctrl).translate.connect(pm.PyNode(master_ctrl_loc).translate, f=True)
 
+        print(u"Master ctrl创建完毕")
         return True
 
     def base_controls(self):
@@ -1840,46 +1821,49 @@ class MouthCreator(Creator):
         这个方法需要依靠 base curve 曲线为控件进行定位
         :return:
         """
-        if (not pm.objExists(self.up_base_curve) or not pm.objExists(self.low_base_curve)):
+        prefix = "MD_{}".format(self.module_name)
+
+        if not pm.objExists(self.up_base_curve) or not pm.objExists(self.low_base_curve):
             pm.error(u"场景中没有找到Base curve")
 
-        base_ctrl_grp = "MD_{}_Base_Ctrl_Grp".format(self.module_name)
+        base_ctrl_grp = "{}_Base_Ctrl_Grp".format(prefix)
         if not pm.objExists(base_ctrl_grp):
             pm.createNode("transform", name=base_ctrl_grp)
-            if pm.objExists("MD_{}_Grp".format(self.module_name)):
-                pm.parent(base_ctrl_grp, "MD_{}_Grp".format(self.module_name))
+            if pm.objExists("{}_Grp".format(prefix)):
+                pm.parent(base_ctrl_grp, "{}_Grp".format(prefix))
 
-        base_ctrl_out_grp = "MD_{}_Base_Ctrl_Out_Grp".format(self.module_name)
-        base_loc_grp = "MD_{}_Base_Loc_Grp".format(self.module_name)
-        base_follicle_grp = "MD_{}_Base_Follicle_Grp".format(self.module_name)
+        base_ctrl_out_grp = "{}_Base_Ctrl_Out_Grp".format(prefix)
+        base_loc_grp = "{}_Base_Loc_Grp".format(prefix)
+        base_follicle_grp = "{}_Base_Follicle_Grp".format(prefix)
 
         if not pm.objExists(base_ctrl_out_grp):
-            pm.parent(pm.createNode("transform", name=base_ctrl_out_grp),
-                      "MD_{}_Deformer_Grp".format(self.module_name))
-
+            pm.parent(
+                pm.createNode("transform", name=base_ctrl_out_grp),
+                "{}_Deformer_Grp".format(prefix))
             if not pm.objExists(base_loc_grp):
-                pm.parent(pm.createNode(
-                    "transform", name=base_loc_grp), base_ctrl_out_grp)
-
+                pm.parent(
+                    pm.createNode("transform", name=base_loc_grp),
+                    base_ctrl_out_grp)
             if not pm.objExists(base_follicle_grp):
-                pm.parent(pm.createNode(
-                    "transform", name=base_follicle_grp), base_ctrl_out_grp)
+                pm.parent(
+                    pm.createNode("transform", name=base_follicle_grp),
+                    base_ctrl_out_grp)
 
         # 左右嘴角的控制
         for item in ["LF", "RT"]:
+            prefix = "{}_{}".format(item, self.module_name)
             if item == "LF":
                 parameter = 0.0
             else:
                 parameter = 1.0
-            control_position = point_on_curve_position(
-                curve=self.up_base_curve, parameter=parameter)
-            control_name = "{}_{}_Ctrl".format(item, self.module_name)
+            control_position = point_on_curve_position(curve=self.up_base_curve, parameter=parameter)
+            control_name = "{}_Ctrl".format(prefix)
             if not pm.objExists(control_name):
                 yellow_component(name=control_name,
                                  shape_type="nurbsPlane",
                                  translate=control_position,
                                  parent_node=base_ctrl_grp)
-            ctrl_loc = "{}_{}_Ctrl_Loc".format(item, self.module_name)
+            ctrl_loc = "{}_Ctrl_Loc".format(prefix)
             if not pm.objExists(ctrl_loc):
                 yellow_component(name=ctrl_loc,
                                  shape_type="locator",
@@ -1888,19 +1872,18 @@ class MouthCreator(Creator):
 
         # 上下嘴唇的控制器
         for item in ["Up", "Low"]:
+            prefix = "{}_{}".format(item, self.module_name)
             parameter = 0.5
             if item == "Up":
                 curve = self.up_base_curve
             else:
                 curve = self.low_base_curve
-            control_position = point_on_curve_position(
-                curve=curve, parameter=parameter)
-            control_name = "{}_{}_Ctrl".format(item, self.module_name)
-            if not pm.objExists(control_name):
-                yellow_component(name=control_name,
+            if not pm.objExists("{}_Ctrl".format(prefix)):
+                yellow_component(name="{}_Ctrl".format(prefix),
                                  shape_type="nurbsPlane",
-                                 translate=control_position,
+                                 translate=point_on_curve_position(curve=curve, parameter=parameter),
                                  parent_node=base_ctrl_grp)
+        print(u"Base controls已经被创建")
         return True
 
     def build(self):
@@ -1923,7 +1906,7 @@ class MouthCreator(Creator):
         self.__connect_jaw_ctrl_and_jnt()
 
     def follicle_on_mouth_surface(self):
-        """求出locator（为控制嘴唇整体的三根骨骼进行定位）在mouth surface上面的位置（参数U，V），
+        u"""求出locator（为控制嘴唇整体的三根骨骼进行定位）在mouth surface上面的位置（参数U，V），
         然后将这个位置信息与控制嘴角骨骼的毛囊体的参数 U 和 V 进行连接，
         毛囊体会根据参数移动到相应的位置，
         这样控制了locator， 就控制了毛囊体，也就间接的控制了骨骼
@@ -1932,74 +1915,77 @@ class MouthCreator(Creator):
 
         follicle_list = []
 
-        for side_prefix in ["LF", "RT", "MD"]:
-            if side_prefix == "MD":
-                corner_locator = "{}_Mouth_01_Master_Ctrl_Loc".format(
-                    side_prefix)
-            else:
-                corner_locator = "{}_Mouth_01_Ctrl_Loc".format(side_prefix)
+        for side in ["LF", "RT", "MD"]:
+            prefix = "{}_{}".format(side, self.module_name)
 
-            cpos_node = "{}_Mouth_01_Ctrl_CPOS".format(side_prefix)
+            if side == "MD":
+                corner_locator = "{}_Master_Ctrl_Loc".format(prefix)
+            else:
+                corner_locator = "{}_Ctrl_Loc".format(prefix)
+
+            cpos_node = "{}_Ctrl_CPOS".format(prefix)
             if not pm.objExists(cpos_node):
-                cpos_node = pm.createNode(
-                    "closestPointOnSurface", name=cpos_node)
+                cpos_node = pm.createNode("closestPointOnSurface", name=cpos_node)
 
             corner_locator_shape = pm.PyNode(corner_locator).getShape()
 
-            corner_locator_shape.attr("worldPosition[0]").connect(
-                cpos_node.attr("inPosition"))
-            mouth_surface_shape.attr("worldSpace[0]").connect(
-                cpos_node.attr("inputSurface"))
+            if not pm.isConnected(corner_locator_shape.attr("worldPosition[0]"),
+                                  pm.PyNode(cpos_node).attr("inPosition")):
+                corner_locator_shape.attr("worldPosition[0]").connect(cpos_node.attr("inPosition"), f=True)
+            if not pm.isConnected(mouth_surface_shape.attr("worldSpace[0]"),
+                                  pm.PyNode(cpos_node).attr("inputSurface")):
+                mouth_surface_shape.attr("worldSpace[0]").connect(cpos_node.attr("inputSurface"), f=True)
 
-            if side_prefix == "MD":
-                follicle_name = "{}_Mouth_01_Master_Ctrl_Follicle".format(
-                    side_prefix)
-                xd_follicle_node(
-                    name=follicle_name,
-                    worldMatrixInput=mouth_surface_shape.attr(
-                        "worldMatrix[0]"),
-                    surfaceInput=mouth_surface_shape.attr("local"),
-                    paramUInput=pm.PyNode(cpos_node).attr("parameterU"),
-                    paramVInput=pm.PyNode(cpos_node).attr("parameterV"),
-                    outTranslateToParent=True,
-                    outRotateToParent=True,
-                    parentNode="MD_{}_Grp".format(self.module_name)
-                )
+            if side == "MD":
+                follicle_name = "{}_Master_Ctrl_Follicle".format(prefix)
+                if not pm.objExists(follicle_name):
+                    xd_follicle_node(
+                        name=follicle_name,
+                        worldMatrixInput=mouth_surface_shape.attr("worldMatrix[0]"),
+                        surfaceInput=mouth_surface_shape.attr("local"),
+                        paramUInput=pm.PyNode(cpos_node).attr("parameterU"),
+                        paramVInput=pm.PyNode(cpos_node).attr("parameterV"),
+                        outTranslateToParent=True,
+                        outRotateToParent=True,
+                        parentNode="MD_{}_Grp".format(self.module_name))
                 follicle_list.append(follicle_name)
             else:
-                follicle_name = "{}_Mouth_01_Ctrl_Jnt_Follicle".format(
-                    side_prefix)
-                xd_follicle_node(
-                    name=follicle_name,
-                    worldMatrixInput=mouth_surface_shape.attr(
-                        "worldMatrix[0]"),
-                    surfaceInput=mouth_surface_shape.attr("local"),
-                    paramUInput=pm.PyNode(cpos_node).attr("parameterU"),
-                    paramVInput=pm.PyNode(cpos_node).attr("parameterV"),
-                    outTranslateToParent=True,
-                    outRotateToParent=True,
-                    parentNode="MD_{}_Base_Follicle_Grp".format(
-                        self.module_name)
-                )
+                follicle_name = "{}_Ctrl_Jnt_Follicle".format(prefix)
+                if not pm.objExists(follicle_name):
+                    xd_follicle_node(
+                        name=follicle_name,
+                        worldMatrixInput=mouth_surface_shape.attr("worldMatrix[0]"),
+                        surfaceInput=mouth_surface_shape.attr("local"),
+                        paramUInput=pm.PyNode(cpos_node).attr("parameterU"),
+                        paramVInput=pm.PyNode(cpos_node).attr("parameterV"),
+                        outTranslateToParent=True,
+                        outRotateToParent=True,
+                        parentNode="MD_{}_Base_Follicle_Grp".format(self.module_name))
                 follicle_list.append(follicle_name)
-
+        print(u"已经创建毛囊体：{}".format(follicle_list))
         return follicle_list
 
     def base_follicle_grp(self):
-        """利用mouth surface定位毛囊，
+        u"""利用mouth surface定位毛囊，
+
         并利用毛囊的位移节点（父节点）对控制嘴唇的骨骼的组节点进行目标约束
         """
+
+        check_list = []
         for item in ["Up", "Low"]:
+            # Up_Mouth_01_Ctrl_Jnt or Low_Mouth_01_Ctrl_Jnt
             aim_jnt = "{}_{}_Ctrl_Jnt".format(item, self.module_name)
+            check_list.append(aim_jnt)
+
+            if item == "Up":
+                base_curve = self.up_base_curve
+            else:
+                base_curve = self.low_base_curve
+
             if not pm.objExists(aim_jnt):
-                if item == "Up":
-                    base_curve = self.up_base_curve
-                else:
-                    base_curve = self.low_base_curve
-                pos = point_on_curve_position(base_curve, 0.5)
                 yellow_component(name=aim_jnt,
                                  shape_type="joint",
-                                 translate=pos,
+                                 translate=point_on_curve_position(base_curve, 0.5),
                                  parent_node="MD_{}_Base_Ctrl_Out_Grp".format(self.module_name))
 
             for side in ["LF", "RT"]:
@@ -2007,19 +1993,25 @@ class MouthCreator(Creator):
                     flip_up = -1.0
                 else:
                     flip_up = 1.0
-                corner_jnt = "{}_{}_Ctrl_{}_Jnt".format(
-                    side, self.module_name, item)
-                corner_follicle = "{}_{}_Ctrl_Jnt_Follicle".format(
-                    side, self.module_name)
-                corner_jnt_grp = jnt_or_control_grp(
-                    name=corner_jnt, parent_node=corner_follicle)
 
-                pm.aimConstraint(
-                    corner_follicle, corner_jnt_grp,
-                    aimVector=[0, 0, -1],
-                    upVector=[0, 1 * flip_up, 0],
-                    worldUpType="object",
-                    worldUpObject=aim_jnt)
+                # LF_Mouth_01_Ctrl_Jnt_Follicle or RT_Mouth_01_Ctrl_Jnt_Follicle
+                corner_follicle = "{}_{}_Ctrl_Jnt_Follicle".format(side, self.module_name)
+                # LF_Mouth_01_Up_Jnt or RT_Mouth_01_Up_Jnt
+                corner_jnt = "{}_{}_Ctrl_{}_Jnt".format(side, self.module_name, item)
+                check_list.append(corner_jnt)
+
+                corner_jnt_grp = "{}_Grp".format(corner_jnt)
+                if not pm.objExists(corner_jnt):
+                    corner_jnt_grp = jnt_or_control_grp(name=corner_jnt, parent_node=corner_follicle)
+
+                if not check_constraint(corner_follicle, corner_jnt_grp):
+                    pm.aimConstraint(
+                        corner_follicle, corner_jnt_grp,
+                        aimVector=[0, 0, -1],
+                        upVector=[0, 1 * flip_up, 0],
+                        worldUpType="object",
+                        worldUpObject=aim_jnt)
+        print(u"已经创建{}".format(check_list))
         return
 
     def skin_base_curve(self):
@@ -2030,13 +2022,13 @@ class MouthCreator(Creator):
             else:
                 base_curve = self.low_base_curve
 
-            base_curve_skin_items = [
-                "{}_Mouth_01_Ctrl_Jnt".format(prefix), base_curve]
+            base_curve_skin_items = ["{}_Mouth_01_Ctrl_Jnt".format(prefix), base_curve]
             for ctrl_jnt_item in ["LF", "RT"]:
-                base_curve_skin_items.append("{}_{}_Ctrl_{}_Jnt".format(
-                    ctrl_jnt_item, self.module_name, prefix))
-            pm.skinCluster(base_curve_skin_items, tsb=True,
-                           name="MD_{}_{}_Base_Curve_SC".format(self.module_name, prefix))
+                base_curve_skin_items.append("{}_{}_Ctrl_{}_Jnt".format(ctrl_jnt_item, self.module_name, prefix))
+            skin_node = "MD_{}_{}_Base_Curve_SC".format(self.module_name, prefix)
+            if not pm.objExists(skin_node):
+                pm.skinCluster(base_curve_skin_items, tsb=True, name=skin_node)
+        print (u"skin_base_curve已经执行完毕".format())
         return
 
     def corner_ctrl_connect_cpos_loc(self):
@@ -2044,8 +2036,8 @@ class MouthCreator(Creator):
         cpos_locs = ["LF_Mouth_01_Ctrl_Loc", "RT_Mouth_01_Ctrl_Loc"]
         for cpos_loc in cpos_locs:
             corner_ctrl = pm.PyNode(cpos_loc.replace("_Loc", ""))
-            pm.PyNode(corner_ctrl).translate.connect(
-                pm.PyNode(cpos_loc).translate, f=True)
+
+            pm.PyNode(corner_ctrl).translate.connect(pm.PyNode(cpos_loc).translate, f=True)
 
         return
 
@@ -3744,7 +3736,16 @@ class MouthCreator(Creator):
                 )
 
             side_ctrl_jnt = "{}_Mouth_01_Ctrl_Jnt".format(side)
-            pm.orientConstraint(master_ctrl, side_ctrl_jnt, mo=True)
+            # 修正为目标约束
+            # pm.orientConstraint(master_ctrl, side_ctrl_jnt, mo=True)
+            pm.aimConstraint(
+                master_ctrl, side_ctrl_jnt,
+                aimVector=[-1, 0, 0],
+                upVector=[0, 0, 1],
+                worldUpType="objectrotation",
+                worldUpVector=[0, 0, 1],
+                worldUpObject="{}_Mouth_01_Ctrl".format(side),
+                mo=True)
 
         return True
 
@@ -3846,7 +3847,7 @@ class FaceCreatorUI(common.Singleton):
                 (mouth_tab, 'Mouth'),
                 (face_tab, 'Cheek'),
             ),
-            sti=2,
+            sti=5,
         )
         pm.setParent(tab_layout)
         pm.showWindow("xdFaceCreatorWnd")
@@ -4639,25 +4640,25 @@ class FaceCreatorUI(common.Singleton):
 
         self.mouth_creator.skin_base_curve()
         self.mouth_creator.corner_ctrl_connect_cpos_loc()
-        self.mouth_creator.lip_ctrl_connect_ctrl_jnt()
+        # self.mouth_creator.lip_ctrl_connect_ctrl_jnt()
 
-        self.mouth_creator.follicle_on_tweak_surface()
-        self.mouth_creator.tweak_jnt_grp()
-        self.mouth_creator.tweak_ctrl_grp()
+        # self.mouth_creator.follicle_on_tweak_surface()
+        # self.mouth_creator.tweak_jnt_grp()
+        # self.mouth_creator.tweak_ctrl_grp()
 
-        self.mouth_creator.lip_sew_and_follicle()
-        self.mouth_creator.skin_out_curve()
+        # self.mouth_creator.lip_sew_and_follicle()
+        # self.mouth_creator.skin_out_curve()
 
-        self.mouth_creator.use_dm_node_to_tweak_ctrl_parent_and_jnt_02_grp()
-        self.mouth_creator.skin_tweak_surface()
+        # self.mouth_creator.use_dm_node_to_tweak_ctrl_parent_and_jnt_02_grp()
+        # self.mouth_creator.skin_tweak_surface()
 
-        self.mouth_creator.lip_sew_ctrl_drive_follicle_shape()
+        # self.mouth_creator.lip_sew_ctrl_drive_follicle_shape()
 
-        self.mouth_creator.make_bind_jnt_scale_work()
+        # self.mouth_creator.make_bind_jnt_scale_work()
 
-        self.mouth_creator.jaw_deformer_and_control()
-        self.mouth_creator.make_jaw_work()
-        self.mouth_creator.static_corner_when_master_ctrl_move_up()
+        # self.mouth_creator.jaw_deformer_and_control()
+        # self.mouth_creator.make_jaw_work()
+        # self.mouth_creator.static_corner_when_master_ctrl_move_up()
 
         return
 
