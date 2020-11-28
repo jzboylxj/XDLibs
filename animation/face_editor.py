@@ -319,7 +319,12 @@ class FaceEditor(common.Singleton):
                 attr=attr, method="delete", target="all"))
         pm.menuItem(divider=True)
         pm.menuItem(
-            label=u"恢复初始状态")
+            label=u"更新初始范围数值", c=lambda *args: self.axis_list_signal(
+                attr=attr,
+                method="update",
+                update="Default",
+                source="scene",
+            ))
         pm.menuItem(
             label=u"更新Max范围数值",
             c=lambda *args: self.axis_list_signal(
@@ -1085,7 +1090,7 @@ class FaceEditor(common.Singleton):
                     test_controller.attr("sliderZ"))
             # print(controller_offset)
         print("Done!")
-        pm.deleteUI("controllerBuilderWnd")
+        # pm.deleteUI("controllerBuilderWnd")
         return
 
     def update_test_controller(self):
@@ -1264,6 +1269,13 @@ class FaceEditor(common.Singleton):
                         controller_index - 1]["AxisControl"][axis_tab_label][
                         "BoneRange"][current_selected_index - 1][
                         "Min"] = offset_value
+                if update == "Default":
+                    current_jnt_value = get_channel_values(
+                        current_selected)
+                    self.face_data[current_module][
+                        controller_index - 1]["AxisControl"][axis_tab_label][
+                        "BoneRange"][current_selected_index - 1][
+                        "def"] = current_jnt_value
 
         common.write_json(dict_data=self.face_data, file_path=self.json_folder)
 
@@ -1341,9 +1353,12 @@ class FaceEditor(common.Singleton):
         pass
 
     def save_face_data(self):
-        common.write_json(
-            dict_data=self.face_data,
-            file_path=self.json_folder)
+        # common.write_json(
+        #     dict_data=self.face_data,
+        #     file_path=self.json_folder)
+
+        print(self.face_data)
+
         return
 
 

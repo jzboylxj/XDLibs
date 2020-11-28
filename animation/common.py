@@ -4,7 +4,7 @@
 
 """
 import json
-
+from functools import partial
 from pymel import core as pm
 
 __author__ = 'Li Xiao Jun'
@@ -65,8 +65,8 @@ def get_anim_range_from_node(node):
     """
     anim_curves = pm.listConnections(
         pm.PyNode(node), s=True, t='animCurve')
-    start_time = 0L
-    end_time = 0L
+    start_time = 0.0
+    end_time = 0.0
     if anim_curves:
         for anim_curve in anim_curves:
             if start_time < pm.keyframe(anim_curve, q=True, index=0):
@@ -120,7 +120,7 @@ def clean_unknown_node():
     """
     unknown_plugin_list = pm.unknownPlugin(query=True, list=True)
     if unknown_plugin_list:
-        print u"unknownPlugin个数为%s" % len(unknown_plugin_list)
+        print(u"unknownPlugin个数为%s" % len(unknown_plugin_list))
         for plugin_name in unknown_plugin_list:
             try:
                 pm.unknownPlugin(plugin_name, remove=True)
@@ -128,9 +128,9 @@ def clean_unknown_node():
                 # print e
                 print(plugin_name, u"无法清理")
                 # pass
-        print u"清理完成！"
+        print(u"清理完成！")
     else:
-        print u"unknownPlugin个数为0，不需要清理"
+        print(u"unknownPlugin个数为0，不需要清理")
 
 
 def moving_target(target, value=None):
@@ -283,3 +283,118 @@ def add_node_as_parent(
     else:
         pm.parent(target, new_parent_node)
     return new_parent_node
+
+
+def snap_targets():
+    """捕捉目标
+
+    使用父子约束的方法捕捉选择列表，选择的第一个对象为捕捉对象，其余选择为被捕捉对象"""
+    select_list = pm.ls(sl=True)
+    if len(select_list) > 1:
+        source = select_list[0]
+        for target_index in range(1, len(select_list)):
+            pm.delete(pm.parentConstraint(
+                source, select_list[target_index], mo=False))
+    return
+
+
+def rename_targets(template_name=""):
+    """批量修改名字
+
+    :parameter template_name: 用#作为数字的占位符
+    """
+    select_list = pm.ls(sl=True)
+    if len(select_list) > 0:
+        for target_index in range(0, len(select_list)):
+            pm.rename(
+                select_list[target_index],
+                template_name.replace("#", "{0:02d}".format(target_index + 1)))
+    return
+
+
+def target_parent_add_decompose_matrix_node():
+    select_list = pm.ls(sl=True)
+    if len(select_list) > 0:
+        for target in select_list:
+            target_parent = target.getParent()
+            decompose_matrix_node = pm.createNode(
+                "decomposeMatrix", name=target.name() + "_Inverse_DM")
+            target.attr("inverseMatrix").connect(
+                decompose_matrix_node.attr("inputMatrix"))
+            decompose_matrix_node.attr("outputTranslate").connect(
+                target_parent.attr("translate"))
+            decompose_matrix_node.attr("outputRotate").connect(
+                target_parent.attr("rotate"))
+    return
+
+
+def tweak_ctrl_connect_jnt():
+    select_list = pm.ls(sl=True)
+    if len(select_list) > 0:
+        for target in select_list:
+            target_jnt = pm.PyNode(target.name() + "_Jnt_02_Grp")
+            target.translate.connect(target_jnt.translate)
+    return
+
+
+def compile_ui_file_to_py():
+    """将 ui 文件编译为 py 文件
+
+    :return:
+    """
+
+    def _set_output_path():
+        output_path = pm.fileDialog2(
+            dialogStyle=2,
+            fileFilter="Python File (*.py);;",
+            fileMode=0,
+            okc=u"选择目录")
+        if output_path:
+            pm.textFieldButtonGrp(
+                py_store_path_field, e=True, text=output_path[0])
+        return True
+
+    if pm.window("compileHelperWnd", exists=True):
+        pm.deleteUI("compileHelperWnd")
+
+    def _get_ui_location():
+        ui_location = pm.fileDialog2(
+            dialogStyle=2,
+            fileFilter="Ui File (*.ui);;",
+            fileMode=1,
+            okc=u"选择文件")
+        if ui_location:
+            pm.textFieldButtonGrp(
+                ui_file_location_field,
+                e=True, text=ui_location[0])
+        return True
+
+    def _compile_ui_file(*args):
+        import sys, pprint
+        from pysideuic import compileUi
+
+        py_file = pm.textFieldButtonGrp(py_store_path_field,
+                                        q=True, text=True)
+        ui_file = pm.textFieldButtonGrp(ui_file_location_field,
+                                        q=True, text=True)
+        output_file = open(py_file, 'w')
+        compileUi(ui_file, output_file, False, 4, False)
+        output_file.close()
+
+        print("Compile Done!")
+        return True
+
+    pm.window("compileHelperWnd", title="ui compile helper")
+    root_layout = pm.columnLayout(adj=1)
+    file_frame = pm.frameLayout(
+        label="Compile file", p=root_layout, mw=10, mh=10, bgs=True)
+    ui_file_location_field = pm.textFieldButtonGrp(
+        label=u"ui file",
+        bl=u"  Get  ",
+        p=file_frame, bc=partial(_get_ui_location))
+    py_store_path_field = pm.textFieldButtonGrp(
+        label=u"Py file store path",
+        bl=u'  Set  ',
+        p=file_frame, bc=partial(_set_output_path))
+    pm.button(label=u'Compile!', c=partial(_compile_ui_file))
+    pm.showWindow("compileHelperWnd")
