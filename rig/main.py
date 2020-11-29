@@ -4,11 +4,9 @@
 # @Author  : Li XiaoJun
 # @Site    :
 # @File    : main.py
-import os
 from imp import reload
 from pymel import core as pm
 from animation import common
-import maya.mel as mel
 import maya.cmds as cmds
 from pymel.util import path
 from rig.names import template_dir
@@ -1708,171 +1706,6 @@ class BrowCreator(Creator):
         return
 
 
-class NoseCreator(Creator):
-    def __init__(self):
-        super(NoseCreator, self).__init__()
-
-        self.proxy_bridge = ""
-        self.proxy_master = ""
-        self.proxy_tip = ""
-        self.proxy_left = ""
-        self.proxy_right = ""
-        self.proxy_up = ""
-
-        self.module_name = "Nose_01"
-
-    def update_init(self):
-        self.proxy_bridge = pm.textFieldButtonGrp(
-            "xdMouthCreatorNoseBridgeProxyField", q=True, text=True)
-        self.proxy_master = pm.textFieldButtonGrp(
-            "xdMouthCreatorNoseMasterProxyField", q=True, text=True)
-        self.proxy_tip = pm.textFieldButtonGrp(
-            "xdMouthCreatorNoseTipProxyField", q=True, text=True)
-        self.proxy_left = pm.textFieldButtonGrp(
-            "xdMouthCreatorNoseLeftProxyField", q=True, text=True)
-        self.proxy_right = pm.textFieldButtonGrp(
-            "xdMouthCreatorNoseRightProxyField", q=True, text=True)
-        self.proxy_up = pm.textFieldButtonGrp(
-            "xdMouthCreatorNoseUpProxyField", q=True, text=True)
-        return
-
-    def proxy(self):
-        if not pm.objExists("Proxy_Grp"):
-            pm.createNode("transform", name="Proxy_Grp")
-
-        if pm.objExists("Proxy_Nose_Grp"):
-            pm.error(u"场景中已经存在代理对象")
-
-        pm.createNode("transform", name="Proxy_Nose_Grp", p="Proxy_Grp")
-
-        for item in ["Bridge", "Master", "MD", "LF", "RT", "Up"]:
-            pm.parent(pm.spaceLocator(name="proxyNose{}Loc".format(item)), "Proxy_Nose_Grp")
-
-        pm.PyNode("proxyNoseBridgeLoc").translateY.set(3)
-        pm.PyNode("proxyNoseBridgeLoc").rotateX.set(-15)
-
-        pm.parent("proxyNoseMasterLoc", "proxyNoseBridgeLoc")
-        pm.PyNode("proxyNoseMasterLoc").translateY.set(-2.5)
-        pm.PyNode("proxyNoseMasterLoc").rotateX.set(15)
-
-        pm.parent("proxyNoseMDLoc", "proxyNoseLFLoc", "proxyNoseRTLoc", "proxyNoseMasterLoc")
-        pm.PyNode("proxyNoseMDLoc").translateY.set(-0.5)
-        pm.PyNode("proxyNoseMDLoc").translateZ.set(3)
-        pm.PyNode("proxyNoseLFLoc").translate.set([1.5, -0.5, 1.5])
-        pm.PyNode("proxyNoseRTLoc").translate.set([-1.5, -0.5, 1.5])
-
-        pm.PyNode("proxyNoseUpLoc").translateY.set(4)
-
-        return True
-
-    def build_module(self):
-        ctrl_list = self.local_rig_out_grp()
-
-        # todo 右边鼻翼控制器scaleX应该为-1，而不是scaleZ的值为-1
-        self.make_ctrl_work(ctrl_list)
-
-    def local_rig_out_grp(self):
-        self.update_init()
-
-        mid_prefix = "MD_{}".format(self.module_name)
-        lf_prefix = "LF_{}".format(self.module_name)
-        rt_prefix = "RT_{}".format(self.module_name)
-
-        ctrl_list = []
-
-        deformer_grp = "{}_Deformer_Grp".format(mid_prefix)
-        if not pm.objExists(deformer_grp):
-            pm.createNode("transform", name=deformer_grp, p="Deformer_Grp")
-
-        control_grp = "{}_Grp".format(mid_prefix)
-        if not pm.objExists(control_grp):
-            pm.createNode("transform", name=control_grp, p="Head_02_Grp")
-
-        local_rig_out_grp = "{}_LocalRig_Out_Grp".format(mid_prefix)
-        if not pm.objExists(local_rig_out_grp):
-            pm.createNode("transform", name=local_rig_out_grp, p="{}_Deformer_Grp".format(mid_prefix))
-
-        bridge_jnt_grp = jnt_or_control_grp(name="{}_Bridge_Ctrl_Jnt".format(mid_prefix),
-                                            parent_node=local_rig_out_grp)
-        pm.delete(pm.parentConstraint(self.proxy_bridge, bridge_jnt_grp, mo=False))
-        bridge_ctrl_grp = jnt_or_control_grp(name="{}_Bridge_Ctrl".format(mid_prefix), object_type="plane",
-                                             parent_node=control_grp)
-        pm.delete(pm.parentConstraint(self.proxy_bridge, bridge_ctrl_grp, mo=False))
-        ctrl_list.append("{}_Bridge_Ctrl".format(mid_prefix))
-
-        master_jnt_grp = yellow_component(
-            name="{}_Master_Ctrl_Jnt".format(mid_prefix),
-            shape_type="joint",
-            parent_node="{}_Bridge_Ctrl_Jnt".format(mid_prefix))
-        pm.delete(pm.parentConstraint(self.proxy_master, master_jnt_grp, mo=False))
-        master_ctrl_grp = yellow_component(
-            name="{}_Master_Ctrl".format(mid_prefix),
-            shape_type="sphere",
-            parent_node="{}_Bridge_Ctrl".format(mid_prefix))
-        pm.delete(pm.parentConstraint(self.proxy_master, master_ctrl_grp, mo=False))
-        ctrl_list.append("{}_Master_Ctrl".format(mid_prefix))
-
-        tip_jnt_grp = jnt_or_control_grp(
-            name="{}_Ctrl_Jnt".format(mid_prefix),
-            object_type='joint',
-            parent_node="{}_Master_Ctrl_Jnt".format(mid_prefix))
-        pm.delete(pm.parentConstraint(self.proxy_tip, tip_jnt_grp, mo=False))
-        tip_ctrl_grp = jnt_or_control_grp(
-            name="{}_Ctrl".format(mid_prefix),
-            object_type='plane',
-            parent_node="{}_Master_Ctrl".format(mid_prefix))
-        pm.delete(pm.parentConstraint(self.proxy_tip, tip_ctrl_grp, mo=False))
-        ctrl_list.append("{}_Ctrl".format(mid_prefix))
-
-        left_jnt_grp = yellow_component(
-            name="{}_Ctrl_Jnt".format(lf_prefix),
-            shape_type="joint",
-            parent_node="{}_Master_Ctrl_Jnt".format(mid_prefix))
-        pm.delete(pm.parentConstraint(self.proxy_left, left_jnt_grp, mo=False))
-        left_ctrl_grp = yellow_component(
-            name="{}_Ctrl".format(lf_prefix),
-            shape_type="sphere",
-            parent_node="{}_Master_Ctrl".format(mid_prefix))
-        pm.delete(pm.parentConstraint(self.proxy_left, left_ctrl_grp, mo=False))
-        ctrl_list.append("{}_Ctrl".format(lf_prefix))
-
-        right_jnt_grp = yellow_component(
-            name="{}_Ctrl_Jnt".format(rt_prefix), shape_type="joint",
-            parent_node="{}_Master_Ctrl_Jnt".format(mid_prefix))
-        pm.PyNode(right_jnt_grp).scaleZ.set(-1)
-        pm.delete(pm.parentConstraint(self.proxy_right, right_jnt_grp, mo=False))
-
-        right_ctrl_grp = yellow_component(
-            name="{}_Ctrl".format(rt_prefix), shape_type="sphere", parent_node="{}_Master_Ctrl".format(mid_prefix))
-        pm.PyNode(right_ctrl_grp).scaleX.set(-1)
-        pm.delete(pm.parentConstraint(self.proxy_right, right_ctrl_grp, mo=False))
-
-        ctrl_list.append("{}_Ctrl".format(rt_prefix))
-
-        up_jnt_grp = jnt_or_control_grp(
-            name="{}_Up_Ctrl_Jnt".format(mid_prefix),
-            object_type="joint",
-            parent_node=local_rig_out_grp)
-        pm.delete(pm.parentConstraint(self.proxy_up, up_jnt_grp, mo=False))
-        up_ctrl_grp = jnt_or_control_grp(
-            name="{}_Up_Ctrl".format(mid_prefix),
-            object_type="plane",
-            parent_node="Head_02_Grp")
-        pm.delete(pm.parentConstraint(self.proxy_up, up_ctrl_grp, mo=False))
-        ctrl_list.append("{}_Up_Ctrl".format(mid_prefix))
-
-        return ctrl_list
-
-    def make_ctrl_work(self, ctrl_list):
-        # print(ctrl_list)
-        for ctrl in ctrl_list:
-            jnt = "{}_Jnt".format(ctrl)
-            pm.PyNode(ctrl).translate.connect(pm.PyNode(jnt).translate)
-            pm.PyNode(ctrl).rotate.connect(pm.PyNode(jnt).rotate)
-            pm.PyNode(ctrl).scale.connect(pm.PyNode(jnt).scale)
-        # todo 鼻子的微表情
-
-
 class CheekCreator(Creator):
     def __init__(self):
         super(CheekCreator, self).__init__()
@@ -1965,20 +1798,177 @@ class CheekCreator(Creator):
 
                 cheek_jnt = "{}_{}_Ctrl_Jnt".format(prefix, "{0:02d}".format(index))
                 cheek_jnt_grp = yellow_component(name=cheek_jnt, shape_type="joint", parent_node=cheek_jnt_group)
-
-                # todo 右边的骨骼的scaleZ需要修正为-1
-
-                pm.delete(pm.parentConstraint(proxy_loc, cheek_jnt_grp, mo=False))
+                pm.delete(pm.parentConstraint(cheek_ctrl_grp, cheek_jnt_grp, mo=False))
                 if side == "RT":
                     pm.PyNode(cheek_jnt_grp).scaleZ.set(-1)
-                    rotate = pm.PyNode(cheek_jnt_grp).rotate.get()
-                    pm.PyNode(cheek_jnt_grp).rotate.set([rotate[0] - 90, rotate[1] + 180, rotate[2]])
+                    pm.rotate(cheek_jnt_grp, 180, 0, 180, r=True, os=True, fo=True)
 
                 pm.PyNode(cheek_ctrl).translate.connect(pm.PyNode(cheek_jnt).translate)
                 pm.PyNode(cheek_ctrl).rotate.connect(pm.PyNode(cheek_jnt).rotate)
                 pm.PyNode(cheek_ctrl).scale.connect(pm.PyNode(cheek_jnt).scale)
 
         return
+
+
+class NoseCreator(Creator):
+    def __init__(self):
+        super(NoseCreator, self).__init__()
+
+        self.proxy_bridge = ""
+        self.proxy_master = ""
+        self.proxy_tip = ""
+        self.proxy_left = ""
+        self.proxy_right = ""
+        self.proxy_up = ""
+
+        self.module_name = "Nose_01"
+
+    def update_init(self):
+        self.proxy_bridge = pm.textFieldButtonGrp("xdMouthCreatorNoseBridgeProxyField", q=True, text=True)
+        self.proxy_master = pm.textFieldButtonGrp("xdMouthCreatorNoseMasterProxyField", q=True, text=True)
+        self.proxy_tip = pm.textFieldButtonGrp("xdMouthCreatorNoseTipProxyField", q=True, text=True)
+        self.proxy_left = pm.textFieldButtonGrp("xdMouthCreatorNoseLeftProxyField", q=True, text=True)
+        self.proxy_right = pm.textFieldButtonGrp("xdMouthCreatorNoseRightProxyField", q=True, text=True)
+        self.proxy_up = pm.textFieldButtonGrp("xdMouthCreatorNoseUpProxyField", q=True, text=True)
+        return
+
+    def proxy(self):
+        if not pm.objExists("Proxy_Grp"):
+            pm.createNode("transform", name="Proxy_Grp")
+
+        if pm.objExists("Proxy_Nose_Grp"):
+            pm.error(u"场景中已经存在代理对象")
+
+        pm.createNode("transform", name="Proxy_Nose_Grp", p="Proxy_Grp")
+
+        for item in ["Bridge", "Master", "MD", "LF", "RT", "Up"]:
+            pm.parent(pm.spaceLocator(name="proxyNose{}Loc".format(item)), "Proxy_Nose_Grp")
+
+        pm.PyNode("proxyNoseBridgeLoc").translateY.set(3)
+        pm.PyNode("proxyNoseBridgeLoc").rotateX.set(-15)
+
+        pm.parent("proxyNoseMasterLoc", "proxyNoseBridgeLoc")
+        pm.PyNode("proxyNoseMasterLoc").translateY.set(-2.5)
+        pm.PyNode("proxyNoseMasterLoc").rotateX.set(15)
+
+        pm.parent("proxyNoseMDLoc", "proxyNoseLFLoc", "proxyNoseRTLoc", "proxyNoseMasterLoc")
+        pm.PyNode("proxyNoseMDLoc").translateY.set(-0.5)
+        pm.PyNode("proxyNoseMDLoc").translateZ.set(3)
+        pm.PyNode("proxyNoseLFLoc").translate.set([1.5, -0.5, 1.5])
+        pm.PyNode("proxyNoseRTLoc").translate.set([-1.5, -0.5, 1.5])
+
+        pm.PyNode("proxyNoseUpLoc").translateY.set(4)
+
+        return True
+
+    def build_module(self):
+        ctrl_list = self.local_rig_out_grp()
+        # todo 右边鼻翼控制器scaleX应该为-1，而不是scaleZ的值为-1
+        self.make_ctrl_work(ctrl_list)
+
+    def local_rig_out_grp(self):
+        self.update_init()
+
+        mid_prefix = "MD_{}".format(self.module_name)
+        lf_prefix = "LF_{}".format(self.module_name)
+        rt_prefix = "RT_{}".format(self.module_name)
+
+        ctrl_list = []
+
+        deformer_grp = "{}_Deformer_Grp".format(mid_prefix)
+        if not pm.objExists(deformer_grp):
+            pm.createNode("transform", name=deformer_grp, p="Deformer_Grp")
+
+        control_grp = "{}_Grp".format(mid_prefix)
+        if not pm.objExists(control_grp):
+            pm.createNode("transform", name=control_grp, p="Head_02_Grp")
+
+        local_rig_out_grp = "{}_LocalRig_Out_Grp".format(mid_prefix)
+        if not pm.objExists(local_rig_out_grp):
+            pm.createNode("transform", name=local_rig_out_grp, p="{}_Deformer_Grp".format(mid_prefix))
+
+        bridge_jnt_grp = jnt_or_control_grp(
+            name="{}_Bridge_Ctrl_Jnt".format(mid_prefix), parent_node=local_rig_out_grp)
+        pm.delete(pm.parentConstraint(self.proxy_bridge, bridge_jnt_grp, mo=False))
+        bridge_ctrl_grp = jnt_or_control_grp(
+            name="{}_Bridge_Ctrl".format(mid_prefix), object_type="plane", parent_node=control_grp)
+        pm.delete(pm.parentConstraint(self.proxy_bridge, bridge_ctrl_grp, mo=False))
+        ctrl_list.append("{}_Bridge_Ctrl".format(mid_prefix))
+
+        master_jnt_grp = yellow_component(
+            name="{}_Master_Ctrl_Jnt".format(mid_prefix),
+            shape_type="joint",
+            parent_node="{}_Bridge_Ctrl_Jnt".format(mid_prefix))
+        pm.delete(pm.parentConstraint(self.proxy_master, master_jnt_grp, mo=False))
+        master_ctrl_grp = yellow_component(
+            name="{}_Master_Ctrl".format(mid_prefix),
+            shape_type="sphere",
+            parent_node="{}_Bridge_Ctrl".format(mid_prefix))
+        pm.delete(pm.parentConstraint(self.proxy_master, master_ctrl_grp, mo=False))
+        ctrl_list.append("{}_Master_Ctrl".format(mid_prefix))
+
+        tip_jnt_grp = jnt_or_control_grp(
+            name="{}_Ctrl_Jnt".format(mid_prefix),
+            object_type='joint',
+            parent_node="{}_Master_Ctrl_Jnt".format(mid_prefix))
+        pm.delete(pm.parentConstraint(self.proxy_tip, tip_jnt_grp, mo=False))
+        tip_ctrl_grp = jnt_or_control_grp(
+            name="{}_Ctrl".format(mid_prefix),
+            object_type='plane',
+            parent_node="{}_Master_Ctrl".format(mid_prefix))
+        pm.delete(pm.parentConstraint(self.proxy_tip, tip_ctrl_grp, mo=False))
+        ctrl_list.append("{}_Ctrl".format(mid_prefix))
+
+        left_jnt_grp = yellow_component(
+            name="{}_Ctrl_Jnt".format(lf_prefix),
+            shape_type="joint",
+            parent_node="{}_Master_Ctrl_Jnt".format(mid_prefix))
+        pm.delete(pm.parentConstraint(self.proxy_left, left_jnt_grp, mo=False))
+        left_ctrl_grp = yellow_component(
+            name="{}_Ctrl".format(lf_prefix),
+            shape_type="sphere",
+            parent_node="{}_Master_Ctrl".format(mid_prefix))
+        pm.delete(pm.parentConstraint(self.proxy_left, left_ctrl_grp, mo=False))
+        ctrl_list.append("{}_Ctrl".format(lf_prefix))
+
+        right_jnt_grp = yellow_component(
+            name="{}_Ctrl_Jnt".format(rt_prefix), shape_type="joint",
+            parent_node="{}_Master_Ctrl_Jnt".format(mid_prefix))
+        pm.PyNode(right_jnt_grp).scaleZ.set(-1)
+        pm.delete(pm.parentConstraint(self.proxy_right, right_jnt_grp, mo=False))
+
+        right_ctrl_grp = yellow_component(
+            name="{}_Ctrl".format(rt_prefix),
+            shape_type="sphere",
+            parent_node="{}_Master_Ctrl".format(mid_prefix))
+        pm.PyNode(right_ctrl_grp).scaleX.set(-1)
+        pm.delete(pm.parentConstraint(self.proxy_right, right_ctrl_grp, mo=False))
+
+        ctrl_list.append("{}_Ctrl".format(rt_prefix))
+
+        up_jnt_grp = jnt_or_control_grp(
+            name="{}_Up_Ctrl_Jnt".format(mid_prefix),
+            object_type="joint",
+            parent_node=local_rig_out_grp)
+        pm.delete(pm.parentConstraint(self.proxy_up, up_jnt_grp, mo=False))
+        up_ctrl_grp = jnt_or_control_grp(
+            name="{}_Up_Ctrl".format(mid_prefix),
+            object_type="plane",
+            parent_node="Head_02_Grp")
+        pm.delete(pm.parentConstraint(self.proxy_up, up_ctrl_grp, mo=False))
+        ctrl_list.append("{}_Up_Ctrl".format(mid_prefix))
+
+        return ctrl_list
+
+    def make_ctrl_work(self, ctrl_list):
+        for ctrl in ctrl_list:
+            jnt = "{}_Jnt".format(ctrl)
+            pm.PyNode(ctrl).translate.connect(pm.PyNode(jnt).translate)
+            pm.PyNode(ctrl).getParent().translate.connect(pm.PyNode(jnt).getParent().translate)
+            pm.PyNode(ctrl).rotate.connect(pm.PyNode(jnt).rotate)
+            pm.PyNode(ctrl).getParent().rotate.connect(pm.PyNode(jnt).getParent().rotate)
+            pm.PyNode(ctrl).scale.connect(pm.PyNode(jnt).scale)
+        # todo 鼻子的微表情
 
 
 class MouthCreator(Creator):
@@ -3705,7 +3695,7 @@ class MouthCreator(Creator):
             for side in ["LF", "RT"]:
                 prefix = "{}_{}".format(side, self.module_name)
                 jnt_roll_sr = pm.createNode(
-                    "setRange",name="{}_Lip_{}_Jnt_Roll_SR".format(prefix, "{0:02d}".format(index)))
+                    "setRange", name="{}_Lip_{}_Jnt_Roll_SR".format(prefix, "{0:02d}".format(index)))
                 # todo setRange节点缺少“最大值”和“旧最大值”这两个参数的自动填充算法逻辑
                 for vertical in ["Up", "Low"]:
                     mouth_ctrl = "{}_{}_Ctrl".format(vertical, self.module_name)
@@ -3869,86 +3859,61 @@ class MouthCreator(Creator):
         if not pm.objExists(jaw_db):
             pm.createNode("distanceBetween", name=jaw_db)
 
-        pm.PyNode(up_jaw_loc).getShape().attr("worldPosition[0]").connect(
-            pm.PyNode(jaw_db).attr("point1"), f=True)
-        pm.PyNode(low_jaw_loc).getShape().attr("worldPosition[0]").connect(
-            pm.PyNode(jaw_db).attr("point2"), f=True)
+        pm.PyNode(up_jaw_loc).getShape().attr("worldPosition[0]").connect(pm.PyNode(jaw_db).attr("point1"), f=True)
+        pm.PyNode(low_jaw_loc).getShape().attr("worldPosition[0]").connect(pm.PyNode(jaw_db).attr("point2"), f=True)
 
         condition_node = "MD_Mouth_01_Jaw_Cond"
         if not pm.objExists(condition_node):
             pm.createNode("condition", name=condition_node)
         pm.PyNode(condition_node).attr("operation").set(2)
 
-        pm.PyNode(jaw_db).attr("distance").connect(
-            pm.PyNode(condition_node).attr("firstTerm"), f=True)
-        pm.PyNode(jaw_db).attr("distance").connect(
-            pm.PyNode(condition_node).attr("colorIfFalseR"), f=True)
-        pm.PyNode(condition_node).attr("secondTerm").set(
-            pm.PyNode(jaw_db).attr("distance").get())
-        pm.PyNode(condition_node).attr("colorIfTrueR").set(
-            pm.PyNode(jaw_db).attr("distance").get())
+        pm.PyNode(jaw_db).attr("distance").connect(pm.PyNode(condition_node).attr("firstTerm"), f=True)
+        pm.PyNode(jaw_db).attr("distance").connect(pm.PyNode(condition_node).attr("colorIfFalseR"), f=True)
+        pm.PyNode(condition_node).attr("secondTerm").set(pm.PyNode(jaw_db).attr("distance").get())
+        pm.PyNode(condition_node).attr("colorIfTrueR").set(pm.PyNode(jaw_db).attr("distance").get())
 
         jaw_pma = "MD_Mouth_01_Jaw_PMA"
         if not pm.objExists(jaw_pma):
             pm.createNode("plusMinusAverage", name=jaw_pma)
         pm.PyNode(jaw_pma).attr("operation").set(2)
-        pm.PyNode(jaw_pma).attr("input1D[0]").set(
-            pm.PyNode(jaw_db).attr("distance").get())
-        pm.PyNode(condition_node).attr("outColorR").connect(
-            pm.PyNode(jaw_pma).attr("input1D[1]"), f=True)
+        pm.PyNode(jaw_pma).attr("input1D[0]").set(pm.PyNode(jaw_db).attr("distance").get())
+        pm.PyNode(condition_node).attr("outColorR").connect(pm.PyNode(jaw_pma).attr("input1D[1]"), f=True)
 
-        pm.PyNode(jaw_pma).attr("output1D").connect(
-            pm.PyNode(up_jaw_jnt).translateY, f=True)
+        pm.PyNode(jaw_pma).attr("output1D").connect(pm.PyNode(up_jaw_jnt).translateY, f=True)
 
         up_teeth_ctrl = "MD_Mouth_01_Up_Teeth_Ctrl"
         up_teeth_jnt = "MD_Mouth_01_Up_Teeth_Ctrl_Jnt"
-        pm.PyNode(up_teeth_ctrl).translate.connect(
-            pm.PyNode(up_teeth_jnt).translate, f=True)
-        pm.PyNode(up_teeth_ctrl).rotate.connect(
-            pm.PyNode(up_teeth_jnt).rotate, f=True)
-        pm.PyNode(up_teeth_ctrl).scale.connect(
-            pm.PyNode(up_teeth_jnt).scale, f=True)
+        pm.PyNode(up_teeth_ctrl).translate.connect(pm.PyNode(up_teeth_jnt).translate, f=True)
+        pm.PyNode(up_teeth_ctrl).rotate.connect(pm.PyNode(up_teeth_jnt).rotate, f=True)
+        pm.PyNode(up_teeth_ctrl).scale.connect(pm.PyNode(up_teeth_jnt).scale, f=True)
 
         jaw_ctrl = "MD_Mouth_01_Jaw_Ctrl"
         low_jaw_grp = "MD_Mouth_01_LowJaw_Jnt_Grp"
-        pm.PyNode(jaw_ctrl).translate.connect(
-            pm.PyNode(low_jaw_grp).translate, f=True)
-        pm.PyNode(jaw_ctrl).rotate.connect(
-            pm.PyNode(low_jaw_grp).rotate, f=True)
+        pm.PyNode(jaw_ctrl).translate.connect(pm.PyNode(low_jaw_grp).translate, f=True)
+        pm.PyNode(jaw_ctrl).rotate.connect(pm.PyNode(low_jaw_grp).rotate, f=True)
 
         tweak_ctrl_jnt = "MD_Mouth_01_Jaw_Tweak_Ctrl_Jnt"
         tweak_ctrl = "MD_Mouth_01_Jaw_Tweak_Ctrl"
-        pm.PyNode(tweak_ctrl).translate.connect(
-            pm.PyNode(tweak_ctrl_jnt).translate, f=True)
-        pm.PyNode(tweak_ctrl).rotate.connect(
-            pm.PyNode(tweak_ctrl_jnt).rotate, f=True)
-        pm.PyNode(tweak_ctrl).scale.connect(
-            pm.PyNode(tweak_ctrl_jnt).scale, f=True)
+        pm.PyNode(tweak_ctrl).translate.connect(pm.PyNode(tweak_ctrl_jnt).translate, f=True)
+        pm.PyNode(tweak_ctrl).rotate.connect(pm.PyNode(tweak_ctrl_jnt).rotate, f=True)
+        pm.PyNode(tweak_ctrl).scale.connect(pm.PyNode(tweak_ctrl_jnt).scale, f=True)
 
         low_teeth_ctrl_jnt = "MD_Mouth_01_Low_Teeth_Ctrl_Jnt"
         low_teeth_ctrl = "MD_Mouth_01_Low_Teeth_Ctrl"
-        pm.PyNode(low_teeth_ctrl).translate.connect(
-            pm.PyNode(low_teeth_ctrl_jnt).translate, f=True)
-        pm.PyNode(low_teeth_ctrl).rotate.connect(
-            pm.PyNode(low_teeth_ctrl_jnt).rotate, f=True)
-        pm.PyNode(low_teeth_ctrl).scale.connect(
-            pm.PyNode(low_teeth_ctrl_jnt).scale, f=True)
+        pm.PyNode(low_teeth_ctrl).translate.connect(pm.PyNode(low_teeth_ctrl_jnt).translate, f=True)
+        pm.PyNode(low_teeth_ctrl).rotate.connect(pm.PyNode(low_teeth_ctrl_jnt).rotate, f=True)
+        pm.PyNode(low_teeth_ctrl).scale.connect(pm.PyNode(low_teeth_ctrl_jnt).scale, f=True)
 
         pm.parentConstraint(up_jaw_jnt, "Up_Mouth_01_Ctrl_Null", mo=True)
-        pm.PyNode("Up_Mouth_01_Ctrl_Null").translate.connect(
-            pm.PyNode("Up_Mouth_01_Ctrl_Jnt_02_Grp").translate, f=True)
-        pm.PyNode("Up_Mouth_01_Ctrl_Null").rotate.connect(
-            pm.PyNode("Up_Mouth_01_Ctrl_Jnt_02_Grp").rotate, f=True)
-        pm.PyNode("Up_Mouth_01_Ctrl_Null").translate.connect(
-            pm.PyNode("Up_Mouth_01_Ctrl_02_Grp").translate, f=True)
+        pm.PyNode("Up_Mouth_01_Ctrl_Null").translate.connect(pm.PyNode("Up_Mouth_01_Ctrl_Jnt_02_Grp").translate, f=True)
+        pm.PyNode("Up_Mouth_01_Ctrl_Null").rotate.connect(pm.PyNode("Up_Mouth_01_Ctrl_Jnt_02_Grp").rotate, f=True)
+        pm.PyNode("Up_Mouth_01_Ctrl_Null").translate.connect(pm.PyNode("Up_Mouth_01_Ctrl_02_Grp").translate, f=True)
 
         pm.parentConstraint(low_jaw_jnt, "Low_Mouth_01_Ctrl_Null", mo=True)
-        pm.PyNode("Low_Mouth_01_Ctrl_Null").translate.connect(
-            pm.PyNode("Low_Mouth_01_Ctrl_Jnt_02_Grp").translate, f=True)
-        pm.PyNode("Low_Mouth_01_Ctrl_Null").rotate.connect(
-            pm.PyNode("Low_Mouth_01_Ctrl_Jnt_02_Grp").rotate, f=True)
-        pm.PyNode("Low_Mouth_01_Ctrl_Null").translate.connect(
-            pm.PyNode("Low_Mouth_01_Ctrl_02_Grp").translate, f=True)
+        pm.PyNode("Low_Mouth_01_Ctrl_Null").translate.connect(pm.PyNode("Low_Mouth_01_Ctrl_Jnt_02_Grp").translate,
+                                                              f=True)
+        pm.PyNode("Low_Mouth_01_Ctrl_Null").rotate.connect(pm.PyNode("Low_Mouth_01_Ctrl_Jnt_02_Grp").rotate, f=True)
+        pm.PyNode("Low_Mouth_01_Ctrl_Null").translate.connect(pm.PyNode("Low_Mouth_01_Ctrl_02_Grp").translate, f=True)
 
         master_ctrl = "MD_Mouth_01_Master_Ctrl"
         master_constraint = pm.parentConstraint(
@@ -3975,10 +3940,8 @@ class MouthCreator(Creator):
 
         for side in ["LF", "RT"]:
             if not pm.attributeQuery("{}Corner".format(side), node=master_ctrl, ex=True):
-                pm.addAttr(master_ctrl, ln="{}Corner".format(
-                    side), at="double", min=0, max=1.0, dv=0.5)
-                pm.setAttr("{}.{}".format(
-                    master_ctrl, "{}Corner".format(side)), e=True, k=True)
+                pm.addAttr(master_ctrl, ln="{}Corner".format(side), at="double", min=0, max=1.0, dv=0.5)
+                pm.setAttr("{}.{}".format(master_ctrl, "{}Corner".format(side)), e=True, k=True)
 
             ctrl_null_02_grp_constraint = pm.parentConstraint(
                 up_jaw_loc,
@@ -5150,7 +5113,33 @@ class FaceCreatorUI(common.Singleton):
         pm.textFieldButtonGrp(field, e=True, text=master_ctrl)
 
     def build_linkage(self):
-        print("Build linkage")
+        jaw_ctrl = "MD_Mouth_01_Jaw_Ctrl"
+        jaw_ctrl_grp = pm.PyNode(jaw_ctrl).getParent()
+
+        pm.parentConstraint(jaw_ctrl, "MD_Tongue_01_Main_Grp", mo=True)
+        pm.scaleConstraint(jaw_ctrl, "MD_Tongue_01_Main_Grp", mo=True)
+
+        mouth_master_ctrl_grp = "MD_Mouth_01_Master_Ctrl_Grp"
+        constraint = pm.parentConstraint(jaw_ctrl, jaw_ctrl_grp, mouth_master_ctrl_grp, mo=True)
+
+        driver_value = [-1, 0]
+        value = [0, 1]
+        for index in range(0, len(driver_value)):
+            pm.setDrivenKeyframe(
+                constraint,
+                at="{}W1".format(jaw_ctrl_grp),
+                cd="{}.{}".format(jaw_ctrl, "rotateX"),
+                dv=driver_value[index],
+                value=value[index],
+                itt="linear",
+                ott="linear",
+            )
+
+        for side in ["LF", "RT"]:
+            pm.parentConstraint(jaw_ctrl, "{}_Cheek_01_04_Ctrl_Grp".format(side), mo=True)
+            pm.PyNode("{}_Cheek_01_04_Ctrl_02_Grp".format(side)).translate.connect(
+                pm.PyNode("{}_Cheek_01_04_Ctrl_Jnt_02_Grp".format(side)).translate)
+        print "Done!"
         return
 
 
