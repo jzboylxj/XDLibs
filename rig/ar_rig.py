@@ -96,7 +96,7 @@ class ARFaceData:
 
 
 class ARFaceEditor(common.Singleton):
-    u"""    AR人脸识别的通道模板编辑器    """
+    u"""AR人脸识别的通道模板编辑器"""
 
     def __init__(self):
         super(ARFaceEditor, self).__init__()
@@ -185,6 +185,7 @@ class ARFaceEditor(common.Singleton):
             bl=u"指定路径",
             adj=2,
             cw3=[60, 100, 60],
+            text=self.ar_file_location,
             bc=lambda *args: self.set_json_location())
 
         self.ar_channel_options = pm.optionMenuGrp(
@@ -275,7 +276,7 @@ class ARFaceEditor(common.Singleton):
         pm.setParent("..")
 
         # if self.ar_file_location != "":
-        #     self.init_ar_channel_options()
+        #     self.init_ar_channel_options(json_file=self.ar_file_location)
         #     pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
         #     self.selected_ar_channel()
         #
@@ -290,6 +291,7 @@ class ARFaceEditor(common.Singleton):
             dialogStyle=2, fileFilter="JSON File (*.json);;", fileMode=0, okc=u"选择文件", cc=u"取消")
         if os.path.isfile(json_location[0]):
             pm.textFieldButtonGrp("ARFileLocationField", e=True, text=json_location[0])
+            self.ar_file_location = json_location[0]
 
         else:
             dict_data = {}
@@ -300,9 +302,9 @@ class ARFaceEditor(common.Singleton):
                 dict_data = channel.arkit_channels
             write_json(dict_data=dict_data, file_path=json_location[0])
             pm.textFieldButtonGrp("ARFileLocationField", e=True, text=json_location[0])
-            # self.ar_file_location = json_location[0]
+            self.ar_file_location = json_location[0]
         self.init_ar_channel_options(json_file=json_location[0])
-        # pm.optionVar(sv=('ARFaceEditor_jsonFileLocation', self.ar_file_location))
+        pm.optionVar(sv=('ARFaceEditor_jsonFileLocation', self.ar_file_location))
 
         return
 
@@ -555,7 +557,9 @@ class ARFaceEditor(common.Singleton):
                 pm.textScrollList(self.ar_item_scroll, e=True, a=item)
 
                 data = []
-                data.extend(pm.PyNode(item).translate.get())
+                translate = pm.PyNode(item).translate.get()
+                unity_translate = [translate[0] * 0.01, translate[1] * 0.01, translate[2] * 0.01]
+                data.extend(unity_translate)
                 data.extend(pm.PyNode(item).rotate.get())
                 data.extend(pm.PyNode(item).scale.get())
 
