@@ -14,6 +14,18 @@ from rig.names import template_dir
 reload(common)
 
 
+def mirror_position(source_field="LF_", target_field="RT_"):
+    if len(pm.ls(sl=True)) < 1:
+        pm.error("")
+    else:
+        for item in pm.ls(sl=True):
+            target = ""
+            translate = item.translate.get()
+            target = item.replace(source_field, target_field)
+            pm.PyNode(target).translate.set(translate)
+    return
+
+
 def mouth_bind_jnt_grp_translate_bc_connect(bind_jnt_grp="", old_min=0.0, old_max=0.0):
     lf_lip_sew_ctrl_follicle_shape = pm.PyNode(
         "LF_Mouth_01_LipSew_Ctrl_FollicleShape")
@@ -5139,7 +5151,7 @@ class FaceCreatorUI(common.Singleton):
             pm.parentConstraint(jaw_ctrl, "{}_Cheek_01_04_Ctrl_Grp".format(side), mo=True)
             pm.PyNode("{}_Cheek_01_04_Ctrl_02_Grp".format(side)).translate.connect(
                 pm.PyNode("{}_Cheek_01_04_Ctrl_Jnt_02_Grp".format(side)).translate)
-        print "Done!"
+        print("Done!")
         return
 
 

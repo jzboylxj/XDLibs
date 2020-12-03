@@ -696,7 +696,7 @@ class ChannelBoxWriter(common.Singleton):
             sv=('arFaceControllerJsonFolder', self.json_folder))
 
 
-manager_version = 0.1
+manager_version = 0.2
 
 
 class JsonManager(common.Singleton):
@@ -725,8 +725,8 @@ class JsonManager(common.Singleton):
         self.mouth_file_folder = ""
         self.face_file_folder = ""
 
-        self.initialize()
         self.show()
+        self.initialize()
         # self.selected_controller()
 
     def show(self):
@@ -737,29 +737,33 @@ class JsonManager(common.Singleton):
         """
         if pm.window("jsonManagerUI", ex=True):
             pm.deleteUI("jsonManagerUI")
-        pm.window(
-            "jsonManagerUI",
-            t=u"JSON数据管理器 %s" % manager_version,
-            mb=True,
-            cc=lambda *args: self._closed_window_cmd())
+        pm.window("jsonManagerUI", t=u"角色脸部特征编辑器 %s" % manager_version, mb=True,
+                  cc=lambda *args: self._closed_window_cmd())
 
-        self.menu_list()
+        # self.menu_list()
 
-        self.main_tab = pm.tabLayout(
-            "jsonManagerMainTabLayout",
-            innerMarginWidth=5, innerMarginHeight=5)
-        child1 = self.custom_tab()
+        pm.columnLayout(adj=1)
+
+        pm.frameLayout(label=u"配置面板", mw=5, mh=5, bgs=True, cll=True, cl=False)
+        pm.textFieldButtonGrp("XDFaceEditDataStoreField", label=u"存储路径", bl=u"设置", adj=2, cw3=[60, 100, 40],
+                              bc=lambda *args: self.setting_json_folder())
+        pm.textFieldButtonGrp("XDFaceEditNewModuleField", label=u"特征模块", bl=u"新建", adj=2, cw3=[60, 100, 40],
+                              bc=lambda *args: self.new_module())
+        pm.setParent("..")
+
+        pm.frameLayout(label=u"工作面板", mw=5, mh=5, bgs=True, cll=True, cl=False)
+        self.main_tab = pm.tabLayout("jsonManagerMainTabLayout", innerMarginWidth=5, innerMarginHeight=5)
+        # child1 = self.custom_tab()
         # child2 = self.ar_tab()
-        child3 = self.discard_tab()
+        # child3 = self.discard_tab()
 
-        pm.tabLayout(
-            self.main_tab,
-            edit=True,
-            tabLabel=(
-                (child1, u'捏脸'),
-                # (child2, u'AR'),
-                (child3, u'历史版本')),
-            sti=self.current_tab_index)
+        pm.tabLayout(self.main_tab, edit=True,
+                     # tabLabel=((child1, u'捏脸'),),
+                     # sti=self.current_tab_index
+                     )
+
+        pm.setParent(self.main_tab)
+        pm.setParent("..")
 
         pm.showWindow("jsonManagerUI")
 
@@ -930,70 +934,13 @@ class JsonManager(common.Singleton):
 
         return
 
-    def discard_tab(self):
-        """
-        历史遗留版本
-        """
-        layout = pm.formLayout()
-
-        self.module_id_field = pm.intFieldGrp(label=u"道具ID", cw2=[50, 100])
-
-        self.discard_child_tab_layout = pm.tabLayout(
-            "jsonManagerMainTabLayout",
-            innerMarginWidth=5,
-            innerMarginHeight=5)
-        child_brow = self.child_brow_tab()
-        child_eye = self.child_eye_tab()
-        child_nose = self.child_nose_tab()
-        child_mouth = self.child_mouth_tab()
-        child_face = self.child_face_tab()
-
-        pm.tabLayout(
-            self.discard_child_tab_layout,
-            edit=True,
-            tabLabel=(
-                (child_brow, u'眉毛'),
-                (child_eye, u'眼睛'),
-                (child_nose, u'鼻子'),
-                (child_mouth, u'嘴巴'),
-                (child_face, u'脸型'),
-            ),
-            # sti=1,
-        )
-        pm.setParent("..")
-
-        self.sava_json_btn = pm.button(
-            label=u"保存JSON文件",
-            c=lambda *args: self.save_data_to_json())
-
-        pm.formLayout(
-            layout,
-            edit=True,
-            attachForm=[
-                (self.module_id_field, 'top', 5),
-                (self.module_id_field, 'left', 5),
-                (self.module_id_field, 'right', 5),
-                (self.discard_child_tab_layout, 'top', 5),
-                (self.discard_child_tab_layout, 'left', 10),
-                (self.discard_child_tab_layout, 'right', 10),
-                (self.sava_json_btn, 'left', 10),
-                (self.sava_json_btn, 'right', 10),
-                (self.sava_json_btn, 'bottom', 10),
-            ],
-            attachControl=[
-                (self.discard_child_tab_layout, 'top', 10,
-                 self.module_id_field),
-                (self.discard_child_tab_layout, 'bottom', 10,
-                 self.sava_json_btn),
-            ])
-
-        return layout
-
     def initialize(self):
         if pm.optionVar(q='jsonManagerFolder'):
-            self.json_folder = pm.optionVar(
-                q='jsonManagerFolder')
+            self.json_folder = pm.optionVar(q='jsonManagerFolder')
+            pm.textFieldButtonGrp("XDFaceEditDataStoreField", e=True, text=self.json_folder)
+
             self.module_sections = self.scanning_folder("folders")
+            # for module
 
         if pm.optionVar(q='jsonManagerMainTabLayoutIndex'):
             self.current_tab_index = int(pm.optionVar(
@@ -1017,32 +964,24 @@ class JsonManager(common.Singleton):
 
     def _closed_window_cmd(self):
         pm.optionVar(sv=('jsonManagerFolder', self.json_folder))
-        pm.optionVar(sv=('arFileLocation', self.ar_file_location))
+        # pm.optionVar(sv=('arFileLocation', self.ar_file_location))
 
-        self.current_tab_index = pm.tabLayout(
-            self.main_tab, q=True, sti=True)
-        pm.optionVar(
-            sv=('jsonManagerMainTabLayoutIndex', self.current_tab_index))
+        self.current_tab_index = pm.tabLayout(self.main_tab, q=True, sti=True)
 
-        pm.optionVar(
-            sv=('jsonManagerDiscardBrowFilePath', self.brow_file_folder))
-        pm.optionVar(
-            sv=('jsonManagerDiscardEyeFilePath', self.eye_file_folder))
-        pm.optionVar(
-            sv=('jsonManagerDiscardNoseFilePath', self.nose_file_folder))
-        pm.optionVar(
-            sv=('jsonManagerDiscardMouthFilePath', self.mouth_file_folder))
-        pm.optionVar(
-            sv=('jsonManagerDiscardFaceFilePath', self.face_file_folder))
+        pm.optionVar(sv=('jsonManagerMainTabLayoutIndex', self.current_tab_index))
+
+        pm.optionVar(sv=('jsonManagerDiscardBrowFilePath', self.brow_file_folder))
+        pm.optionVar(sv=('jsonManagerDiscardEyeFilePath', self.eye_file_folder))
+        pm.optionVar(sv=('jsonManagerDiscardNoseFilePath', self.nose_file_folder))
+        pm.optionVar(sv=('jsonManagerDiscardMouthFilePath', self.mouth_file_folder))
+        pm.optionVar(sv=('jsonManagerDiscardFaceFilePath', self.face_file_folder))
 
     def setting_json_folder(self):
-        json_folder = pm.fileDialog2(
-            dialogStyle=2,
-            fileFilter="JSON File (*.json);;",
-            fileMode=3, okc=u"选择文件夹")
-        if json_folder:
+        json_folder = pm.fileDialog2(dialogStyle=2, fileFilter="JSON File (*.json);;", fileMode=3, okc=u"选择文件夹")
+        if json_folder[0]:
             self.json_folder = json_folder[0]
             self.module_sections = self.scanning_folder("folders")
+            pm.textFieldButtonGrp("XDFaceEditDataStoreField", e=True, text=json_folder[0])
 
         return
 
@@ -1070,7 +1009,24 @@ class JsonManager(common.Singleton):
         if return_type == "files":
             return json_file
         elif return_type == "folders":
+            print(folder_list)
             return folder_list
+
+    def new_module(self):
+        u"""创建新的特征模块
+
+        :return:
+        """
+        data_root = self.json_folder
+        module_name = pm.textFieldButtonGrp("XDFaceEditNewModuleField", q=True, text=True)
+        if not module_name == "":
+            module_path = os.path.join(data_root, module_name)
+            print(module_path)
+            if not os.path.exists(module_path):
+                os.makedirs(module_path)
+        else:
+            pm.error(u"模块的名字不能缺")
+        return
 
     def option_menu_widget(self, parent_widget):
         if pm.optionMenuGrp("faceModuleOptionsWidget", ex=True):
@@ -1081,8 +1037,7 @@ class JsonManager(common.Singleton):
             label=u"模块名称",
             cw2=[50, 50],
             adj=2,
-            cc=lambda *args: self.selected_controller(
-                pm.optionMenuGrp(widget, q=True, value=True)))
+            cc=lambda *args: self.selected_controller(pm.optionMenuGrp(widget, q=True, value=True)))
         if len(self.module_sections) > 0:
             for json_file in self.module_sections:
                 pm.menuItem(label=json_file)
@@ -2131,8 +2086,8 @@ class DataHelper(common.Singleton):
     def sdk_layout(self, parent):
         layout = pm.frameLayout(
             p=parent, label="SDK Mirror Helper", bgs=True, mw=10, mh=10)
-        pm.textFieldGrp(label="Search", cw2=[80,150])
-        pm.textFieldGrp(label="Replace", cw2=[80,150])
+        pm.textFieldGrp(label="Search", cw2=[80, 150])
+        pm.textFieldGrp(label="Replace", cw2=[80, 150])
         pm.setParent(layout)
         return layout
 
@@ -2146,7 +2101,7 @@ class DataHelper(common.Singleton):
 
         form_layout = pm.formLayout()
 
-        work_mode_layout = pm.rowColumnLayout(nr=1,p=form_layout)
+        work_mode_layout = pm.rowColumnLayout(nr=1, p=form_layout)
         pm.text(label=u"工作模式：")
         collection1 = pm.radioCollection()
         rb1 = pm.radioButton(label='SDK')

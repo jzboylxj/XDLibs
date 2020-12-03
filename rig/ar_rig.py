@@ -125,6 +125,7 @@ class ARFaceEditor(common.Singleton):
         self.menu_list()
         self.main_layout()
 
+
         pm.showWindow("ARFaceEditor")
 
     def _closed_window_cmd(self):
@@ -208,7 +209,7 @@ class ARFaceEditor(common.Singleton):
             pre=3,
             adj=3,
             value=0,
-            cw3=[80, 60, 100])
+            cw3=[120, 60, 100])
         self.ar_item_scroll = pm.textScrollList(w=200, ams=True, sc=lambda *args: self.selected_ar_item_in_scroll())
         pm.popupMenu()
         pm.menuItem(label=u"添加映射", c=lambda *args: self.new_mapping())
@@ -276,13 +277,14 @@ class ARFaceEditor(common.Singleton):
         pm.setParent("..")
 
         # if self.ar_file_location != "":
-        #     self.init_ar_channel_options(json_file=self.ar_file_location)
-        #     pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
-        #     self.selected_ar_channel()
+        #     if os.path.isfile(self.ar_file_location):
+        #         self.init_ar_channel_options(json_file=self.ar_file_location)
+        #         pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
+        #         self.selected_ar_channel()
         #
-        #     if pm.textScrollList(self.ar_item_scroll, q=True, ni=True) > 1:
-        #         pm.textScrollList(self.ar_item_scroll, e=True, sii=1)
-        #         self.selected_ar_item_in_scroll()
+        #         if pm.textScrollList(self.ar_item_scroll, q=True, ni=True) > 1:
+        #             pm.textScrollList(self.ar_item_scroll, e=True, sii=1)
+        #             self.selected_ar_item_in_scroll()
 
         return layout
 
@@ -303,8 +305,13 @@ class ARFaceEditor(common.Singleton):
             write_json(dict_data=dict_data, file_path=json_location[0])
             pm.textFieldButtonGrp("ARFileLocationField", e=True, text=json_location[0])
             self.ar_file_location = json_location[0]
+
         self.init_ar_channel_options(json_file=json_location[0])
         pm.optionVar(sv=('ARFaceEditor_jsonFileLocation', self.ar_file_location))
+
+        if pm.textScrollList(self.ar_item_scroll, q=True, ni=True) > 1:
+            pm.textScrollList(self.ar_item_scroll, e=True, sii=1)
+            self.selected_ar_item_in_scroll()
 
         return
 
@@ -328,10 +335,8 @@ class ARFaceEditor(common.Singleton):
         """
         current_channel = pm.optionMenuGrp(self.ar_channel_options, q=True, value=True)
 
-        if pm.objExists(current_channel):
-            pm.floatSliderGrp("arIDControlSlider", e=True, enable=True, label=current_channel)
-            pm.connectControl('arIDControlSlider', '%s.sliderX' % current_channel)
-            pm.textScrollList(self.ar_item_scroll, e=True, ra=True)
+        pm.textScrollList(self.ar_item_scroll, e=True, ra=True)
+        if self.ar_data.get_channel_joints(current_channel):
             pm.textScrollList(
                 self.ar_item_scroll,
                 e=True,
@@ -339,6 +344,16 @@ class ARFaceEditor(common.Singleton):
             )
             pm.textScrollList(self.ar_item_scroll, e=True, sii=1)
             self.selected_ar_item_in_scroll()
+
+        print(u"选择通道：{}".format(current_channel))
+        work_mode = pm.radioButtonGrp(self.work_mode_control, q=True, sl=True)
+        if pm.objExists(current_channel):
+            pm.floatSliderGrp("arIDControlSlider", e=True, enable=True, label=current_channel)
+            if work_mode == 1:
+                pm.connectControl('arIDControlSlider', '%s.sliderX' % current_channel)
+            if work_mode == 2:
+                pm.connectControl('arIDControlSlider', '{}.weight'.format(current_channel))
+
         else:
             pass
 
@@ -551,6 +566,7 @@ class ARFaceEditor(common.Singleton):
         return True
 
     def new_mapping(self):
+        filename = pm.textFieldButtonGrp(self.json_location_widget, q=True, text=True)
         all_items = pm.textScrollList(self.ar_item_scroll, q=True, ai=True)
         for item in pm.ls(sl=True):
             if item not in all_items:
