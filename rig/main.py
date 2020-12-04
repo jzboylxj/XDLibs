@@ -151,7 +151,7 @@ def yellow_component(name="", shape_type="", translate=(0, 0, 0), parent_node=No
     黄色的控制器一般用来作为模块的细节控制器或次级控制器
 
     :param name: 名字
-    :param shape_type: 控制器的节点类型，例如曲面，locator等
+    :param shape_type: 控制器的节点类型，例如nurbsPlane，locator, joint, sphere, cone
     :param translate: 位移
     :param parent_node: 父节点
     :param have_loc: 在父节点下是否创建loc
@@ -450,6 +450,13 @@ def mp_node(node_name, geometry_path_input="", all_coordinates_output=""):
     """
     mp_node = pm.createNode("motionPath", name=node_name)
     mp_node.attr("uValue").set(0)
+    
+    '''
+    关掉参数化长度。1位关闭，0为开启
+    如果处于开启状态，motion path节点输出的对象位置会根据曲线的实际弧长进行计算
+    如果处于关闭状态，motion path节点输出的对象位置会根据曲线的实际弧长乘以参数的百分比进行计算
+    '''
+    mp_node.attr("fractionMode").set(1)
 
     pm.Attribute(geometry_path_input).connect(mp_node.attr('geometryPath'))
     pm.PyNode(mp_node).attr("allCoordinates").connect(all_coordinates_output)
