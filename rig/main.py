@@ -14,6 +14,18 @@ from rig.names import template_dir
 reload(common)
 
 
+def mirror_position(source_field="LF_", target_field="RT_"):
+    if len(pm.ls(sl=True)) < 1:
+        pm.error("")
+    else:
+        for item in pm.ls(sl=True):
+            target = ""
+            translate = item.translate.get()
+            target = item.replace(source_field, target_field)
+            pm.PyNode(target).translate.set(translate)
+    return
+
+
 def mouth_bind_jnt_grp_translate_bc_connect(bind_jnt_grp="", old_min=0.0, old_max=0.0):
     lf_lip_sew_ctrl_follicle_shape = pm.PyNode(
         "LF_Mouth_01_LipSew_Ctrl_FollicleShape")
@@ -23,9 +35,9 @@ def mouth_bind_jnt_grp_translate_bc_connect(bind_jnt_grp="", old_min=0.0, old_ma
     set_range = pm.createNode(
         "setRange", name=bind_jnt_grp.replace("_Grp", "_LipSew_SR"))
     lf_lip_sew_ctrl_follicle_shape.attr("parameterU").connect(
-        "{}.value.valueX".format(set_range.name()))
+        "{}.value.valueX".format(set_range.controller_name()))
     rt_lip_sew_ctrl_follicle_shape.attr("parameterU").connect(
-        "{}.value.valueY".format(set_range.name()))
+        "{}.value.valueY".format(set_range.controller_name()))
     set_range.attr("oldMinX").set(old_min)
     set_range.attr("oldMinY").set(old_min)
     set_range.attr("oldMaxX").set(old_max)
@@ -139,7 +151,7 @@ def yellow_component(name="", shape_type="", translate=(0, 0, 0), parent_node=No
     黄色的控制器一般用来作为模块的细节控制器或次级控制器
 
     :param name: 名字
-    :param shape_type: 控制器的节点类型，例如曲面，locator等
+    :param shape_type: 控制器的节点类型，例如nurbsPlane，locator, joint, sphere, cone
     :param translate: 位移
     :param parent_node: 父节点
     :param have_loc: 在父节点下是否创建loc
@@ -438,6 +450,13 @@ def mp_node(node_name, geometry_path_input="", all_coordinates_output=""):
     """
     mp_node = pm.createNode("motionPath", name=node_name)
     mp_node.attr("uValue").set(0)
+    
+    '''
+    关掉参数化长度。1位关闭，0为开启
+    如果处于开启状态，motion path节点输出的对象位置会根据曲线的实际弧长进行计算
+    如果处于关闭状态，motion path节点输出的对象位置会根据曲线的实际弧长乘以参数的百分比进行计算
+    '''
+    mp_node.attr("fractionMode").set(1)
 
     pm.Attribute(geometry_path_input).connect(mp_node.attr('geometryPath'))
     pm.PyNode(mp_node).attr("allCoordinates").connect(all_coordinates_output)
@@ -3613,7 +3632,7 @@ class MouthCreator(Creator):
             for index in range(0, len(driver_value)):
                 pm.setDrivenKeyframe(
                     constraint,
-                    at="{}W1".format(pm.PyNode(jaw_ctrl).getParent().name()),
+                    at="{}W1".format(pm.PyNode(jaw_ctrl).getParent().controller_name()),
                     cd="{}.rotateX".format(jaw_ctrl),
                     dv=driver_value[index],
                     value=value[index],
@@ -5139,7 +5158,7 @@ class FaceCreatorUI(common.Singleton):
             pm.parentConstraint(jaw_ctrl, "{}_Cheek_01_04_Ctrl_Grp".format(side), mo=True)
             pm.PyNode("{}_Cheek_01_04_Ctrl_02_Grp".format(side)).translate.connect(
                 pm.PyNode("{}_Cheek_01_04_Ctrl_Jnt_02_Grp".format(side)).translate)
-        print "Done!"
+        print("Done!")
         return
 
 

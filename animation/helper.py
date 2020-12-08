@@ -262,7 +262,7 @@ class ChannelBoxSaver(common.Singleton):
                     round(jnt.scaleZ.get(), 5),
                 ]
                 self.dict_data[
-                    current_slider][current_range][jnt.name()] = jnt_value
+                    current_slider][current_range][jnt.controller_name()] = jnt_value
         return
 
     def _check_field_exists(self, field, scroll_list):
@@ -505,7 +505,7 @@ class CustomAttrHelper(common.Singleton):
         sel_joints = pm.ls(sl=True)
         name = ""
         for item in sel_joints:
-            name = name + item.name() + ";"
+            name = name + item.controller_name() + ";"
 
         attr_name = ""
         if index == 1:
@@ -523,7 +523,7 @@ class CustomAttrHelper(common.Singleton):
     def get_custom_controller(self):
         attr_list = ['jointsX', 'jointsY', 'jointsZ']
 
-        controller_name = pm.ls(sl=True)[0].name()
+        controller_name = pm.ls(sl=True)[0].controller_name()
         pm.textFieldButtonGrp(
             "customControllerGetter",
             e=True,
@@ -696,7 +696,210 @@ class ChannelBoxWriter(common.Singleton):
             sv=('arFaceControllerJsonFolder', self.json_folder))
 
 
-manager_version = 0.1
+manager_version = 0.2
+
+
+class FaceController:
+    def __init__(self):
+        self.controller_name = ""
+
+    def from_dict(self, dict_data):
+        self.controller_name = dict_data["ControllerName"]
+        self.controller_bone_name = dict_data["ControllerBoneName"]
+        self.controller_group_name = dict_data["ControllerGroupName"]
+        self.controller_postion_offset = dict_data["ControllerPositionOffset"]
+        self.controller_axis_control = dict_data["AxisControl"]
+
+    def __str__(self):
+        return self.controller_name
+
+
+class FeatureManager():
+    def __init__(self, name):
+        self.name = name
+        self.control_group_file = ""
+        self.control_file = ""
+
+    def json_location(self, root_path):
+        self.control_group_file = os.path.join(root_path, "{}ControlGroup.json".format(self.name))
+        self.control_file = os.path.join(root_path, "{}Controller.json".format(self.name))
+
+    def __str__(self):
+        return self.name
+
+    def custom_widget(self, parent):
+        u"""
+        标签栏之自定义捏脸栏
+
+        :return: layout
+        """
+        layout = pm.formLayout("{}FormTabLayout".format(self.name), p=parent)
+        control_list_label = pm.text(label="Control List", al="left")
+        control_list_widget = pm.textScrollList(
+            "{}ControllerListWidget".format(self.name), h=153, w=100,
+            sc=lambda *args: self.select_controller())
+        new_control_btn = pm.button("{}ControllerBuildBtn".format(self.name),
+                                    label="New", w=100, c=lambda *args: self.build_control())
+
+        controller_meta_frame = pm.frameLayout(
+            "{}ControllerMetaFrameLayout".format(self.name),
+            bgs=True, mh=10, mw=10,
+            label=("{} meta".format(self.name).title()),
+        )
+
+        pm.textFieldGrp("{}ControllerNameField".format(self.name), label=u"控制器")
+        pm.textFieldGrp("{}ControllerBoneNameField".format(self.name), label=u"控制器挂点骨骼")
+        pm.textFieldGrp("{}ControllerGroupNameField".format(self.name), label=u"控制器组")
+        pm.floatFieldGrp("{}ControllerPositionOffsetField".format(self.name),
+                         label=u'控制器位置偏移', numberOfFields=3,
+                         value1=0.0, value2=0.0, value3=0.0, cw4=[140, 50, 50, 50])
+        pm.checkBoxGrp("{}ControllerAxisControlField".format(self.name),
+                       label=u'控制器滑竿',
+                       numberOfCheckBoxes=3, labelArray3=['XAxis', 'YAxis', 'ZAxis'],
+                       cw4=[140, 80, 80, 80])
+        pm.button("{}ControllerMetaUpdateBtn".format(self.name),label=u"更新")
+        pm.setParent(controller_meta_frame)
+
+        pm.formLayout(
+            layout, edit=True,
+            attachForm=[
+                (control_list_label, 'top', 10),
+                (control_list_label, 'left', 15),
+                (control_list_widget, 'left', 10),
+                (new_control_btn, 'left', 10),
+                (controller_meta_frame, 'top', 10),
+                (controller_meta_frame, 'right', 10),
+            ],
+            attachControl=[
+                (control_list_widget, 'top', 5, control_list_label),
+                (new_control_btn, 'top', 5, control_list_widget),
+                (controller_meta_frame, 'left', 10, control_list_widget),
+            ])
+
+        pm.setParent("..")
+
+        self.init_data()
+
+        return layout
+
+    def init_data(self):
+        self.control_group_data = common.read_json(self.control_group_file)
+        print(self.control_group_data)
+        self.control_data = common.read_json(self.control_file)
+        # print(self.control_data)
+        self.controller_list = self.control_data["{}Controller".format(self.name)]
+        for controller in self.controller_list:
+            # print(controller)
+            control = FaceController()
+            control.from_dict(controller)
+            pm.textScrollList("{}ControllerListWidget".format(self.name), e=True, a=control.controller_name)
+
+    def build_control(self):
+        u"""创建新的控制器
+
+        :return:
+        """
+        default_control_data = {
+            "ControllerPositionOffset": [0.0, 0.0, 0.0],
+            "ControllerGroupName": "{}ControlGroup".format(self.name),
+            "ControllerBoneName": "",
+            "AxisControl": {
+                "ZAxis": "",
+                "XAxis": "",
+                "YAxis": ""
+            },
+            "ControllerName": "control"
+        }
+        self.control_data['{}Controller'.format(self.name)].append(default_control_data)
+        # print(self.control_data)
+        common.write_json(self.control_data, self.control_file)
+        return True
+
+    def select_controller(self):
+        select_index = pm.textScrollList("{}ControllerListWidget".format(self.name), q=True, sii=True)[0]
+        controller_data = self.get_controller_meta_data(select_index - 1)
+        self.delete_meta_data()
+        self.update_meta_data(controller_data)
+        return
+
+    def get_controller_meta_data(self, controller_index):
+        return self.controller_list[controller_index]
+
+    def delete_meta_data(self):
+        pm.textFieldGrp("{}ControllerNameField".format(self.name), e=True, text="")
+        pm.textFieldGrp("{}ControllerBoneNameField".format(self.name), e=True, text="")
+        pm.textFieldGrp("{}ControllerGroupNameField".format(self.name), e=True, text="")
+        pm.floatFieldGrp("{}ControllerPositionOffsetField".format(self.name), e=True,
+                         value1=0.0, value2=0.0, value3=0.0)
+        pm.checkBoxGrp("{}ControllerAxisControlField".format(self.name), e=True,
+                       value1=False, value2=False, value3=False)
+        return
+
+    def update_meta_data(self, data):
+        pm.textFieldGrp("{}ControllerNameField".format(self.name), e=True, text=data["ControllerName"])
+        pm.textFieldGrp("{}ControllerBoneNameField".format(self.name), e=True, text=data["ControllerBoneName"])
+        pm.textFieldGrp("{}ControllerGroupNameField".format(self.name), e=True, text=data["ControllerGroupName"])
+        pm.floatFieldGrp("{}ControllerPositionOffsetField".format(self.name), e=True,
+                         value1=data["ControllerPositionOffset"][0],
+                         value2=data["ControllerPositionOffset"][1],
+                         value3=data["ControllerPositionOffset"][2])
+        axis_control_check_grp = data["AxisControl"]
+        if axis_control_check_grp["XAxis"] == "":
+            axis_x = False
+        else:
+            axis_x = True
+        if axis_control_check_grp["YAxis"] == "":
+            axis_y = False
+        else:
+            axis_y = True
+        if axis_control_check_grp["ZAxis"] == "":
+            axis_z = False
+        else:
+            axis_z = True
+        pm.checkBoxGrp("{}ControllerAxisControlField".format(self.name), e=True,
+                       value1=axis_x, value2=axis_y, value3=axis_z)
+        return
+
+    def add_controller_widget(self, index=0, parent=""):
+        if pm.columnLayout(
+                "controllerListItemLayout%s" % index, q=True, ex=True):
+            pm.deleteUI("controllerListItemLayout%s" % index)
+
+        layout = pm.columnLayout(
+            "controllerListItemLayout%s" % index,
+            adj=1, parent=parent)
+
+        pm.textFieldButtonGrp(
+            "controllerNameWidget%s" % index,
+            label=u"控制器名", cw3=[60, 200, 140], bl=u"指定",
+            bc=lambda *args: self.get_custom_controller(index))
+        pm.textFieldButtonGrp(
+            "controllerGrpNameWidget%s" % index,
+            label=u"控制器组", cw3=[60, 200, 140], bl=u"指定")
+        pm.textFieldButtonGrp(
+            "controllerBoneNameWidget%s" % index,
+            label=u"挂点名称",
+            cw3=[60, 200, 140], bl=u"指定",
+            bc=lambda *args: self.get_sample_node(
+                text_widget="controllerBoneNameWidget%s" % index))
+        pm.floatFieldGrp(
+            "controllerBoneOffsetWidget%s" % index,
+            numberOfFields=3,
+            pre=3,
+            label=u'挂点偏移', cw4=[60, 50, 50, 50])
+
+        pm.textFieldGrp(
+            "controller%sAxisX" % index, label=u"XAxis", cw2=[60, 200])
+        pm.textFieldGrp(
+            "controller%sAxisY" % index, label=u"YAxis", cw2=[60, 200])
+        pm.textFieldGrp(
+            "controller%sAxisZ" % index, label=u"ZAxis", cw2=[60, 200])
+
+        pm.separator(style='in', height=20)
+
+        pm.setParent("..")  # end of layout
+
+        return layout
 
 
 class JsonManager(common.Singleton):
@@ -725,8 +928,8 @@ class JsonManager(common.Singleton):
         self.mouth_file_folder = ""
         self.face_file_folder = ""
 
-        self.initialize()
         self.show()
+        self.initialize()
         # self.selected_controller()
 
     def show(self):
@@ -737,29 +940,33 @@ class JsonManager(common.Singleton):
         """
         if pm.window("jsonManagerUI", ex=True):
             pm.deleteUI("jsonManagerUI")
-        pm.window(
-            "jsonManagerUI",
-            t=u"JSON数据管理器 %s" % manager_version,
-            mb=True,
-            cc=lambda *args: self._closed_window_cmd())
+        pm.window("jsonManagerUI", t=u"角色脸部特征编辑器 %s" % manager_version, mb=True,
+                  cc=lambda *args: self._closed_window_cmd())
 
-        self.menu_list()
+        # self.menu_list()
 
-        self.main_tab = pm.tabLayout(
-            "jsonManagerMainTabLayout",
-            innerMarginWidth=5, innerMarginHeight=5)
-        child1 = self.custom_tab()
+        pm.columnLayout(adj=1)
+
+        pm.frameLayout(label=u"配置面板", mw=5, mh=5, bgs=True, cll=True, cl=False)
+        pm.textFieldButtonGrp("XDFaceEditDataStoreField", label=u"存储路径", bl=u"设置", adj=2, cw3=[60, 100, 40],
+                              bc=lambda *args: self.setting_json_folder())
+        pm.textFieldButtonGrp("XDFaceEditNewModuleField", label=u"特征模块", bl=u"新建", adj=2, cw3=[60, 100, 40],
+                              bc=lambda *args: self.new_module())
+        pm.setParent("..")
+
+        pm.frameLayout(label=u"工作面板", mw=5, mh=5, bgs=True, cll=True, cl=False)
+        self.main_tab = pm.tabLayout("jsonManagerMainTabLayout", innerMarginWidth=5, innerMarginHeight=5)
+        # child1 = self.custom_tab()
         # child2 = self.ar_tab()
-        child3 = self.discard_tab()
+        # child3 = self.discard_tab()
 
-        pm.tabLayout(
-            self.main_tab,
-            edit=True,
-            tabLabel=(
-                (child1, u'捏脸'),
-                # (child2, u'AR'),
-                (child3, u'历史版本')),
-            sti=self.current_tab_index)
+        pm.tabLayout(self.main_tab, edit=True,
+                     # tabLabel=((child1, u'捏脸'),),
+                     # sti=self.current_tab_index
+                     )
+
+        pm.setParent(self.main_tab)
+        pm.setParent("..")
 
         pm.showWindow("jsonManagerUI")
 
@@ -930,70 +1137,18 @@ class JsonManager(common.Singleton):
 
         return
 
-    def discard_tab(self):
-        """
-        历史遗留版本
-        """
-        layout = pm.formLayout()
-
-        self.module_id_field = pm.intFieldGrp(label=u"道具ID", cw2=[50, 100])
-
-        self.discard_child_tab_layout = pm.tabLayout(
-            "jsonManagerMainTabLayout",
-            innerMarginWidth=5,
-            innerMarginHeight=5)
-        child_brow = self.child_brow_tab()
-        child_eye = self.child_eye_tab()
-        child_nose = self.child_nose_tab()
-        child_mouth = self.child_mouth_tab()
-        child_face = self.child_face_tab()
-
-        pm.tabLayout(
-            self.discard_child_tab_layout,
-            edit=True,
-            tabLabel=(
-                (child_brow, u'眉毛'),
-                (child_eye, u'眼睛'),
-                (child_nose, u'鼻子'),
-                (child_mouth, u'嘴巴'),
-                (child_face, u'脸型'),
-            ),
-            # sti=1,
-        )
-        pm.setParent("..")
-
-        self.sava_json_btn = pm.button(
-            label=u"保存JSON文件",
-            c=lambda *args: self.save_data_to_json())
-
-        pm.formLayout(
-            layout,
-            edit=True,
-            attachForm=[
-                (self.module_id_field, 'top', 5),
-                (self.module_id_field, 'left', 5),
-                (self.module_id_field, 'right', 5),
-                (self.discard_child_tab_layout, 'top', 5),
-                (self.discard_child_tab_layout, 'left', 10),
-                (self.discard_child_tab_layout, 'right', 10),
-                (self.sava_json_btn, 'left', 10),
-                (self.sava_json_btn, 'right', 10),
-                (self.sava_json_btn, 'bottom', 10),
-            ],
-            attachControl=[
-                (self.discard_child_tab_layout, 'top', 10,
-                 self.module_id_field),
-                (self.discard_child_tab_layout, 'bottom', 10,
-                 self.sava_json_btn),
-            ])
-
-        return layout
-
     def initialize(self):
         if pm.optionVar(q='jsonManagerFolder'):
-            self.json_folder = pm.optionVar(
-                q='jsonManagerFolder')
+            self.json_folder = pm.optionVar(q='jsonManagerFolder')
+            pm.textFieldButtonGrp("XDFaceEditDataStoreField", e=True, text=self.json_folder)
+
             self.module_sections = self.scanning_folder("folders")
+            for module_section in self.module_sections:
+                module = FeatureManager(module_section)
+                module.json_location(os.path.join(self.json_folder, module_section))
+                layout = module.custom_widget(parent=self.main_tab)
+                pm.tabLayout(self.main_tab, edit=True, tabLabel=((layout, module_section)))
+            # for module
 
         if pm.optionVar(q='jsonManagerMainTabLayoutIndex'):
             self.current_tab_index = int(pm.optionVar(
@@ -1017,38 +1172,30 @@ class JsonManager(common.Singleton):
 
     def _closed_window_cmd(self):
         pm.optionVar(sv=('jsonManagerFolder', self.json_folder))
-        pm.optionVar(sv=('arFileLocation', self.ar_file_location))
+        # pm.optionVar(sv=('arFileLocation', self.ar_file_location))
 
-        self.current_tab_index = pm.tabLayout(
-            self.main_tab, q=True, sti=True)
-        pm.optionVar(
-            sv=('jsonManagerMainTabLayoutIndex', self.current_tab_index))
+        self.current_tab_index = pm.tabLayout(self.main_tab, q=True, sti=True)
 
-        pm.optionVar(
-            sv=('jsonManagerDiscardBrowFilePath', self.brow_file_folder))
-        pm.optionVar(
-            sv=('jsonManagerDiscardEyeFilePath', self.eye_file_folder))
-        pm.optionVar(
-            sv=('jsonManagerDiscardNoseFilePath', self.nose_file_folder))
-        pm.optionVar(
-            sv=('jsonManagerDiscardMouthFilePath', self.mouth_file_folder))
-        pm.optionVar(
-            sv=('jsonManagerDiscardFaceFilePath', self.face_file_folder))
+        pm.optionVar(sv=('jsonManagerMainTabLayoutIndex', self.current_tab_index))
+
+        pm.optionVar(sv=('jsonManagerDiscardBrowFilePath', self.brow_file_folder))
+        pm.optionVar(sv=('jsonManagerDiscardEyeFilePath', self.eye_file_folder))
+        pm.optionVar(sv=('jsonManagerDiscardNoseFilePath', self.nose_file_folder))
+        pm.optionVar(sv=('jsonManagerDiscardMouthFilePath', self.mouth_file_folder))
+        pm.optionVar(sv=('jsonManagerDiscardFaceFilePath', self.face_file_folder))
 
     def setting_json_folder(self):
-        json_folder = pm.fileDialog2(
-            dialogStyle=2,
-            fileFilter="JSON File (*.json);;",
-            fileMode=3, okc=u"选择文件夹")
-        if json_folder:
+        json_folder = pm.fileDialog2(dialogStyle=2, fileFilter="JSON File (*.json);;", fileMode=3, okc=u"选择文件夹")
+        if json_folder[0]:
             self.json_folder = json_folder[0]
             self.module_sections = self.scanning_folder("folders")
+            pm.textFieldButtonGrp("XDFaceEditDataStoreField", e=True, text=json_folder[0])
 
         return
 
     def scanning_folder(self, return_type):
-        """
-        扫描文件件，将目录列取出来，如果目录下有对应的文件（例：文件夹名face, 对应的文件）
+        u"""扫描文件夹，将目录列取出来，如果目录下有对应的文件（例：文件夹名face, 对应的文件）
+
         :param return_type: 返回类型
         """
         json_list = []
@@ -1056,8 +1203,9 @@ class JsonManager(common.Singleton):
         folder_list = []
         if self.json_folder != '':
             path_dir = os.listdir(self.json_folder)
-
             for json_file in path_dir:
+                if json_file == ".mayaSwatches":
+                    continue
                 full_path = "%s/%s" % (self.json_folder, json_file)
                 if os.path.isdir(full_path):
                     # print("%s it's a directory" % full_path)
@@ -1072,6 +1220,39 @@ class JsonManager(common.Singleton):
         elif return_type == "folders":
             return folder_list
 
+    def new_module(self):
+        u"""创建新的特征模块
+
+        :return:
+        """
+        data_root = self.json_folder
+        module_name = pm.textFieldButtonGrp("XDFaceEditNewModuleField", q=True, text=True)
+        if not module_name == "":
+            module_path = os.path.join(data_root, module_name)
+            # print(module_path)
+            if not os.path.exists(module_path):
+                os.makedirs(module_path)
+                self.new_module_data_file(module_name, module_path)
+        else:
+            pm.error(u"模块的名字不能缺")
+        return
+
+    def new_module_data_file(self, module_name, module_path):
+        module_control_group_file = "{}ControlGroup.json".format(module_name)
+        module_control_group_file_path = os.path.join(module_path, module_control_group_file)
+        module_control_group_data = {}
+        print(module_control_group_file_path)
+        common.write_json(module_control_group_data, file_path=module_control_group_file_path)
+
+        module_control_file = "{}Controller.json".format(module_name)
+        module_control_file_path = os.path.join(module_path, module_control_file)
+        module_control_data = {}
+        module_control_data["{}Controller".format(module_name)] = []
+        print(module_control_file_path)
+        common.write_json(module_control_data, file_path=module_control_file_path)
+
+        return
+
     def option_menu_widget(self, parent_widget):
         if pm.optionMenuGrp("faceModuleOptionsWidget", ex=True):
             pm.deleteUI("faceModuleOptionsWidget")
@@ -1081,8 +1262,7 @@ class JsonManager(common.Singleton):
             label=u"模块名称",
             cw2=[50, 50],
             adj=2,
-            cc=lambda *args: self.selected_controller(
-                pm.optionMenuGrp(widget, q=True, value=True)))
+            cc=lambda *args: self.selected_controller(pm.optionMenuGrp(widget, q=True, value=True)))
         if len(self.module_sections) > 0:
             for json_file in self.module_sections:
                 pm.menuItem(label=json_file)
@@ -2033,7 +2213,7 @@ class DataPasteHelper(common.Singleton):
         self.expression_data = {}
         sel_joints = pm.ls(sl=True)
         for jnt in sel_joints:
-            self.expression_data[jnt.name()] = [
+            self.expression_data[jnt.controller_name()] = [
                 round(pm.PyNode(jnt).translateX.get(), 5),
                 round(pm.PyNode(jnt).translateY.get(), 5),
                 round(pm.PyNode(jnt).translateZ.get(), 5),
@@ -2131,8 +2311,8 @@ class DataHelper(common.Singleton):
     def sdk_layout(self, parent):
         layout = pm.frameLayout(
             p=parent, label="SDK Mirror Helper", bgs=True, mw=10, mh=10)
-        pm.textFieldGrp(label="Search", cw2=[80,150])
-        pm.textFieldGrp(label="Replace", cw2=[80,150])
+        pm.textFieldGrp(label="Search", cw2=[80, 150])
+        pm.textFieldGrp(label="Replace", cw2=[80, 150])
         pm.setParent(layout)
         return layout
 
@@ -2146,7 +2326,7 @@ class DataHelper(common.Singleton):
 
         form_layout = pm.formLayout()
 
-        work_mode_layout = pm.rowColumnLayout(nr=1,p=form_layout)
+        work_mode_layout = pm.rowColumnLayout(nr=1, p=form_layout)
         pm.text(label=u"工作模式：")
         collection1 = pm.radioCollection()
         rb1 = pm.radioButton(label='SDK')

@@ -102,7 +102,7 @@ def duplicate_and_parent_jnt(search="", replace=""):
     duplicate_targets = pm.ls(sl=True)
     if len(duplicate_targets) > 0:
         for duplicate_target in duplicate_targets:
-            new_name = duplicate_target.name().replace(search, replace)
+            new_name = duplicate_target.controller_name().replace(search, replace)
             target = pm.duplicate(duplicate_target, name=new_name)
             pm.parent(target, duplicate_target)
 
@@ -189,7 +189,7 @@ def lock_and_hide_attr(target, translate=True, rotate=True, scale=True,
 
 
 def null_node(name, parent="", node_type="transform"):
-    null_node = pm.createNode(node_type, name=name).name()
+    null_node = pm.createNode(node_type, name=name).controller_name()
     lock_and_hide_attr(null_node, vis=True)
     pm.parent(null_node, parent)
     return null_node
@@ -208,7 +208,7 @@ def create_two_layout_bone(name, parent, offset_value=None):
         offset_value = [0, 1, 0]
     bone = pm.joint(name=name)
     con = add_node_as_parent(
-        bone.name(),
+        bone.controller_name(),
         search_field="_BND",
         suffix="_CON",
         node_type="circle")
@@ -230,7 +230,7 @@ def create_three_layout_bone(name="", parent="", offset_value=None):
     pm.select(cl=True)
     bone = pm.joint(name=name)
     con = add_node_as_parent(
-        bone.name(),
+        bone.controller_name(),
         search_field="_BND",
         suffix="_CON",
         node_type="circle")
@@ -265,13 +265,13 @@ def add_node_as_parent(
     new_parent_name = target.replace(search_field, suffix)
 
     if node_type == "locator":
-        new_parent_node = pm.spaceLocator(name=new_parent_name).name()
+        new_parent_node = pm.spaceLocator(name=new_parent_name).controller_name()
     if node_type == "circle":
         new_parent_node = pm.circle(
-            c=(0, 0, 0), nr=(0, 1, 0), name=new_parent_name, ch=0)[0].name()
+            c=(0, 0, 0), nr=(0, 1, 0), name=new_parent_name, ch=0)[0].controller_name()
     if node_type == "transform":
         new_parent_node = pm.createNode(
-            "transform", name=new_parent_name).name()
+            "transform", name=new_parent_name).controller_name()
 
     pm.delete(pm.parentConstraint(target, new_parent_node, mo=False))
 
@@ -318,7 +318,7 @@ def target_parent_add_decompose_matrix_node():
         for target in select_list:
             target_parent = target.getParent()
             decompose_matrix_node = pm.createNode(
-                "decomposeMatrix", name=target.name() + "_Inverse_DM")
+                "decomposeMatrix", name=target.controller_name() + "_Inverse_DM")
             target.attr("inverseMatrix").connect(
                 decompose_matrix_node.attr("inputMatrix"))
             decompose_matrix_node.attr("outputTranslate").connect(
@@ -332,7 +332,7 @@ def tweak_ctrl_connect_jnt():
     select_list = pm.ls(sl=True)
     if len(select_list) > 0:
         for target in select_list:
-            target_jnt = pm.PyNode(target.name() + "_Jnt_02_Grp")
+            target_jnt = pm.PyNode(target.controller_name() + "_Jnt_02_Grp")
             target.translate.connect(target_jnt.translate)
     return
 
