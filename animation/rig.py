@@ -138,8 +138,8 @@ def add_item_to_text_scroll(scroll_list=None):
     mesh_list = pm.ls(sl=True)
     objs_in_tsl = pm.textScrollList(scroll_list, q=True, ai=True)
     for mesh in mesh_list:
-        if mesh.name() not in objs_in_tsl:
-            objs_in_tsl.append(mesh.name())
+        if mesh.controller_name() not in objs_in_tsl:
+            objs_in_tsl.append(mesh.controller_name())
     pm.textScrollList(scroll_list, e=True, ra=True)
     pm.textScrollList(scroll_list, e=True, a=objs_in_tsl)
 
@@ -650,7 +650,7 @@ def add_grp_to_parent():
     target_list = pm.ls(sl=True)
     for target_item in target_list:
         grp = pm.createNode("transform",
-                            name=("%s_offset" % target_item.name()))
+                            name=("%s_offset" % target_item.controller_name()))
         pm.delete(pm.parentConstraint(target_item, grp, mo=False))
         pm.parent(target_item, grp)
     return
@@ -666,7 +666,7 @@ def joint_convert_grp():
     target_list = pm.ls(sl=True)
     for target_item in target_list:
         grp = pm.createNode(
-            "transform", name=("%s_offset" % target_item.name()))
+            "transform", name=("%s_offset" % target_item.controller_name()))
         pm.delete(pm.parentConstraint(target_item, grp, mo=False))
         target_parent = target_item.getParent()
         pm.parent(grp, target_parent)
@@ -683,7 +683,7 @@ def joint_convert_grp():
                     item, q=True, targetList=True)
                 pm.scaleConstraint(constraint_objs, grp, mo=True)
 
-        new_name = target_item.name()
+        new_name = target_item.controller_name()
         pm.delete(target_item)
         pm.rename(grp, new_name)
 
@@ -1136,25 +1136,25 @@ class CleanDefinitionAnim(common.Singleton):
                 pm.select("definition_*")
                 for item in pm.ls(sl=True, type="joint"):
                     if item.type() == "joint":
-                        cmd = ''' cutKey -cl -t ":" -f ":" -at "tx" %s ;''' % item.name()
+                        cmd = ''' cutKey -cl -t ":" -f ":" -at "tx" %s ;''' % item.controller_name()
                         mel.eval(cmd)
-                        cmd = ''' cutKey -cl -t ":" -f ":" -at "ty" %s ''' % item.name()
+                        cmd = ''' cutKey -cl -t ":" -f ":" -at "ty" %s ''' % item.controller_name()
                         mel.eval(cmd)
-                        cmd = ''' cutKey -cl -t ":" -f ":" -at "tz" %s ''' % item.name()
+                        cmd = ''' cutKey -cl -t ":" -f ":" -at "tz" %s ''' % item.controller_name()
                         mel.eval(cmd)
-                        cmd = ''' cutKey -cl -t ":" -f ":" -at "rx" %s ''' % item.name()
+                        cmd = ''' cutKey -cl -t ":" -f ":" -at "rx" %s ''' % item.controller_name()
                         mel.eval(cmd)
-                        cmd = ''' cutKey -cl -t ":" -f ":" -at "ry" %s ''' % item.name()
+                        cmd = ''' cutKey -cl -t ":" -f ":" -at "ry" %s ''' % item.controller_name()
                         mel.eval(cmd)
-                        cmd = ''' cutKey -cl -t ":" -f ":" -at "rz" %s ''' % item.name()
+                        cmd = ''' cutKey -cl -t ":" -f ":" -at "rz" %s ''' % item.controller_name()
                         mel.eval(cmd)
                 for item in pm.ls(type="joint"):
                     if item.type() == "joint":
-                        cmd = ''' cutKey -cl -t ":" -f ":" -at "sx" %s ''' % item.name()
+                        cmd = ''' cutKey -cl -t ":" -f ":" -at "sx" %s ''' % item.controller_name()
                         mel.eval(cmd)
-                        cmd = ''' cutKey -cl -t ":" -f ":" -at "sy" %s ''' % item.name()
+                        cmd = ''' cutKey -cl -t ":" -f ":" -at "sy" %s ''' % item.controller_name()
                         mel.eval(cmd)
-                        cmd = ''' cutKey -cl -t ":" -f ":" -at "sz" %s ''' % item.name()
+                        cmd = ''' cutKey -cl -t ":" -f ":" -at "sz" %s ''' % item.controller_name()
                         mel.eval(cmd)
 
                 cmd = '''file -force -options "fbx" -type "FBX export" -pr -ea "%s";''' % full_path

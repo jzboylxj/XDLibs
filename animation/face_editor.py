@@ -1152,11 +1152,11 @@ class FaceEditor(common.Singleton):
         if method == "post":
             for new_jnt in pm.ls(sl=True):
                 # new_jnt = pm.ls(sl=True)[0]
-                if new_jnt.name() not in (pm.textScrollList(
+                if new_jnt.controller_name() not in (pm.textScrollList(
                         "axis_{}_joint_list".format(attr), q=True, ai=True)):
-                    new_jnt_default_value = get_channel_values(new_jnt.name())
+                    new_jnt_default_value = get_channel_values(new_jnt.controller_name())
                     new_jnt_data = {
-                        "BoneName": new_jnt.name(),
+                        "BoneName": new_jnt.controller_name(),
                         "Max": [0, 0, 0, 0, 0, 0, 1, 1, 1],
                         "Min": [0, 0, 0, 0, 0, 0, 1, 1, 1],
                         "def": new_jnt_default_value,
@@ -1166,10 +1166,10 @@ class FaceEditor(common.Singleton):
                         new_jnt_data)
                     pm.textScrollList(
                         "axis_{}_joint_list".format(attr), e=True,
-                        a=new_jnt.name())
+                        a=new_jnt.controller_name())
                     pm.textScrollList(
                         "axis_{}_joint_list".format(attr), e=True,
-                        si=new_jnt.name())
+                        si=new_jnt.controller_name())
         if method == "update":
             update_joints_index = pm.textScrollList(
                 "axis_{}_joint_list".format(attr), q=True, sii=True)
@@ -1341,7 +1341,7 @@ class FaceEditor(common.Singleton):
             self.face_data[current_module][controller_index - 1][
                 "ControllerBoneName"] = value
         if method == "button":
-            value = pm.ls(sl=True)[0].name()
+            value = pm.ls(sl=True)[0].controller_name()
             print(value)
             pm.textFieldButtonGrp("controller_bone_widget", e=True, text=value)
             self.face_data[current_module][controller_index - 1][

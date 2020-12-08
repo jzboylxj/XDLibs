@@ -35,9 +35,9 @@ def mouth_bind_jnt_grp_translate_bc_connect(bind_jnt_grp="", old_min=0.0, old_ma
     set_range = pm.createNode(
         "setRange", name=bind_jnt_grp.replace("_Grp", "_LipSew_SR"))
     lf_lip_sew_ctrl_follicle_shape.attr("parameterU").connect(
-        "{}.value.valueX".format(set_range.name()))
+        "{}.value.valueX".format(set_range.controller_name()))
     rt_lip_sew_ctrl_follicle_shape.attr("parameterU").connect(
-        "{}.value.valueY".format(set_range.name()))
+        "{}.value.valueY".format(set_range.controller_name()))
     set_range.attr("oldMinX").set(old_min)
     set_range.attr("oldMinY").set(old_min)
     set_range.attr("oldMaxX").set(old_max)
@@ -3632,7 +3632,7 @@ class MouthCreator(Creator):
             for index in range(0, len(driver_value)):
                 pm.setDrivenKeyframe(
                     constraint,
-                    at="{}W1".format(pm.PyNode(jaw_ctrl).getParent().name()),
+                    at="{}W1".format(pm.PyNode(jaw_ctrl).getParent().controller_name()),
                     cd="{}.rotateX".format(jaw_ctrl),
                     dv=driver_value[index],
                     value=value[index],

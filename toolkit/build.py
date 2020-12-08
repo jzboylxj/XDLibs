@@ -56,6 +56,10 @@ def multiple_object_on_curve(curve="", spans=7, prefix=None, object_type="joint"
 
 
 def build_jawline_deformer():
+    u"""创建下巴轮廓控制线
+
+    :return:
+    """
     jawline_tweaks = multiple_object_on_curve(
         curve="MD_Jaw_01_Master_Curve",
         prefix="JawLine_01",

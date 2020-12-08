@@ -547,11 +547,11 @@ class ARFaceEditor(common.Singleton):
                 pm.textScrollList(self.ar_item_scroll, e=True, a=item)
                 self.ar_data.set_channel_joint(
                     channel=pm.optionMenuGrp(self.ar_channel_options, q=True, value=True),
-                    joint=item.name(),
+                    joint=item.controller_name(),
                 )
                 self.ar_data.set_channel_joint_attr(
                     channel=pm.optionMenuGrp(self.ar_channel_options, q=True, value=True),
-                    joint=item.name(),
+                    joint=item.controller_name(),
                     value=[0, 0, 0, 0, 0, 0, 1, 1, 1]
                 )
 
@@ -581,11 +581,11 @@ class ARFaceEditor(common.Singleton):
 
                 self.ar_data.set_channel_joint(
                     channel=pm.optionMenuGrp(self.ar_channel_options, q=True, value=True),
-                    joint=item.name(),
+                    joint=item.controller_name(),
                 )
                 self.ar_data.set_channel_joint_attr(
                     channel=pm.optionMenuGrp(self.ar_channel_options, q=True, value=True),
-                    joint=item.name(),
+                    joint=item.controller_name(),
                     value=data
                 )
             pm.textScrollList(self.ar_item_scroll, e=True, da=True)

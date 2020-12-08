@@ -273,7 +273,7 @@ class ExportFBXMaster(common.Singleton):
                     anim_attrs = pm.listAttr(jnt, k=True)
                     for anim_attr in anim_attrs:
                         cmd = '''cutKey -cl -t ":" -f ":" -at %s %s;''' % (
-                            anim_attr, jnt.name())
+                            anim_attr, jnt.controller_name())
                         mel.eval(cmd)
 
             # 清理指定骨骼的动画
@@ -321,7 +321,7 @@ class ExportFBXMaster(common.Singleton):
                 pm.select("head_JNT", hi=True)
 
                 for item in pm.ls(sl=True):
-                    if "definition_" in item.name() and item.type() == "joint":
+                    if "definition_" in item.controller_name() and item.type() == "joint":
                         faceMakeSets.append(item)
 
                 for item in extraSets:
@@ -334,7 +334,7 @@ class ExportFBXMaster(common.Singleton):
                     anim_attrs = pm.listAttr(jnt, k=True)
                     for anim_attr in anim_attrs:
                         cmd = '''cutKey -cl -t ":" -f ":" -at %s %s;''' % (
-                            anim_attr, jnt.name())
+                            anim_attr, jnt.controller_name())
                         mel.eval(cmd)
 
             cmds.file(export_file_name,

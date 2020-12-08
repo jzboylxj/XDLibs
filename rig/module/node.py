@@ -48,7 +48,7 @@ class DoJointGrp:
             self.offset_value = [0, 0, 0]
 
         pm.select(cl=True)
-        self.bnd_name = pm.joint(name=(self.name + "_BND")).name()
+        self.bnd_name = pm.joint(name=(self.name + "_BND")).controller_name()
         if self.have_sub:
             self.sub_con = common.add_node_as_parent(
                 self.bnd_name,
@@ -99,7 +99,7 @@ class DoJointGrp:
             self.offset_value = [0, 0, 0]
 
         pm.select(cl=True)
-        self.bnd_name = pm.joint(name=(self.name + "_BND")).name()
+        self.bnd_name = pm.joint(name=(self.name + "_BND")).controller_name()
 
         self.bnd_con = common.add_node_as_parent(
             self.bnd_name,

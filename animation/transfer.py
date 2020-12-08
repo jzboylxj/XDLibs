@@ -119,7 +119,7 @@ class TransferAnimTool(common.Singleton):
             source_anim_curves = pm.PyNode(
                 "%s%s" % (self.namespace, source_attr)).inputs()
             if len(source_anim_curves) > 0:
-                target_anim_curve = source_anim_curves[0].name()
+                target_anim_curve = source_anim_curves[0].controller_name()
                 # print target_anim_curve
                 # print source_attr.split(".")[0]
                 # print dict_data[source_attr].split(".")[0]

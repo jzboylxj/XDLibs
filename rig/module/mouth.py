@@ -479,7 +479,7 @@ class MouthModule(common.Singleton):
                 mo=False))
         pm.parent(bind_joints, self.bind_jnt_grp)
         set_color(bind_joints, "mid_blue")
-        pm.parent(tweak_surface.name, self.robbin_surface_grp)
+        pm.parent(tweak_surface.controller_name, self.robbin_surface_grp)
 
     def _init_framework(self):
         if not pm.objExists(self.robbin_surface_grp):
@@ -568,14 +568,14 @@ class MouthModule(common.Singleton):
         # bind the surface to the joints
         nurbs_skin_cluster = pm.skinCluster(
             tweak_skin_joints,
-            tweak_surface.name,
+            tweak_surface.controller_name,
             dr=2,
             mi=(self.num_of_controls - 1),
             ns=(self.num_of_controls * 5),
             bm=0,
-            n="{}_SC".format(tweak_surface.name))
+            n="{}_SC".format(tweak_surface.controller_name))
         pm.skinPercent(
-            nurbs_skin_cluster, tweak_surface.name, pruneWeights=0.2
+            nurbs_skin_cluster, tweak_surface.controller_name, pruneWeights=0.2
         )
         for skin_joint in tweak_skin_joints:
             skin_joint_grp = RibbonJoint().from_joint_get_connect_grp(
@@ -659,9 +659,9 @@ class MouthModule(common.Singleton):
         )
         pm.setAttr(
             # fols[-1] + parameter,
-            fol.name() + ".parameterU",
+            fol.controller_name() + ".parameterU",
             tweak_surface.param_joints[x])
-        pm.setAttr(fol.name() + ".parameterV", 0.5)
+        pm.setAttr(fol.controller_name() + ".parameterV", 0.5)
         pm.parent(fol, self.bind_jnt_follicles_grp)
         return fol, temp_follicle
 
