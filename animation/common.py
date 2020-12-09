@@ -41,7 +41,7 @@ def write_json(dict_data=None, file_path=""):
     with open(file_path, "w") as f:
         json.dump(dict_data, f, indent=4)
 
-    return
+    return True
 
 
 def read_json(file_path=""):

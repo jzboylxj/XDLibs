@@ -4,6 +4,7 @@
 # @Author  : Li XiaoJun
 # @Site    :
 # @File    : build.py
+from imp import reload
 
 from pymel import core as pm
 
