@@ -60,14 +60,26 @@ class ARFaceData:
         return True
 
     def get_channel_joints(self, channel):
+        u"""获取通道对应的骨骼
+
+        :return: 骨骼列表
+        """
         return self.dict_data[channel].keys()
 
     def set_channel_joint_attr(self, channel, joint, value):
         self.dict_data[channel][joint]["max"] = value
-
         return True
 
     def get_channel_joint_attr(self, channel, joint):
+        u"""获取通道对应骨骼的属性值
+
+        Args:
+            channel ([str]): [通道名]]
+            joint ([str]): [骨骼名]
+
+        Returns:
+            [list]: [骨骼的通道栏属性值]
+        """
         return self.dict_data[channel][joint]["max"]
 
     def data_to_json(self):
@@ -104,23 +116,30 @@ class ARFaceEditor(common.Singleton):
         self.ar_file_location = ""
         self.ar_data = ARFaceData()
 
-        self.initialize()
         self.show()
+        self.initialize()
 
     def initialize(self):
         if pm.optionVar(q='ARFaceEditor_jsonFileLocation'):
-            self.ar_file_location = pm.optionVar(q='ARFaceEditor_jsonFileLocation')
+            self.ar_file_location = pm.optionVar(
+                q='ARFaceEditor_jsonFileLocation')
+            if os.path.isfile(self.ar_file_location):
+                pm.textFieldButtonGrp(
+                    self.json_location_widget, e=True, text=self.ar_file_location)
+
+                self.init_ar_channel_options(json_file=self.ar_file_location)
+                pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
+                self.selected_ar_channel()
         else:
             self.ar_file_location = ""
+
+        print(self.ar_file_location)
 
     def show(self):
         if pm.window("ARFaceEditor", ex=True):
             pm.deleteUI("ARFaceEditor")
-        pm.window(
-            "ARFaceEditor",
-            t=u"AR人脸识别 %s" % manager_version,
-            mb=True,
-            cc=lambda *args: self._closed_window_cmd())
+        pm.window("ARFaceEditor", t=u"AR人脸识别 %s" % manager_version, mb=True,
+                  cc=lambda *args: self._closed_window_cmd())
 
         self.menu_list()
         self.main_layout()
@@ -131,41 +150,28 @@ class ARFaceEditor(common.Singleton):
         pass
 
     def menu_list(self):
-        u"""        工具菜单栏
+        u"""工具菜单栏
 
         :return:
         """
 
         # 数据菜单栏
         pm.menu(label=u"数据", tearOff=True)
-        pm.menuItem(
-            label=u"输出Unity",
-            c=lambda *args: self.export_for_unity())
-        # 通道菜单栏
-        pm.menu(label=u"通道", tearOff=True)
-        pm.menuItem(
-            label=u"重建选择通道",
-            c=lambda *args: self.rebuild_channels_controller(type="selected"))
-        pm.menuItem(
-            label=u"重建所有通道",
-            c=lambda *args: self.rebuild_channels_controller(type="all"))
+        pm.menuItem(label=u"重建通道", c=lambda *args: self.rebuild_channels_controller())
+        pm.menuItem(label=u"输出Unity", c=lambda *args: self.export_for_unity())
 
         # 通道菜单栏
         pm.menu(label=u"骨骼", tearOff=True)
-        pm.menuItem(
-            label=u"添加影响骨骼",
-            c=lambda *args: self.new_joint_to_ar_channel(auto_sdk=False))
-        pm.menuItem(
-            label=u"添加骨骼和SDK",
-            c=lambda *args: self.new_joint_to_ar_channel(auto_sdk=True))
+        pm.menuItem(label=u"添加影响骨骼",
+                    c=lambda *args: self.new_joint_to_ar_channel(auto_sdk=False))
+        pm.menuItem(label=u"添加骨骼和SDK",
+                    c=lambda *args: self.new_joint_to_ar_channel(auto_sdk=True))
         pm.menuItem(divider=True)
-        pm.menuItem(
-            label=u"移除选择骨骼",
-            c=lambda *args: self.remove_select_joint_in_scroll())
+        pm.menuItem(label=u"移除选择骨骼",
+                    c=lambda *args: self.remove_select_joint_in_scroll())
         pm.menuItem(divider=True)
-        pm.menuItem(
-            label=u"选择所有骨骼",
-            c=lambda *args: self.select_all_joint_in_scroll())
+        pm.menuItem(label=u"选择所有骨骼",
+                    c=lambda *args: self.select_all_joint_in_scroll())
 
         return
 
@@ -214,27 +220,43 @@ class ARFaceEditor(common.Singleton):
         pm.popupMenu()
         pm.menuItem(label=u"添加映射", c=lambda *args: self.new_mapping())
         pm.menuItem(divider=True)
-        pm.menuItem(label=u"添加影响骨骼", c=lambda *args: self.new_joint_to_ar_channel(auto_sdk=False))
-        pm.menuItem(label=u"添加骨骼和SDK", c=lambda *args: self.new_joint_to_ar_channel(auto_sdk=True))
+        pm.menuItem(
+            label=u"添加影响骨骼", c=lambda *args: self.new_joint_to_ar_channel(auto_sdk=False))
+        pm.menuItem(label=u"添加骨骼和SDK",
+                    c=lambda *args: self.new_joint_to_ar_channel(auto_sdk=True))
         pm.menuItem(divider=True)
-        pm.menuItem(label=u"移除选择骨骼", c=lambda *args: self.remove_select_joint_in_scroll())
+        pm.menuItem(label=u"移除选择骨骼",
+                    c=lambda *args: self.remove_select_joint_in_scroll())
         pm.menuItem(divider=True)
-        pm.menuItem(label=u"选择所有骨骼", c=lambda *args: self.select_all_joint_in_scroll())
+        pm.menuItem(label=u"选择所有骨骼",
+                    c=lambda *args: self.select_all_joint_in_scroll())
 
         ar_item_data_layout = pm.columnLayout(adj=1, rs=2)
-        self.ar_item_joint_name = pm.text(label=u"Joint name", al="left", fn="boldLabelFont")
-        self.ar_item_attr_tx = pm.floatFieldGrp(adj=1, cw2=[80, 80], label="translateX", pre=3)
-        self.ar_item_attr_ty = pm.floatFieldGrp(adj=1, cw2=[80, 80], label="translateY", pre=3)
-        self.ar_item_attr_tz = pm.floatFieldGrp(adj=1, cw2=[80, 80], label="translateZ", pre=3)
-        self.ar_item_attr_rx = pm.floatFieldGrp(adj=1, cw2=[80, 80], label="rotateX", pre=3)
-        self.ar_item_attr_ry = pm.floatFieldGrp(adj=1, cw2=[80, 80], label="rotateY", pre=3)
-        self.ar_item_attr_rz = pm.floatFieldGrp(adj=1, cw2=[80, 80], label="rotateZ", pre=3)
-        self.ar_item_attr_sx = pm.floatFieldGrp(adj=1, cw2=[80, 80], label="scaleX", pre=3)
-        self.ar_item_attr_sy = pm.floatFieldGrp(adj=1, cw2=[80, 80], label="scaleY", pre=3)
-        self.ar_item_attr_sz = pm.floatFieldGrp(adj=1, cw2=[80, 80], label="scaleZ", pre=3)
+        self.ar_item_joint_name = pm.text(
+            label=u"Joint name", al="left", fn="boldLabelFont")
+        self.ar_item_attr_tx = pm.floatFieldGrp(
+            adj=1, cw2=[80, 80], label="translateX", pre=3)
+        self.ar_item_attr_ty = pm.floatFieldGrp(
+            adj=1, cw2=[80, 80], label="translateY", pre=3)
+        self.ar_item_attr_tz = pm.floatFieldGrp(
+            adj=1, cw2=[80, 80], label="translateZ", pre=3)
+        self.ar_item_attr_rx = pm.floatFieldGrp(
+            adj=1, cw2=[80, 80], label="rotateX", pre=3)
+        self.ar_item_attr_ry = pm.floatFieldGrp(
+            adj=1, cw2=[80, 80], label="rotateY", pre=3)
+        self.ar_item_attr_rz = pm.floatFieldGrp(
+            adj=1, cw2=[80, 80], label="rotateZ", pre=3)
+        self.ar_item_attr_sx = pm.floatFieldGrp(
+            adj=1, cw2=[80, 80], label="scaleX", pre=3)
+        self.ar_item_attr_sy = pm.floatFieldGrp(
+            adj=1, cw2=[80, 80], label="scaleY", pre=3)
+        self.ar_item_attr_sz = pm.floatFieldGrp(
+            adj=1, cw2=[80, 80], label="scaleZ", pre=3)
 
-        pm.button(label="Update Selected", c=lambda *args: self.update_sdk(type="select"))
-        pm.button(label="Update All", c=lambda *args: self.update_sdk(type="all"))
+        pm.button(label="Update Selected",
+                  c=lambda *args: self.update_sdk_json(type="select"))
+        pm.button(label="Update All",
+                  c=lambda *args: self.update_sdk_json(type="all"))
 
         pm.setParent("..")  # end of ar_item_data_layout
 
@@ -276,15 +298,15 @@ class ARFaceEditor(common.Singleton):
 
         pm.setParent("..")
 
-        if self.ar_file_location != "":
-            if os.path.isfile(self.ar_file_location):
-                self.init_ar_channel_options(json_file=self.ar_file_location)
-                pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
-                self.selected_ar_channel()
+        # if self.ar_file_location != "":
+        #     if os.path.isfile(self.ar_file_location):
+        #         self.init_ar_channel_options(json_file=self.ar_file_location)
+        #         pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
+        #         self.selected_ar_channel()
 
-                if pm.textScrollList(self.ar_item_scroll, q=True, ni=True) > 1:
-                    pm.textScrollList(self.ar_item_scroll, e=True, sii=1)
-                    self.selected_ar_item_in_scroll()
+        #         if pm.textScrollList(self.ar_item_scroll, q=True, ni=True) > 1:
+        #             pm.textScrollList(self.ar_item_scroll, e=True, sii=1)
+        #             self.selected_ar_item_in_scroll()
 
         return layout
 
@@ -292,7 +314,8 @@ class ARFaceEditor(common.Singleton):
         json_location = pm.fileDialog2(
             dialogStyle=2, fileFilter="JSON File (*.json);;", fileMode=0, okc=u"选择文件", cc=u"取消")
         if os.path.isfile(json_location[0]):
-            pm.textFieldButtonGrp("ARFileLocationField", e=True, text=json_location[0])
+            pm.textFieldButtonGrp("ARFileLocationField",
+                                  e=True, text=json_location[0])
             self.ar_file_location = json_location[0]
 
         else:
@@ -303,11 +326,13 @@ class ARFaceEditor(common.Singleton):
             elif mode == 2:
                 dict_data = channel.arkit_channels
             write_json(dict_data=dict_data, file_path=json_location[0])
-            pm.textFieldButtonGrp("ARFileLocationField", e=True, text=json_location[0])
+            pm.textFieldButtonGrp("ARFileLocationField",
+                                  e=True, text=json_location[0])
             self.ar_file_location = json_location[0]
 
         self.init_ar_channel_options(json_file=json_location[0])
-        pm.optionVar(sv=('ARFaceEditor_jsonFileLocation', self.ar_file_location))
+        pm.optionVar(
+            sv=('ARFaceEditor_jsonFileLocation', self.ar_file_location))
 
         if pm.textScrollList(self.ar_item_scroll, q=True, ni=True) > 1:
             pm.textScrollList(self.ar_item_scroll, e=True, sii=1)
@@ -325,7 +350,8 @@ class ARFaceEditor(common.Singleton):
 
         if len(self.ar_data.ar_channels) > 0:
             for item in self.ar_data.ar_channels:
-                pm.menuItem(p=(self.ar_channel_options + "|OptionMenu"), label=item)
+                pm.menuItem(
+                    p=(self.ar_channel_options + "|OptionMenu"), label=item)
         return
 
     def selected_ar_channel(self):
@@ -334,45 +360,44 @@ class ARFaceEditor(common.Singleton):
         :return:
         """
         current_channel = pm.optionMenuGrp(self.ar_channel_options, q=True, value=True)
-
         pm.textScrollList(self.ar_item_scroll, e=True, ra=True)
-        if self.ar_data.get_channel_joints(current_channel):
-            pm.textScrollList(
-                self.ar_item_scroll,
-                e=True,
-                a=self.ar_data.get_channel_joints(current_channel)
-            )
+        if len(self.ar_data.get_channel_joints(current_channel)) > 0:
+            pm.textScrollList(self.ar_item_scroll, e=True,
+                              a=self.ar_data.get_channel_joints(current_channel))
             pm.textScrollList(self.ar_item_scroll, e=True, sii=1)
             self.selected_ar_item_in_scroll()
 
-        print(u"选择通道：{}".format(current_channel))
-        work_mode = pm.radioButtonGrp(self.work_mode_control, q=True, sl=True)
-        if pm.objExists(current_channel):
-            pm.floatSliderGrp("arIDControlSlider", e=True, enable=True, label=current_channel)
-            if work_mode == 1:
-                pm.connectControl('arIDControlSlider', '%s.sliderX' % current_channel)
-            if work_mode == 2:
-                pm.connectControl('arIDControlSlider', '{}.weight'.format(current_channel))
+        print(u"已选择通道：{}".format(current_channel))
 
-        else:
-            pass
+        work_mode = pm.radioButtonGrp(self.work_mode_control, q=True, sl=True)
+        # if pm.objExists(current_channel):
+        #     pm.floatSliderGrp("arIDControlSlider", e=True, enable=True, label=current_channel)
+        #     if work_mode == 1:
+        #         pm.connectControl('arIDControlSlider', '%s.sliderX' % current_channel)
+        if work_mode == 2 and pm.objExists("ArkitPoseLib"):
+            pm.connectControl('arIDControlSlider', 'ArkitPoseLib.{}'.format(current_channel))
+
+        # else:
+        #     pass
 
         return
 
     def selected_ar_item_in_scroll(self):
         current_channel = pm.optionMenuGrp(
             self.ar_channel_options, q=True, value=True)
-
         # 当前选择的骨骼
         current_item = pm.textScrollList(
-            self.ar_item_scroll, q=True, si=True)
-        pm.select(current_item)
+            self.ar_item_scroll, q=True, si=True)[0]
+        if pm.objExists(current_item):
+            pm.select(current_item)
+        else:
+            pm.error(U"{}不存在".format(current_item))
 
         current_item_attrs = self.ar_data.get_channel_joint_attr(
-            current_channel, current_item[0])
+            current_channel, current_item)
 
         # 修改通道属性栏里面底部右侧的面板的名称
-        pm.text(self.ar_item_joint_name, e=True, label=current_item[0])
+        pm.text(self.ar_item_joint_name, e=True, label=current_item)
         pm.floatFieldGrp(
             self.ar_item_attr_tx, e=True, v1=current_item_attrs[0] * 100)
         pm.floatFieldGrp(
@@ -393,53 +418,56 @@ class ARFaceEditor(common.Singleton):
             self.ar_item_attr_sz, e=True, v1=current_item_attrs[8])
         return
 
-    def rebuild_channels_controller(self, type="all"):
+    def rebuild_channels_controller(self):
         u"""重建通道与控制器之间的连接
 
         :param type: 重建类型，有效选项为all, selected
         :return: None
         """
-        
+
         test_proxy = "ArkitPoseLib"
-        
-        if not pm.objExists(test_proxy):
-            # pm.error(u"测试用代理体{}已经存在".format(test_proxy))
-            pm.createNode("transform", name=test_proxy)
-            for attr in ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz", "v"]:
-                pm.setAttr("{}.{}".format(test_proxy, attr), lock=True, keyable=False, channelBox=False)
 
-                all_channel = pm.optionMenuGrp(self.ar_channel_options, q=True, ils=True)
-                for channel in all_channel:
-                    channel_label = pm.menuItem(channel, q=True, label=True)
-                    print(channel_label)
-                    pm.addAttr(test_proxy)
-                    # addAttr -ln "browDown_L"  -at double  -min 0 -max 1 -dv 0 |ArkitPoseLib;
-                    # setAttr -e-keyable true |ArkitPoseLib.browDown_L;
+        if pm.objExists(test_proxy):
+            pm.delete(test_proxy)
 
-        # if type == "all":
-        #     for item in pm.optionMenuGrp(self.ar_channel_options, q=True, ils=True):
-        #         channel_label = pm.menuItem(item, q=True, label=True)
-        #         if not pm.objExists(channel_label):
-        #             self.create_slider_controller(name=channel_label)
-        #             self.sdk_slider_to_rig(channel=channel_label)
-        #             pm.connectControl('arIDControlSlider', '%s.sliderX' % channel_label)
-        #     pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
-        #     self.selected_ar_channel()
-        # elif type == "selected":
-        #     all_menu_item = pm.optionMenuGrp(
-        #         self.ar_channel_options, q=True, ils=True)
-        #     current_index = pm.optionMenuGrp(
-        #         self.ar_channel_options, q=True, sl=True) - 1
-        #     channel_label = pm.menuItem(
-        #         all_menu_item[current_index], q=True, label=True)
-        #     if not pm.objExists(channel_label):
-        #         self.create_slider_controller(name=channel_label)
-        #         self.sdk_slider_to_rig(channel=channel_label)
-        #         pm.connectControl(
-        #             'arIDControlSlider', '%s.sliderX' % channel_label)
-        #     pm.optionMenuGrp(
-        #         self.ar_channel_options, e=True, sl=(current_index + 1))
-        #     self.selected_ar_channel()
+        test_proxy = pm.createNode("transform", name=test_proxy)
+        for attr in ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz", "v"]:
+            pm.setAttr("{}.{}".format(test_proxy, attr),
+                       lock=True, keyable=False, channelBox=False)
+
+        all_channel = pm.optionMenuGrp(self.ar_channel_options, q=True, ils=True)
+        for item in all_channel:
+            channel_label = pm.menuItem(item, q=True, label=True)
+            pm.addAttr(test_proxy, ln=channel_label, at="double", min=0, max=1, dv=0)
+            pm.setAttr("{}.{}".format(test_proxy, channel_label), e=True, keyable=True)
+
+            if pm.radioButtonGrp(self.work_mode_control, q=True, sl=True) == 2:
+                self.sdk_channel(channel=channel_label)
+                pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
+                # if type == "all":
+                #     for item in pm.optionMenuGrp(self.ar_channel_options, q=True, ils=True):
+                #         channel_label = pm.menuItem(item, q=True, label=True)
+                #         if not pm.objExists(channel_label):
+                #             self.create_slider_controller(name=channel_label)
+                #             self.sdk_slider_to_rig(channel=channel_label)
+                #             pm.connectControl('arIDControlSlider', '%s.sliderX' % channel_label)
+                #     pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
+                #     self.selected_ar_channel()
+                # elif type == "selected":
+                #     all_menu_item = pm.optionMenuGrp(
+                #         self.ar_channel_options, q=True, ils=True)
+                #     current_index = pm.optionMenuGrp(
+                #         self.ar_channel_options, q=True, sl=True) - 1
+                #     channel_label = pm.menuItem(
+                #         all_menu_item[current_index], q=True, label=True)
+                #     if not pm.objExists(channel_label):
+                #         self.create_slider_controller(name=channel_label)
+                #         self.sdk_slider_to_rig(channel=channel_label)
+                #         pm.connectControl(
+                #             'arIDControlSlider', '%s.sliderX' % channel_label)
+                #     pm.optionMenuGrp(
+                #         self.ar_channel_options, e=True, sl=(current_index + 1))
+                #     self.selected_ar_channel()
 
         return
 
@@ -450,14 +478,15 @@ class ARFaceEditor(common.Singleton):
         print(u"%s已经创建" % locator)
         return
 
-    def update_sdk(self, type="select", pre=5):
+    def update_sdk_json(self, type="select", pre=5):
         current_jnts = []
         if type == "select":
-            current_jnts = pm.textScrollList(
-                self.ar_item_scroll, q=True, si=True)
+            current_jnts = pm.textScrollList(self.ar_item_scroll, q=True, si=True)
         elif type == "all":
-            current_jnts = pm.textScrollList(
-                self.ar_item_scroll, q=True, ai=True)
+            current_jnts = pm.textScrollList(self.ar_item_scroll, q=True, ai=True)
+
+        current_selected_channel = pm.optionMenuGrp(
+            self.ar_channel_options, q=True, value=True)
 
         for current_jnt in current_jnts:
             jnt_value = [
@@ -475,31 +504,30 @@ class ARFaceEditor(common.Singleton):
             attr_list = ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz"]
 
             for dv_attr in attr_list:
-                helper.position_joint(
-                    current_jnt, value=[0, 0, 0, 0, 0, 0, 1, 1, 1])
+                # helper.position_joint(
+                    # current_jnt, value=[0, 0, 0, 0, 0, 0, 1, 1, 1])
 
+                # pm.setDrivenKeyframe(
+                #     "%s.%s" % (current_jnt, dv_attr),
+                #     cd="%s.sliderX" % (pm.optionMenuGrp(
+                #         self.ar_channel_options, q=True, value=True)),
+                #     dv=0)
+
+                # helper.position_joint(
+                #     current_jnt,
+                #     value=[
+                #         jnt_value[0] * 100,
+                #         jnt_value[1] * 100,
+                #         jnt_value[2] * 100,
+                #         jnt_value[3],
+                #         jnt_value[4],
+                #         jnt_value[5],
+                #         jnt_value[6],
+                #         jnt_value[7],
+                #         jnt_value[8]])
                 pm.setDrivenKeyframe(
                     "%s.%s" % (current_jnt, dv_attr),
-                    cd="%s.sliderX" % (pm.optionMenuGrp(
-                        self.ar_channel_options, q=True, value=True)),
-                    dv=0)
-
-                helper.position_joint(
-                    current_jnt,
-                    value=[
-                        jnt_value[0] * 100,
-                        jnt_value[1] * 100,
-                        jnt_value[2] * 100,
-                        jnt_value[3],
-                        jnt_value[4],
-                        jnt_value[5],
-                        jnt_value[6],
-                        jnt_value[7],
-                        jnt_value[8]])
-                pm.setDrivenKeyframe(
-                    "%s.%s" % (current_jnt, dv_attr),
-                    cd="%s.sliderX" % (pm.optionMenuGrp(
-                        self.ar_channel_options, q=True, value=True)),
+                    cd="ArkitPoseLib.{}".format(current_selected_channel),
                     dv=1)
 
             pm.floatFieldGrp(self.ar_item_attr_tx, e=True,
@@ -516,12 +544,41 @@ class ARFaceEditor(common.Singleton):
             pm.floatFieldGrp(self.ar_item_attr_sz, e=True, v1=jnt_value[8])
 
             self.ar_data.set_channel_joint_attr(
-                channel=pm.optionMenuGrp(
-                    self.ar_channel_options, q=True, value=True),
+                channel=pm.optionMenuGrp(self.ar_channel_options, q=True, value=True),
                 joint=current_jnt,
                 value=jnt_value,
             )
         self.ar_data.data_to_json()
+        
+        return
+
+    def sdk_channel(self, channel):
+        attr_list = ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz"]
+        if len(self.ar_data.get_channel_joints(channel)) > 0:
+            for jnt in self.ar_data.get_channel_joints(channel):
+                value = self.ar_data.get_channel_joint_attr(channel, jnt)
+                for dv_attr in attr_list:
+                    helper.position_joint(jnt, value=[0, 0, 0, 0, 0, 0, 1, 1, 1])
+                    pm.setDrivenKeyframe(
+                        "%s.%s" % (jnt, dv_attr),
+                        cd="ArkitPoseLib.{}".format(channel),
+                        dv=0)
+                    dv_value = [
+                        value[0] * 100,
+                        value[1] * 100,
+                        value[2] * 100,
+                        value[3],
+                        value[4],
+                        value[5],
+                        value[6],
+                        value[7],
+                        value[8],
+                    ]
+                    helper.position_joint(jnt, value=dv_value)
+                    pm.setDrivenKeyframe(
+                        "%s.%s" % (jnt, dv_attr),
+                        cd="ArkitPoseLib.{}".format(channel),
+                        dv=1)
         return
 
     def sdk_slider_to_rig(self, channel, attr="sliderX"):
@@ -561,11 +618,13 @@ class ARFaceEditor(common.Singleton):
             if item not in all_items:
                 pm.textScrollList(self.ar_item_scroll, e=True, a=item)
                 self.ar_data.set_channel_joint(
-                    channel=pm.optionMenuGrp(self.ar_channel_options, q=True, value=True),
+                    channel=pm.optionMenuGrp(
+                        self.ar_channel_options, q=True, value=True),
                     joint=item.controller_name(),
                 )
                 self.ar_data.set_channel_joint_attr(
-                    channel=pm.optionMenuGrp(self.ar_channel_options, q=True, value=True),
+                    channel=pm.optionMenuGrp(
+                        self.ar_channel_options, q=True, value=True),
                     joint=item.controller_name(),
                     value=[0, 0, 0, 0, 0, 0, 1, 1, 1]
                 )
@@ -574,17 +633,19 @@ class ARFaceEditor(common.Singleton):
             pm.textScrollList(self.ar_item_scroll, e=True, si=item)
 
             if auto_sdk:
-                self.update_sdk(type="select")
+                self.update_sdk_json(type="select")
 
             self.ar_data.data_to_json()
 
         return True
 
     def new_mapping(self):
-        filename = pm.textFieldButtonGrp("ARFileLocationField", q=True, text=True)
+        filename = pm.textFieldButtonGrp(
+            "ARFileLocationField", q=True, text=True)
         arkit_data = common.read_json(filename)
 
-        current_channel = pm.optionMenuGrp(self.ar_channel_options, q=True, value=True)
+        current_channel = pm.optionMenuGrp(
+            self.ar_channel_options, q=True, value=True)
         joint_data = {}
         # print(current_channel)
         all_items = pm.textScrollList(self.ar_item_scroll, q=True, ai=True)
@@ -593,7 +654,8 @@ class ARFaceEditor(common.Singleton):
                 pm.textScrollList(self.ar_item_scroll, e=True, a=item)
             data = []
             translate = pm.PyNode(item).translate.get()
-            unity_translate = [translate[0] * 0.01, translate[1] * 0.01, translate[2] * 0.01]
+            unity_translate = [translate[0] * 0.01,
+                               translate[1] * 0.01, translate[2] * 0.01]
             data.extend(unity_translate)
             data.extend(pm.PyNode(item).rotate.get())
             data.extend(pm.PyNode(item).scale.get())
