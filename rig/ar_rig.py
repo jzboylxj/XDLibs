@@ -125,7 +125,6 @@ class ARFaceEditor(common.Singleton):
         self.menu_list()
         self.main_layout()
 
-
         pm.showWindow("ARFaceEditor")
 
     def _closed_window_cmd(self):
@@ -210,7 +209,8 @@ class ARFaceEditor(common.Singleton):
             adj=3,
             value=0,
             cw3=[120, 60, 100])
-        self.ar_item_scroll = pm.textScrollList(w=200, ams=True, sc=lambda *args: self.selected_ar_item_in_scroll())
+        self.ar_item_scroll = pm.textScrollList(
+            w=200, ams=True, sc=lambda *args: self.selected_ar_item_in_scroll())
         pm.popupMenu()
         pm.menuItem(label=u"添加映射", c=lambda *args: self.new_mapping())
         pm.menuItem(divider=True)
@@ -276,15 +276,15 @@ class ARFaceEditor(common.Singleton):
 
         pm.setParent("..")
 
-        # if self.ar_file_location != "":
-        #     if os.path.isfile(self.ar_file_location):
-        #         self.init_ar_channel_options(json_file=self.ar_file_location)
-        #         pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
-        #         self.selected_ar_channel()
-        #
-        #         if pm.textScrollList(self.ar_item_scroll, q=True, ni=True) > 1:
-        #             pm.textScrollList(self.ar_item_scroll, e=True, sii=1)
-        #             self.selected_ar_item_in_scroll()
+        if self.ar_file_location != "":
+            if os.path.isfile(self.ar_file_location):
+                self.init_ar_channel_options(json_file=self.ar_file_location)
+                pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
+                self.selected_ar_channel()
+
+                if pm.textScrollList(self.ar_item_scroll, q=True, ni=True) > 1:
+                    pm.textScrollList(self.ar_item_scroll, e=True, sii=1)
+                    self.selected_ar_item_in_scroll()
 
         return layout
 
@@ -399,32 +399,47 @@ class ARFaceEditor(common.Singleton):
         :param type: 重建类型，有效选项为all, selected
         :return: None
         """
-        if type == "all":
-            for item in pm.optionMenuGrp(
-                    self.ar_channel_options, q=True, ils=True):
-                channel_label = pm.menuItem(item, q=True, label=True)
-                if not pm.objExists(channel_label):
-                    self.create_slider_controller(name=channel_label)
-                    self.sdk_slider_to_rig(channel=channel_label)
-                    pm.connectControl(
-                        'arIDControlSlider', '%s.sliderX' % channel_label)
-            pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
-            self.selected_ar_channel()
-        elif type == "selected":
-            all_menu_item = pm.optionMenuGrp(
-                self.ar_channel_options, q=True, ils=True)
-            current_index = pm.optionMenuGrp(
-                self.ar_channel_options, q=True, sl=True) - 1
-            channel_label = pm.menuItem(
-                all_menu_item[current_index], q=True, label=True)
-            if not pm.objExists(channel_label):
-                self.create_slider_controller(name=channel_label)
-                self.sdk_slider_to_rig(channel=channel_label)
-                pm.connectControl(
-                    'arIDControlSlider', '%s.sliderX' % channel_label)
-            pm.optionMenuGrp(
-                self.ar_channel_options, e=True, sl=(current_index + 1))
-            self.selected_ar_channel()
+        
+        test_proxy = "ArkitPoseLib"
+        
+        if not pm.objExists(test_proxy):
+            # pm.error(u"测试用代理体{}已经存在".format(test_proxy))
+            pm.createNode("transform", name=test_proxy)
+            for attr in ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz", "v"]:
+                pm.setAttr("{}.{}".format(test_proxy, attr), lock=True, keyable=False, channelBox=False)
+
+                all_channel = pm.optionMenuGrp(self.ar_channel_options, q=True, ils=True)
+                for channel in all_channel:
+                    channel_label = pm.menuItem(channel, q=True, label=True)
+                    print(channel_label)
+                    pm.addAttr(test_proxy)
+                    # addAttr -ln "browDown_L"  -at double  -min 0 -max 1 -dv 0 |ArkitPoseLib;
+                    # setAttr -e-keyable true |ArkitPoseLib.browDown_L;
+
+        # if type == "all":
+        #     for item in pm.optionMenuGrp(self.ar_channel_options, q=True, ils=True):
+        #         channel_label = pm.menuItem(item, q=True, label=True)
+        #         if not pm.objExists(channel_label):
+        #             self.create_slider_controller(name=channel_label)
+        #             self.sdk_slider_to_rig(channel=channel_label)
+        #             pm.connectControl('arIDControlSlider', '%s.sliderX' % channel_label)
+        #     pm.optionMenuGrp(self.ar_channel_options, e=True, sl=1)
+        #     self.selected_ar_channel()
+        # elif type == "selected":
+        #     all_menu_item = pm.optionMenuGrp(
+        #         self.ar_channel_options, q=True, ils=True)
+        #     current_index = pm.optionMenuGrp(
+        #         self.ar_channel_options, q=True, sl=True) - 1
+        #     channel_label = pm.menuItem(
+        #         all_menu_item[current_index], q=True, label=True)
+        #     if not pm.objExists(channel_label):
+        #         self.create_slider_controller(name=channel_label)
+        #         self.sdk_slider_to_rig(channel=channel_label)
+        #         pm.connectControl(
+        #             'arIDControlSlider', '%s.sliderX' % channel_label)
+        #     pm.optionMenuGrp(
+        #         self.ar_channel_options, e=True, sl=(current_index + 1))
+        #     self.selected_ar_channel()
 
         return
 
@@ -566,32 +581,45 @@ class ARFaceEditor(common.Singleton):
         return True
 
     def new_mapping(self):
-        filename = pm.textFieldButtonGrp(self.json_location_widget, q=True, text=True)
+        filename = pm.textFieldButtonGrp("ARFileLocationField", q=True, text=True)
+        arkit_data = common.read_json(filename)
+
+        current_channel = pm.optionMenuGrp(self.ar_channel_options, q=True, value=True)
+        joint_data = {}
+        # print(current_channel)
         all_items = pm.textScrollList(self.ar_item_scroll, q=True, ai=True)
         for item in pm.ls(sl=True):
             if item not in all_items:
                 pm.textScrollList(self.ar_item_scroll, e=True, a=item)
+            data = []
+            translate = pm.PyNode(item).translate.get()
+            unity_translate = [translate[0] * 0.01, translate[1] * 0.01, translate[2] * 0.01]
+            data.extend(unity_translate)
+            data.extend(pm.PyNode(item).rotate.get())
+            data.extend(pm.PyNode(item).scale.get())
 
-                data = []
-                translate = pm.PyNode(item).translate.get()
-                unity_translate = [translate[0] * 0.01, translate[1] * 0.01, translate[2] * 0.01]
-                data.extend(unity_translate)
-                data.extend(pm.PyNode(item).rotate.get())
-                data.extend(pm.PyNode(item).scale.get())
+            joint_data[item.name()] = {}
+            joint_data[item.name()]["max"] = data
 
-                self.ar_data.set_channel_joint(
-                    channel=pm.optionMenuGrp(self.ar_channel_options, q=True, value=True),
-                    joint=item.controller_name(),
-                )
-                self.ar_data.set_channel_joint_attr(
-                    channel=pm.optionMenuGrp(self.ar_channel_options, q=True, value=True),
-                    joint=item.controller_name(),
-                    value=data
-                )
-            pm.textScrollList(self.ar_item_scroll, e=True, da=True)
-            pm.textScrollList(self.ar_item_scroll, e=True, si=item)
+        print(joint_data)
+        #         print data
 
-        self.ar_data.data_to_json()
+        #         self.ar_data.set_channel_joint(
+        #             channel=pm.optionMenuGrp(self.ar_channel_options, q=True, value=True),
+        #             joint=item.controller_name(),
+        #         )
+        # self.ar_data.set_channel_joint_attr(
+        #     channel=pm.optionMenuGrp(self.ar_channel_options, q=True, value=True),
+        #     joint=item.controller_name(),
+        #     value=data
+        # )
+        #     pm.textScrollList(self.ar_item_scroll, e=True, da=True)
+        #     pm.textScrollList(self.ar_item_scroll, e=True, si=item)
+
+        arkit_data[current_channel] = joint_data
+        print(arkit_data)
+        # # self.ar_data.data_to_json()
+        common.write_json(arkit_data, filename)
         return
 
     def select_all_joint_in_scroll(self):

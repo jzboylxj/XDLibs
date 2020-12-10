@@ -884,14 +884,12 @@ class FeatureManager():
             if current_tab in control_group[index]["GroupName"]:
                 current_axis_data = control_group[index]["BoneRange"]
                 for axis_data in current_axis_data:
-                    print("axis_data:{}".format(axis_data))
+                    # print("axis_data:{}".format(axis_data))
                     bone_name = axis_data["BoneName"]
                     if value == "Max":
-                        axis_data["Max"] = self.joint_cb_list(
-                            pm.PyNode(bone_name).getParent())
+                        axis_data["Max"] = self.joint_cb_list(pm.PyNode(bone_name).getParent())
                     elif value == "Min":
-                        axis_data["Min"] = self.joint_cb_list(
-                            pm.PyNode(bone_name).getParent())
+                        axis_data["Min"] = self.joint_cb_list(pm.PyNode(bone_name).getParent())
                 # context_control_group = control_group[index]
                 # context_bone_range = context_control_group["BoneRange"]
 
@@ -959,13 +957,13 @@ class FeatureManager():
             round(pm.PyNode(jnt).translateX.get() * 0.01, pre),
             round(pm.PyNode(jnt).translateY.get() * 0.01, pre),
             round(pm.PyNode(jnt).translateZ.get() * 0.01, pre),
-            0, 0, 0, 1, 1, 1
-            # round(pm.PyNode(jnt).rotateX.get(), pre),
-            # round(pm.PyNode(jnt).rotateY.get(), pre),
-            # round(pm.PyNode(jnt).rotateZ.get(), pre),
-            # round(pm.PyNode(jnt).scaleX.get(), pre),
-            # round(pm.PyNode(jnt).scaleY.get(), pre),
-            # round(pm.PyNode(jnt).scaleZ.get(), pre),
+            round(pm.PyNode(jnt).rotateX.get(), pre),
+            round(pm.PyNode(jnt).rotateY.get(), pre),
+            round(pm.PyNode(jnt).rotateZ.get(), pre),
+            # 1, 1, 1
+            round(pm.PyNode(jnt).scaleX.get(), pre),
+            round(pm.PyNode(jnt).scaleY.get(), pre),
+            round(pm.PyNode(jnt).scaleZ.get(), pre),
         ]
         return jnt_value
 
@@ -1077,10 +1075,9 @@ class FeatureManager():
         select_controller = pm.textScrollList(
             "{}ControllerListWidget".format(self.name), q=True, si=True)[0]
 
-
         # for tab_layout in pm.tabLayout("{}ControlJointListTabLayout".format(self.name), q=True, tl=True):
-            # pm.deleteUI(tab_layout)
-            # print(tab_layout)
+        # pm.deleteUI(tab_layout)
+        # print(tab_layout)
         print(pm.tabLayout("{}ControlJointListTabLayout".format(self.name), q=True, tl=True))
         self.init_control_joints_frmae_data(select_index-1)
 
