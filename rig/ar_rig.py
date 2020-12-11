@@ -391,7 +391,7 @@ class ARFaceEditor(common.Singleton):
         if pm.objExists(current_item):
             pm.select(current_item)
         else:
-            pm.error(U"{}不存在".format(current_item))
+            pm.warning(U"在场景中没有找到{}".format(current_item))
 
         current_item_attrs = self.ar_data.get_channel_joint_attr(
             current_channel, current_item)
@@ -501,34 +501,35 @@ class ARFaceEditor(common.Singleton):
                 round(pm.PyNode(current_jnt).scaleZ.get(), pre),
             ]
 
-            attr_list = ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz"]
+            # 如果测试代理体存在,就更新
+            if pm.objExists("ArkitPoseLib"):
+                attr_list = ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz"]
+                for dv_attr in attr_list:
+                    # helper.position_joint(
+                        # current_jnt, value=[0, 0, 0, 0, 0, 0, 1, 1, 1])
 
-            for dv_attr in attr_list:
-                # helper.position_joint(
-                    # current_jnt, value=[0, 0, 0, 0, 0, 0, 1, 1, 1])
+                    # pm.setDrivenKeyframe(
+                    #     "%s.%s" % (current_jnt, dv_attr),
+                    #     cd="%s.sliderX" % (pm.optionMenuGrp(
+                    #         self.ar_channel_options, q=True, value=True)),
+                    #     dv=0)
 
-                # pm.setDrivenKeyframe(
-                #     "%s.%s" % (current_jnt, dv_attr),
-                #     cd="%s.sliderX" % (pm.optionMenuGrp(
-                #         self.ar_channel_options, q=True, value=True)),
-                #     dv=0)
-
-                # helper.position_joint(
-                #     current_jnt,
-                #     value=[
-                #         jnt_value[0] * 100,
-                #         jnt_value[1] * 100,
-                #         jnt_value[2] * 100,
-                #         jnt_value[3],
-                #         jnt_value[4],
-                #         jnt_value[5],
-                #         jnt_value[6],
-                #         jnt_value[7],
-                #         jnt_value[8]])
-                pm.setDrivenKeyframe(
-                    "%s.%s" % (current_jnt, dv_attr),
-                    cd="ArkitPoseLib.{}".format(current_selected_channel),
-                    dv=1)
+                    # helper.position_joint(
+                    #     current_jnt,
+                    #     value=[
+                    #         jnt_value[0] * 100,
+                    #         jnt_value[1] * 100,
+                    #         jnt_value[2] * 100,
+                    #         jnt_value[3],
+                    #         jnt_value[4],
+                    #         jnt_value[5],
+                    #         jnt_value[6],
+                    #         jnt_value[7],
+                    #         jnt_value[8]])
+                    pm.setDrivenKeyframe(
+                        "%s.%s" % (current_jnt, dv_attr),
+                        cd="ArkitPoseLib.{}".format(current_selected_channel),
+                        dv=1)
 
             pm.floatFieldGrp(self.ar_item_attr_tx, e=True,
                              v1=jnt_value[0] * 100)
@@ -556,13 +557,19 @@ class ARFaceEditor(common.Singleton):
         attr_list = ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz"]
         if len(self.ar_data.get_channel_joints(channel)) > 0:
             for jnt in self.ar_data.get_channel_joints(channel):
-                value = self.ar_data.get_channel_joint_attr(channel, jnt)
+                print(u"开始为{}->{}设置sdk".format(channel, jnt))
                 for dv_attr in attr_list:
-                    helper.position_joint(jnt, value=[0, 0, 0, 0, 0, 0, 1, 1, 1])
                     pm.setDrivenKeyframe(
                         "%s.%s" % (jnt, dv_attr),
                         cd="ArkitPoseLib.{}".format(channel),
                         dv=0)
+                value = self.ar_data.get_channel_joint_attr(channel, jnt)
+                for dv_attr in attr_list:
+                    # helper.position_joint(jnt, value=[0, 0, 0, 0, 0, 0, 1, 1, 1])
+                    # pm.setDrivenKeyframe(
+                    #     "%s.%s" % (jnt, dv_attr),
+                    #     cd="ArkitPoseLib.{}".format(channel),
+                    #     dv=0)
                     dv_value = [
                         value[0] * 100,
                         value[1] * 100,
@@ -579,6 +586,7 @@ class ARFaceEditor(common.Singleton):
                         "%s.%s" % (jnt, dv_attr),
                         cd="ArkitPoseLib.{}".format(channel),
                         dv=1)
+            pm.setAttr("ArkitPoseLib.{}".format(channel), 0)
         return
 
     def sdk_slider_to_rig(self, channel, attr="sliderX"):
