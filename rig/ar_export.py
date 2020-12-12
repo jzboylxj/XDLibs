@@ -70,16 +70,85 @@ def ar_export():
             source = source.replace("Anim", "Ctrl")
             pm.parentConstraint(source, pm.PyNode(proxy[1]).getParent(), mo=True)
 
+        if "Low_Teeth" in item.name():
+            source = item.replace("Low_Teeth", "Mouth_01_Low_Teeth")
+            source = source.replace("Anim", "Ctrl")
+            pm.parentConstraint(source, pm.PyNode(proxy[1]).getParent(), mo=True)
+
+        if "Up_Teeth" in item.name():
+            source = item.replace("Up_Teeth", "Mouth_01_Up_Teeth")
+            source = source.replace("Anim", "Ctrl")
+            pm.parentConstraint(source, pm.PyNode(proxy[1]).getParent(), mo=True)
+
+        if "Jaw" in item.name() and "Low" not in item.name() and "Line" not in item.name():
+            source = item.replace("Jaw", "Mouth_01_Jaw")
+            source = source.replace("Anim", "Ctrl")
+            pm.parentConstraint(source, pm.PyNode(proxy[1]).getParent(), mo=True)
+
+        if "LowJaw" in item.name() :
+            source = item.replace("LowJaw", "Mouth_01_Jaw")
+            source = source.replace("Anim", "Ctrl")
+            # print(u"{}存在:{}".format(source, pm.objExists(source)))
+            pm.parentConstraint(source, pm.PyNode(proxy[1]).getParent(), mo=True)
+
         if "Shape" in item.name():
             source = item.replace("Eye", "Eye_01")
             source = source.replace("Anim", "Ctrl")
             pm.parentConstraint(source, pm.PyNode(proxy[1]).getParent(), mo=True)
 
+        if "Eyeball" in item.name():
+            source = item.replace("Eyeball_Anim", "Eye_01_Aim_01_Ctrl")
+            pm.orientConstraint(source, pm.PyNode(proxy[1]).getParent(), mo=True)
+
         if "Eye" in item.name() and "Shape" not in item.name() and "Eyeball" not in item.name():
             source = item.replace("Eye", "Eye_01")
             source = source.replace("Anim", "Jnt")
-            print(source, pm.PyNode(proxy[1]).getParent())
-            print(pm.objExists(source), pm.objExists(pm.PyNode(proxy[1]).getParent()))
-            pm.orientConstraint(source, pm.PyNode(proxy[1]).getParent(), mo=True)
+            local_proxy = loc_grp(name="{}_Proxy".format(source))
+            pm.parent(local_proxy[0], anim_proxy_grp)
+            pm.delete(pm.parentConstraint(item, local_proxy[0], mo=False))
+            pm.parentConstraint(source, local_proxy[1], mo=True)
+            pm.PyNode(local_proxy[1]).rotate.connect(pm.PyNode(proxy[1]).rotate)
+
+        if "LowLip" in item.name():
+            source = item.replace("LowLip", "Mouth_01_LowLip")
+            source = source.replace("Anim", "Jnt")
+            # print(u"{}存在:{}".format(source, pm.objExists(source)))
+
+            local_proxy = loc_grp(name="{}_Proxy".format(source))
+            pm.parent(local_proxy[0], anim_proxy_grp)
+            pm.delete(pm.parentConstraint(item, local_proxy[0], mo=False))
+            pm.parentConstraint(source, local_proxy[1], mo=True)
+            pm.PyNode(local_proxy[1]).translate.connect(pm.PyNode(proxy[1]).translate)
+
+        if "UpLip" in item.name():
+            source = item.replace("UpLip", "Mouth_01_UpLip")
+            source = source.replace("Anim", "Jnt")
+            # print(u"{}存在:{}".format(source, pm.objExists(source)))
+
+            local_proxy = loc_grp(name="{}_Proxy".format(source))
+            pm.parent(local_proxy[0], anim_proxy_grp)
+            pm.delete(pm.parentConstraint(item, local_proxy[0], mo=False))
+            pm.parentConstraint(source, local_proxy[1], mo=True)
+            pm.PyNode(local_proxy[1]).translate.connect(pm.PyNode(proxy[1]).translate)
+
+        if "Lip" in item.name() and "Low" not in item.name() and "Up" not in item.name():
+            source = item.replace("Lip", "Mouth_01_Lip")
+            source = source.replace("Anim", "Jnt")
+            # print(u"{}存在:{}".format(source, pm.objExists(source)))
+
+            local_proxy = loc_grp(name="{}_Proxy".format(source))
+            pm.parent(local_proxy[0], anim_proxy_grp)
+            pm.delete(pm.parentConstraint(item, local_proxy[0], mo=False))
+            pm.parentConstraint(source, local_proxy[1], mo=True)
+            pm.PyNode(local_proxy[1]).translate.connect(pm.PyNode(proxy[1]).translate)
+
+        if "Tongue" in item.name():
+            source = item.replace("Tongue", "Tongue_01")
+            source = source.replace("FK_Ctrl", "Ctrl")
+            pm.parentConstraint("MD_LowJaw_Anim_Proxy", pm.PyNode(proxy[1]).getParent(), mo=True)
+
+        if "MD_Brow" in item.name():
+            pm.PyNode("MD_Brow_01_Sub_01_Jnt").translateY.connect(pm.PyNode("MD_Brow_Jnt").translateY)
+
 
     return
