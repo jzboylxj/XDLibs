@@ -371,7 +371,7 @@ def compile_ui_file_to_py():
 
     def _compile_ui_file(*args):
         import sys, pprint
-        from pysideuic import compileUi
+        from pyside2uic import compileUi
 
         py_file = pm.textFieldButtonGrp(py_store_path_field,
                                         q=True, text=True)

@@ -742,6 +742,10 @@ class FeatureManager():
                                                label=("{} Controllers".format(self.name).title()))
         pm.textScrollList("{}ControllerListWidget".format(self.name), w=120, h=130,
                           sc=lambda *args: self.select_controller())
+
+        pm.popupMenu()
+        pm.menuItem(label=u"创建测试代理体", c=lambda *args: self.build_test_proxy())
+
         pm.button("{}ControllerBuildBtn".format(self.name), label="New", w=100,
                   c=lambda *args: self.command_new_control())
         pm.setParent(controller_list_frame)
@@ -1218,6 +1222,15 @@ class FeatureManager():
             self.init_data()
 
         return True
+
+    def build_test_proxy(self):
+        print(self.current_select_tab("jsonManagerMainTabLayout"))
+
+    def current_select_tab(self, tab_object):
+        tabs = pm.tabLayout(tab_object, q=True, tl=True)
+        select_tab_index = pm.tabLayout(tab_object, q=True, sti=True)
+        current_tab = (tabs[select_tab_index - 1])
+        return current_tab
 
 
 class JsonManager(common.Singleton):

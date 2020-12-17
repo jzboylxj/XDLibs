@@ -383,11 +383,9 @@ class ARFaceEditor(common.Singleton):
         return
 
     def selected_ar_item_in_scroll(self):
-        current_channel = pm.optionMenuGrp(
-            self.ar_channel_options, q=True, value=True)
+        current_channel = pm.optionMenuGrp(self.ar_channel_options, q=True, value=True)
         # 当前选择的骨骼
-        current_item = pm.textScrollList(
-            self.ar_item_scroll, q=True, si=True)[0]
+        current_item = pm.textScrollList(self.ar_item_scroll, q=True, si=True)[0]
         if pm.objExists(current_item):
             pm.select(current_item)
         else:
@@ -531,12 +529,9 @@ class ARFaceEditor(common.Singleton):
                         cd="ArkitPoseLib.{}".format(current_selected_channel),
                         dv=1)
 
-            pm.floatFieldGrp(self.ar_item_attr_tx, e=True,
-                             v1=jnt_value[0] * 100)
-            pm.floatFieldGrp(self.ar_item_attr_ty, e=True,
-                             v1=jnt_value[1] * 100)
-            pm.floatFieldGrp(self.ar_item_attr_tz, e=True,
-                             v1=jnt_value[2] * 100)
+            pm.floatFieldGrp(self.ar_item_attr_tx, e=True, v1=jnt_value[0] * 100)
+            pm.floatFieldGrp(self.ar_item_attr_ty, e=True, v1=jnt_value[1] * 100)
+            pm.floatFieldGrp(self.ar_item_attr_tz, e=True, v1=jnt_value[2] * 100)
             pm.floatFieldGrp(self.ar_item_attr_rx, e=True, v1=jnt_value[3])
             pm.floatFieldGrp(self.ar_item_attr_ry, e=True, v1=jnt_value[4])
             pm.floatFieldGrp(self.ar_item_attr_rz, e=True, v1=jnt_value[5])
@@ -657,6 +652,8 @@ class ARFaceEditor(common.Singleton):
         joint_data = {}
         # print(current_channel)
         all_items = pm.textScrollList(self.ar_item_scroll, q=True, ai=True)
+
+        pre = 5
         for item in pm.ls(sl=True):
             if item not in all_items:
                 pm.textScrollList(self.ar_item_scroll, e=True, a=item)
@@ -664,9 +661,28 @@ class ARFaceEditor(common.Singleton):
             translate = pm.PyNode(item).translate.get()
             unity_translate = [translate[0] * 0.01,
                                translate[1] * 0.01, translate[2] * 0.01]
-            data.extend(unity_translate)
-            data.extend(pm.PyNode(item).rotate.get())
-            data.extend(pm.PyNode(item).scale.get())
+
+            # 对数据进行处理，小数点后面只留5位，进行四舍五入
+            data.extend(
+                # unity_translate
+                [
+                    round(unity_translate[0], pre),
+                    round(unity_translate[1], pre),
+                    round(unity_translate[2], pre),
+                ]
+            )
+            data.extend(
+                [
+                    round(pm.PyNode(item).rotateX.get(), pre),
+                    round(pm.PyNode(item).rotateY.get(), pre),
+                    round(pm.PyNode(item).rotateZ.get(), pre),
+                ]
+            )
+            data.extend(
+                [round(pm.PyNode(item).scaleX.get(), pre),
+                 round(pm.PyNode(item).scaleY.get(), pre),
+                 round(pm.PyNode(item).scaleZ.get(), pre)]
+            )
 
             joint_data[item.name()] = {}
             joint_data[item.name()]["max"] = data
