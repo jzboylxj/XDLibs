@@ -1224,7 +1224,11 @@ class FeatureManager():
         return True
 
     def build_test_proxy(self):
-        print(self.current_select_tab("jsonManagerMainTabLayout"))
+        # selected_tab = self.current_select_tab("jsonManagerMainTabLayout")
+        selected_tab = self.name
+        selected_controller = pm.textScrollList("{}ControllerListWidget".format(self.name), q=True, si=True)[0]
+        print(self.name)
+        print(selected_controller)
 
     def current_select_tab(self, tab_object):
         tabs = pm.tabLayout(tab_object, q=True, tl=True)
