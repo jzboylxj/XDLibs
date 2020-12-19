@@ -721,10 +721,8 @@ class FeatureManager():
         self.control_file = ""
 
     def json_location(self, root_path):
-        self.control_group_file = os.path.join(
-            root_path, "{}ControlGroup.json".format(self.name))
-        self.control_file = os.path.join(
-            root_path, "{}Controller.json".format(self.name))
+        self.control_group_file = os.path.join(root_path, "{}ControlGroup.json".format(self.name))
+        self.control_file = os.path.join(root_path, "{}Controller.json".format(self.name))
 
     def __str__(self):
         return self.name
@@ -755,11 +753,11 @@ class FeatureManager():
                                                label=("{} meta".format(self.name).title()))
         pm.radioButtonGrp("{}ControllerSideField".format(self.name),
                           label=u'控制器位置',
-                          numberOfRadioButtons=2, labelArray2=['Middle', 'LF And RT'], cw3=[140, 80, 80])
+                          numberOfRadioButtons=2,
+                          labelArray2=['Middle', 'LF And RT'], cw3=[140, 80, 80])
         pm.textFieldGrp("{}ControllerNameField".format(
             self.name), label=u"控制器")
-        pm.textFieldGrp("{}ControllerBoneNameField".format(
-            self.name), label=u"控制器挂点骨骼")
+        pm.textFieldGrp("{}ControllerBoneNameField".format(self.name), label=u"控制器挂点骨骼")
         # pm.textFieldGrp("{}ControllerGroupNameField".format(self.name), label=u"控制器组")
         pm.floatFieldGrp("{}ControllerPositionOffsetField".format(self.name),
                          label=u'控制器位置偏移', numberOfFields=3,
@@ -802,37 +800,32 @@ class FeatureManager():
         return layout
 
     def axis_control_joints_widget(self, parent="", axis=""):
-        layout = pm.formLayout(
-            "{}Control{}JointFormLayout".format(self.name, axis), p=parent)
+        layout = pm.formLayout("{}Control{}JointFormLayout".format(self.name, axis), p=parent)
         joint_list_frame = pm.frameLayout(
             "{}Control{}JointListFrameLayout".format(self.name, axis), label="Joint List", p=layout)
         # print("{}Control{}JointListWidget".format(self.name, axis))
-        pm.textScrollList(
-            "{}Control{}JointListWidget".format(self.name, axis), w=120)
+        pm.textScrollList("{}Control{}JointListWidget".format(self.name, axis), w=120)
         pm.popupMenu()
         pm.menuItem(label=u"添加骨骼", c=lambda *args: self.add_axis_joints())
         pm.setParent(joint_list_frame)
         joint_meta_frame = pm.frameLayout(
             "{}Control{}JointMetaFrameWidget".format(self.name, axis), label="Joint Meta", p=layout)
-        pm.button(label=u"Update Max",
-                  c=lambda *args: self.update_joints_meta(value="Max"))
-        pm.button(label=u"Update Min",
-                  c=lambda *args: self.update_joints_meta(value="Min"))
+        pm.button(label=u"Update Max", c=lambda *args: self.update_joints_meta(value="Max"))
+        pm.button(label=u"Update Min", c=lambda *args: self.update_joints_meta(value="Min"))
         pm.setParent("..")
 
-        pm.formLayout(
-            layout, edit=True,
-            attachForm=[
-                (joint_list_frame, 'top', 10),
-                (joint_list_frame, 'left', 10),
-                (joint_list_frame, 'bottom', 10),
-                (joint_meta_frame, 'top', 10),
-                (joint_meta_frame, 'right', 10),
-                (joint_meta_frame, 'bottom', 10),
-            ],
-            attachControl=[
-                (joint_meta_frame, 'left', 5, joint_list_frame),
-            ])
+        pm.formLayout(layout, edit=True,
+                      attachForm=[
+                          (joint_list_frame, 'top', 10),
+                          (joint_list_frame, 'left', 10),
+                          (joint_list_frame, 'bottom', 10),
+                          (joint_meta_frame, 'top', 10),
+                          (joint_meta_frame, 'right', 10),
+                          (joint_meta_frame, 'bottom', 10),
+                      ],
+                      attachControl=[
+                          (joint_meta_frame, 'left', 5, joint_list_frame),
+                      ])
 
         pm.setParent(layout)
 
@@ -1012,8 +1005,7 @@ class FeatureManager():
                     if tab in bone_range["GroupName"]:
                         for bone_dict in bone_range["BoneRange"]:
                             bone_name = bone_dict["BoneName"]
-                            text_scroll_list = "{}Control{}JointListWidget".format(
-                                self.name, tab)
+                            text_scroll_list = "{}Control{}JointListWidget".format(self.name, tab)
                             if bone_name not in pm.textScrollList(text_scroll_list, q=True, ai=True):
                                 pm.textScrollList(text_scroll_list, e=True, a=bone_name)
 
@@ -1083,7 +1075,7 @@ class FeatureManager():
         # pm.deleteUI(tab_layout)
         # print(tab_layout)
         print(pm.tabLayout("{}ControlJointListTabLayout".format(self.name), q=True, tl=True))
-        self.init_control_joints_frmae_data(select_index-1)
+        self.init_control_joints_frmae_data(select_index - 1)
 
         # select_controller_index = select_index - 1
         # axis_joint_tabs = self.controller_list[select_controller_index]["AxisControl"].values()
@@ -1483,8 +1475,7 @@ class JsonManager(common.Singleton):
     def initialize(self):
         if pm.optionVar(q='jsonManagerFolder'):
             self.json_folder = pm.optionVar(q='jsonManagerFolder')
-            pm.textFieldButtonGrp("XDFaceEditDataStoreField",
-                                  e=True, text=self.json_folder)
+            pm.textFieldButtonGrp("XDFaceEditDataStoreField", e=True, text=self.json_folder)
             self.init_module_data()
 
         # if pm.optionVar(q='jsonManagerMainTabLayoutIndex'):
@@ -1511,11 +1502,9 @@ class JsonManager(common.Singleton):
         self.module_sections = self.scanning_folder("folders")
         for module_section in self.module_sections:
             module = FeatureManager(module_section)
-            module.json_location(os.path.join(
-                self.json_folder, module_section))
+            module.json_location(os.path.join(self.json_folder, module_section))
             layout = module.custom_widget(parent=self.main_tab)
-            pm.tabLayout(self.main_tab, edit=True,
-                         tabLabel=((layout, module_section)))
+            pm.tabLayout(self.main_tab, edit=True, tabLabel=((layout, module_section)))
             # for module
 
     def _closed_window_cmd(self):
@@ -1746,7 +1735,7 @@ class JsonManager(common.Singleton):
         controller_index = pm.scrollLayout(
             "controllerListLayout", q=True, nch=True)
         self.controller[controller_index] = (
-            "controllerGrp%s" % controller_index)
+                "controllerGrp%s" % controller_index)
         self.add_controller_widget(
             index=controller_index, parent="controllerListLayout")
 

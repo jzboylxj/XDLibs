@@ -4,6 +4,7 @@
 
 """
 import json
+import os
 from functools import partial
 from pymel import core as pm
 
@@ -45,12 +46,16 @@ def write_json(dict_data=None, file_path=""):
 
 
 def read_json(file_path=""):
-    """
+    u"""
     从json文件中读取数据，数据以字典类型作为返回值
 
     :param file_path: 文件的存放路径
     :return: dict
     """
+    # print(file_path)
+    # file_path = file_path.replace('/', '\\')
+    # print(file_path)
+    # print(os.path.isfile(file_path))
     with open(file_path, 'r') as data:
         dict_data = json.load(data)
     return dict_data

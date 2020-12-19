@@ -8,7 +8,7 @@ import os
 from imp import reload
 
 import pymel.core as pm
-from animation import common as xd_com
+from animation import common as xd_com, helper
 
 reload(xd_com)
 
@@ -103,15 +103,18 @@ class FeatureComponent():
     def axis_widget(self, data=None, parent=""):
         name = data["GroupName"]
 
+        print("axis_widget:{}".format(name))
+
         joint_list = []
         for bone_data in data["BoneRange"]:
             joint_list.append(bone_data["BoneName"])
 
-
         layout = pm.formLayout("{}_FormLayout".format(name), p=parent)
         joint_list_frame = pm.frameLayout(
             "{}_JointListFrameLayout".format(name), label="Joint List", p=layout)
-        pm.textScrollList("{}_JointListWidget".format(name), w=120, a=joint_list)
+        pm.textScrollList("{}_JointListWidget".format(name),
+                          w=120, a=joint_list,
+                          sc=lambda *args: self.select_joint("{}_JointListWidget".format(name)))
         pm.popupMenu()
         pm.menuItem(label=u"添加骨骼", c=lambda *args: self.add_axis_joints())
         pm.setParent(joint_list_frame)
@@ -138,6 +141,9 @@ class FeatureComponent():
         pm.setParent(layout)
 
         return layout
+
+    def select_joint(self, widget):
+        pm.select(pm.textScrollList(widget, q=True, si=True)[0])
 
 
 class FaceFeatureModule():
@@ -191,6 +197,7 @@ class FaceFeatureModule():
                                           bgs=True, mh=10, mw=10, p=layout,
                                           label=("{} control joints".format(self.name).title()))
         pm.tabLayout("{}ControlJointListTabLayout".format(self.name), p=joint_list_frame)
+
         pm.setParent("..")
         pm.setParent(joint_list_frame)
 
@@ -267,6 +274,80 @@ class FaceFeatureModule():
 
         axis_tabs = FeatureComponent(data)
         axis_tabs.build_widget(parent="{}ControlJointListTabLayout".format(self.name))
+
+    def build_test_proxy(self):
+        selected_controller = pm.textScrollList("{}ControllerListWidget".format(self.name), q=True, si=True)[0]
+        selected_tab = self.name
+
+        if not pm.objExists("TestProxyGrp"):
+            pm.createNode("transform", name="TestProxyGrp")
+
+        test_controller = pm.spaceLocator(name="Test{}".format(selected_controller))
+        pm.parent(test_controller, "TestProxyGrp")
+
+        control_group = self.control_group_data.get_controller_group_data(selected_controller)["ControlGroup"]
+        for control_data in control_group:
+            pm.addAttr(test_controller, ln=control_data["GroupName"], at="double", dv=0, min=-1, max=1)
+            pm.setAttr("{}.{}".format(test_controller, control_data["GroupName"]), e=True, k=True)
+            self.sdk_bone(source="{}.{}".format(test_controller, control_data["GroupName"]),
+                          target_data=control_data)
+
+        return
+
+    def sdk_bone(self, source, target_data):
+        print(source)
+        print(target_data)
+        attr_list = ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz"]
+
+        if len(target_data["BoneRange"]) > 0:
+            for bone in target_data["BoneRange"]:
+                for dv_attr in attr_list:
+                    pm.setDrivenKeyframe(
+                        "%s.%s" % (bone["BoneName"], dv_attr),
+                        cd=source,
+                        dv=0)
+
+                max_value = bone["Max"]
+                dv_value = [
+                    max_value[0] * 100,
+                    max_value[1] * 100,
+                    max_value[2] * 100,
+                    max_value[3],
+                    max_value[4],
+                    max_value[5],
+                    max_value[6],
+                    max_value[7],
+                    max_value[8],
+                ]
+                helper.position_joint(bone["BoneName"], value=dv_value)
+                for dv_attr in attr_list:
+                    pm.setDrivenKeyframe(
+                        "%s.%s" % (bone["BoneName"], dv_attr),
+                        cd=source,
+                        dv=1)
+
+                min_value = bone["Min"]
+                dv_value = [
+                    min_value[0] * 100,
+                    min_value[1] * 100,
+                    min_value[2] * 100,
+                    min_value[3],
+                    min_value[4],
+                    min_value[5],
+                    min_value[6],
+                    min_value[7],
+                    min_value[8],
+                ]
+                helper.position_joint(bone["BoneName"], value=dv_value)
+                for dv_attr in attr_list:
+                    pm.setDrivenKeyframe(
+                        "%s.%s" % (bone["BoneName"], dv_attr),
+                        cd=source,
+                        dv=-1)
+
+
+            pm.setAttr(source, 0)
+        return
 
     def __str__(self):
         return self.name
