@@ -1687,7 +1687,7 @@ class JsonManager(common.Singleton):
                 text=dict_data[controller_key][index]["AxisControl"]["ZAxis"])
 
     def add_module(self):
-        """
+        u"""
         添加模块
 
         模块实际上是一个文件夹。
@@ -1708,23 +1708,16 @@ class JsonManager(common.Singleton):
         folder_name = file_path[0].split("/")[len(file_path[0].split("/")) - 1]
 
         # 将新添加的模块添加到菜单项
-        pm.menuItem(label=folder_name,
-                    parent="faceModuleOptionsWidget|OptionMenu")
+        pm.menuItem(label=folder_name, parent="faceModuleOptionsWidget|OptionMenu")
 
-        controller_path = "%s/%sController.json" % (
-            file_path[0], folder_name)
+        controller_path = "%s/%sController.json" % (file_path[0], folder_name)
 
         dict_data = {}
         controller_key = "%sController" % folder_name
         dict_data[controller_key] = []
-        common.write_json(
-            dict_data=dict_data,
-            file_path=controller_path)
-        control_group_path = "%s/%sControlGroup.json" % (
-            file_path[0], folder_name)
-        common.write_json(
-            dict_data={},
-            file_path=control_group_path)
+        common.write_json(dict_data=dict_data, file_path=controller_path)
+        control_group_path = "%s/%sControlGroup.json" % (file_path[0], folder_name)
+        common.write_json(dict_data={}, file_path=control_group_path)
 
         # 将菜单栏的当前选择修改为新添加的模块
         pm.optionMenuGrp("faceModuleOptionsWidget", e=True, value=folder_name)
@@ -1732,47 +1725,30 @@ class JsonManager(common.Singleton):
         return True
 
     def add_controller(self):
-        controller_index = pm.scrollLayout(
-            "controllerListLayout", q=True, nch=True)
-        self.controller[controller_index] = (
-                "controllerGrp%s" % controller_index)
-        self.add_controller_widget(
-            index=controller_index, parent="controllerListLayout")
+        controller_index = pm.scrollLayout("controllerListLayout", q=True, nch=True)
+        self.controller[controller_index] = ("controllerGrp%s" % controller_index)
+        self.add_controller_widget(index=controller_index, parent="controllerListLayout")
 
     def add_controller_widget(self, index=0, parent=""):
-        if pm.columnLayout(
-                "controllerListItemLayout%s" % index, q=True, ex=True):
+        if pm.columnLayout("controllerListItemLayout%s" % index, q=True, ex=True):
             pm.deleteUI("controllerListItemLayout%s" % index)
 
-        layout = pm.columnLayout(
-            "controllerListItemLayout%s" % index,
-            adj=1, parent=parent)
+        layout = pm.columnLayout("controllerListItemLayout%s" % index, adj=1, parent=parent)
 
+        pm.textFieldButtonGrp("controllerNameWidget%s" % index,
+                              label=u"控制器名", cw3=[60, 200, 140], bl=u"指定",
+                              bc=lambda *args: self.get_custom_controller(index))
+        pm.textFieldButtonGrp("controllerGrpNameWidget%s" % index,
+                              label=u"控制器组", cw3=[60, 200, 140], bl=u"指定")
         pm.textFieldButtonGrp(
-            "controllerNameWidget%s" % index,
-            label=u"控制器名", cw3=[60, 200, 140], bl=u"指定",
-            bc=lambda *args: self.get_custom_controller(index))
-        pm.textFieldButtonGrp(
-            "controllerGrpNameWidget%s" % index,
-            label=u"控制器组", cw3=[60, 200, 140], bl=u"指定")
-        pm.textFieldButtonGrp(
-            "controllerBoneNameWidget%s" % index,
-            label=u"挂点名称",
-            cw3=[60, 200, 140], bl=u"指定",
-            bc=lambda *args: self.get_sample_node(
-                text_widget="controllerBoneNameWidget%s" % index))
-        pm.floatFieldGrp(
-            "controllerBoneOffsetWidget%s" % index,
-            numberOfFields=3,
-            pre=3,
-            label=u'挂点偏移', cw4=[60, 50, 50, 50])
+            "controllerBoneNameWidget%s" % index, label=u"挂点名称", cw3=[60, 200, 140], bl=u"指定",
+            bc=lambda *args: self.get_sample_node(text_widget="controllerBoneNameWidget%s" % index))
+        pm.floatFieldGrp("controllerBoneOffsetWidget%s" % index,
+                         numberOfFields=3, pre=3, label=u'挂点偏移', cw4=[60, 50, 50, 50])
 
-        pm.textFieldGrp(
-            "controller%sAxisX" % index, label=u"XAxis", cw2=[60, 200])
-        pm.textFieldGrp(
-            "controller%sAxisY" % index, label=u"YAxis", cw2=[60, 200])
-        pm.textFieldGrp(
-            "controller%sAxisZ" % index, label=u"ZAxis", cw2=[60, 200])
+        pm.textFieldGrp("controller%sAxisX" % index, label=u"XAxis", cw2=[60, 200])
+        pm.textFieldGrp("controller%sAxisY" % index, label=u"YAxis", cw2=[60, 200])
+        pm.textFieldGrp("controller%sAxisZ" % index, label=u"ZAxis", cw2=[60, 200])
 
         pm.separator(style='in', height=20)
 
@@ -1782,90 +1758,51 @@ class JsonManager(common.Singleton):
 
     def add_control_detail_widget(self):
         parent = "controllerDetailListLayout"
-        for index in range(0, pm.scrollLayout(
-                "controllerListLayout", q=True, nch=True)):
-
-            if pm.frameLayout(
-                    "controllerDetailListItemLayout%s" % index,
-                    q=True, ex=True):
+        for index in range(0, pm.scrollLayout("controllerListLayout", q=True, nch=True)):
+            if pm.frameLayout("controllerDetailListItemLayout%s" % index, q=True, ex=True):
                 pm.deleteUI("controllerDetailListItemLayout%s" % index)
 
-            pm.frameLayout(
-                "controllerDetailListItemLayout%s" % index,
-                bgs=True,
-                mw=10, mh=5,
-                cll=True,
-                cl=False,
-                parent=parent)
-            pm.textFieldButtonGrp(
-                "controllerDetailControlType%s" % index,
-                label=u"控制类型", bl=u"指定", cw3=[48, 200, 140])
-            pm.textFieldButtonGrp(
-                "controllerDetailControlGroup%s" % index,
-                label=u"控制器组", bl=u"指定", cw3=[48, 200, 140])
+            pm.frameLayout("controllerDetailListItemLayout%s" % index,
+                           bgs=True, mw=10, mh=5, cll=True, cl=False, parent=parent)
+            pm.textFieldButtonGrp("controllerDetailControlType%s" % index,
+                                  label=u"控制类型", bl=u"指定", cw3=[48, 200, 140])
+            pm.textFieldButtonGrp("controllerDetailControlGroup%s" % index,
+                                  label=u"控制器组", bl=u"指定", cw3=[48, 200, 140])
             pm.text(label=u"滑竿控制", al="left", width=100)
             pm.text(label="SliderX:", al="left")
-            pm.textScrollList(
-                "controllerDetailSliderXBone%s" % index)
+            pm.textScrollList("controllerDetailSliderXBone%s" % index)
             pm.text(label="SliderY:", al="left")
-            pm.textScrollList(
-                "controllerDetailSliderYBone%s" % index)
+            pm.textScrollList("controllerDetailSliderYBone%s" % index)
             pm.text(label="SliderZ:", al="left")
-            pm.textScrollList(
-                "controllerDetailSliderZBone%s" % index)
+            pm.textScrollList("controllerDetailSliderZBone%s" % index)
             pm.setParent("..")
 
             # 自动录入一些数据
-            frame_label = pm.textFieldButtonGrp(
-                "controllerNameWidget%s" % index, q=True, text=True)
-            pm.frameLayout(
-                "controllerDetailListItemLayout%s" % index,
-                e=True, label=frame_label)
+            frame_label = pm.textFieldButtonGrp("controllerNameWidget%s" % index, q=True, text=True)
+            pm.frameLayout("controllerDetailListItemLayout%s" % index, e=True, label=frame_label)
 
-            control_type = pm.optionMenuGrp(
-                "faceModuleOptionsWidget", q=True, value=True)
-            pm.textFieldButtonGrp(
-                "controllerDetailControlType%s" % index,
-                e=True, text=control_type)
+            control_type = pm.optionMenuGrp("faceModuleOptionsWidget", q=True, value=True)
+            pm.textFieldButtonGrp("controllerDetailControlType%s" % index, e=True, text=control_type)
 
-            control_grp = pm.textFieldButtonGrp(
-                "controllerGrpNameWidget%s" % index, q=True, text=True)
-            pm.textFieldButtonGrp(
-                "controllerDetailControlGroup%s" % index,
-                e=True, text=control_grp)
+            control_grp = pm.textFieldButtonGrp("controllerGrpNameWidget%s" % index, q=True, text=True)
+            pm.textFieldButtonGrp("controllerDetailControlGroup%s" % index, e=True, text=control_grp)
 
-            control_name = pm.textFieldButtonGrp(
-                "controllerNameWidget%s" % index, q=True, text=True)
+            control_name = pm.textFieldButtonGrp("controllerNameWidget%s" % index, q=True, text=True)
 
-            axis_x = pm.textFieldGrp(
-                "controller%sAxisX" % index, q=True, text=True)
+            axis_x = pm.textFieldGrp("controller%sAxisX" % index, q=True, text=True)
             if axis_x != "" and axis_x is not None:
-                definition_joints = pm.PyNode(
-                    control_name).attr("jointsX").get()
-                pm.textScrollList(
-                    "controllerDetailSliderXBone%s" % index,
-                    e=True,
-                    a=str_to_list(definition_joints))
+                definition_joints = pm.PyNode(control_name).attr("jointsX").get()
+                pm.textScrollList("controllerDetailSliderXBone%s" % index, e=True, a=str_to_list(definition_joints))
 
-            axis_y = pm.textFieldGrp(
-                "controller%sAxisY" % index, q=True, text=True)
+            axis_y = pm.textFieldGrp("controller%sAxisY" % index, q=True, text=True)
             if axis_y != "" and axis_y is not None:
-                definition_joints = pm.PyNode(
-                    control_name).attr("jointsY").get()
-                pm.textScrollList(
-                    "controllerDetailSliderYBone%s" % index,
-                    e=True,
-                    a=str_to_list(definition_joints))
+                definition_joints = pm.PyNode(control_name).attr("jointsY").get()
+                pm.textScrollList("controllerDetailSliderYBone%s" % index, e=True, a=str_to_list(definition_joints))
 
-            axis_z = pm.textFieldGrp(
-                "controller%sAxisZ" % index, q=True, text=True)
+            axis_z = pm.textFieldGrp("controller%sAxisZ" % index, q=True, text=True)
             if axis_z != "" and axis_z is not None:
-                definition_joints = pm.PyNode(
-                    control_name).attr("jointsZ").get()
-                pm.textScrollList(
-                    "controllerDetailSliderZBone%s" % index,
-                    e=True,
-                    a=str_to_list(definition_joints))
+                definition_joints = pm.PyNode(control_name).attr("jointsZ").get()
+                pm.textScrollList("controllerDetailSliderZBone%s" % index, e=True, a=str_to_list(definition_joints))
 
         return
 
@@ -2463,10 +2400,7 @@ class DataPasteHelper(common.Singleton):
     def show(self):
         if pm.window("ExpressionHelper", ex=True):
             pm.deleteUI("ExpressionHelper")
-        pm.window(
-            "ExpressionHelper",
-            t=u"数据粘贴助手",
-            mb=True)
+        pm.window("ExpressionHelper", t=u"数据粘贴助手", mb=True)
 
         form_layout = pm.formLayout()
 
@@ -2554,7 +2488,7 @@ class DataPasteHelper(common.Singleton):
         self.expression_data = {}
         sel_joints = pm.ls(sl=True)
         for jnt in sel_joints:
-            self.expression_data[jnt.controller_name()] = [
+            self.expression_data[jnt.shortName()] = [
                 round(pm.PyNode(jnt).translateX.get(), 5),
                 round(pm.PyNode(jnt).translateY.get(), 5),
                 round(pm.PyNode(jnt).translateZ.get(), 5),
