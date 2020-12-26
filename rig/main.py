@@ -165,10 +165,11 @@ def yellow_component(name="", shape_type="", translate=(0, 0, 0), parent_node=No
         pm.select(cl=True)
         pm.joint(name=name)
     if shape_type == "sphere":
-        pm.sphere(name=name, p=[0, 0, 0], ax=[0, 1, 0], ssw=0, esw=360, r=0.3, d=3, ut=0, tol=0.01, s=4, nsp=2, ch=1)
+        pm.sphere(name=name, p=[0, 0, 0], ax=[0, 1, 0],
+                  ssw=0, esw=360, r=0.3, d=3, ut=0, tol=0.01, s=4, nsp=2, ch=1)
     if shape_type == "cone":
-        pm.cone(name=name, p=[0, 0, 0], ax=[-1, 0, 0], ssw=0, esw=360, r=0.45, hr=2, d=1, ut=0, tol=0.01, s=4, nsp=1,
-                ch=0)
+        pm.cone(name=name, p=[0, 0, 0], ax=[-1, 0, 0],
+                ssw=0, esw=360, r=0.45, hr=2, d=1, ut=0, tol=0.01, s=4, nsp=1, ch=0)
 
     pm.parent(
         pm.createNode("transform", name="{}_02_Grp".format(name)),
@@ -203,8 +204,8 @@ def cyan_control(name="", shape_type="sphere", translate=(0, 0, 0), parent_node=
     """
     base_ctrl = None
     if shape_type == "sphere":
-        base_ctrl = pm.sphere(name=name, p=[0, 0, 0], ax=[0, 1, 0], ssw=0, esw=360, r=1, d=1, ut=0, tol=0.01, s=4,
-                              nsp=2, ch=0)
+        base_ctrl = pm.sphere(name=name, p=[0, 0, 0], ax=[0, 1, 0],
+                              ssw=0, esw=360, r=1, d=1, ut=0, tol=0.01, s=4, nsp=2, ch=0)
     pm.parent(base_ctrl, pm.createNode("transform", name="{}_Grp".format(name)))
 
     pm.PyNode("{}_Grp".format(name)).translate.set(translate)
@@ -302,8 +303,8 @@ def jnt_or_control_grp(name, object_type="joint", parent_node=None, have_loc=Fal
     if object_type == "sphere":
         pm.sphere(name=name, p=[0, 0, 0], ax=[0, 1, 0], ssw=0, esw=360, r=1, d=3, ut=0, tol=0.01, s=4, nsp=2, ch=1)
     if object_type == "cylinder":
-        pm.cylinder(name=name, p=[0, 0, 0], ax=[0, 0, 1], ssw=0, esw=360, r=1, hr=2, d=3, ut=0, tol=0.01, s=8, nsp=1,
-                    ch=1)
+        pm.cylinder(name=name, p=[0, 0, 0], ax=[0, 0, 1],
+                    ssw=0, esw=360, r=1, hr=2, d=3, ut=0, tol=0.01, s=8, nsp=1, ch=1)
 
     pm.parent(name, pm.createNode("transform", name="{}_Grp".format(name)))
 
@@ -450,7 +451,7 @@ def mp_node(node_name, geometry_path_input="", all_coordinates_output=""):
     """
     mp_node = pm.createNode("motionPath", name=node_name)
     mp_node.attr("uValue").set(0)
-    
+
     '''
     关掉参数化长度。1位关闭，0为开启
     如果处于开启状态，motion path节点输出的对象位置会根据曲线的实际弧长进行计算
