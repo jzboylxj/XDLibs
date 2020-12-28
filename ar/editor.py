@@ -3,7 +3,7 @@
 # @Time    : 2020/7/22 13:56
 # @Author  : Li XiaoJun
 # @Site    :
-# @File    : ar_rig.py
+# @File    : editor.py
 
 import os
 from imp import reload

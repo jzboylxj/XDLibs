@@ -2,7 +2,7 @@
 # coding: utf-8
 # @Time    : 2020/12/11 15:36
 # @Author  : Li XiaoJun
-# @Site    : 
+# @Site    :
 # @File    : ar_export.py
 
 from pymel import core as pm
@@ -21,7 +21,10 @@ def loc_grp(name):
     return ["{}_Grp".format(name), name]
 
 
-def ar_export():
+def animation_proxy():
+    u"""为AR2.0版本的头部绑定创建代理体组，用来连接绑定动画用绑定组和导出到引擎里面的绑定组
+    """
+
     # 新建一个空组作为代理loc的根目录
     anim_proxy_grp = "ARAnimProxyGrp"
     if pm.objExists(anim_proxy_grp):
@@ -85,7 +88,7 @@ def ar_export():
             source = source.replace("Anim", "Ctrl")
             pm.parentConstraint(source, pm.PyNode(proxy[1]).getParent(), mo=True)
 
-        if "LowJaw" in item.name() :
+        if "LowJaw" in item.name():
             source = item.replace("LowJaw", "Mouth_01_Jaw")
             source = source.replace("Anim", "Ctrl")
             print(u"{}存在:{}".format(source, pm.objExists(source)))
@@ -149,6 +152,5 @@ def ar_export():
 
         if "MD_Brow" in item.name():
             pm.PyNode("MD_Brow_01_Sub_01_Jnt").translateY.connect(pm.PyNode("MD_Brow_Jnt").translateY)
-
 
     return
