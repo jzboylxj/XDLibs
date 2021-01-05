@@ -21,6 +21,18 @@ def loc_grp(name):
     return ["{}_Grp".format(name), name]
 
 
+def UI():
+    if pm.window("AnimationProxyUI", ex=True):
+        pm.deleteUI("AnimationProxyUI")
+
+    pm.window("AnimationProxyUI", mb=True)
+    pm.columnLayout(adj=1)
+
+    pm.showWindow("AnimationProxyUI")
+
+    return
+
+
 def animation_proxy():
     u"""为AR2.0版本的头部绑定创建代理体组，用来连接绑定动画用绑定组和导出到引擎里面的绑定组
     """
@@ -31,6 +43,7 @@ def animation_proxy():
         pm.error(u"场景中已经存在{}".format(anim_proxy_grp))
     else:
         pm.createNode("transform", name=anim_proxy_grp)
+        pm.setAttr("{}.visibility".format(anim_proxy_grp), 0)
 
     # 获取输出动画的集，然后遍历集的成员为它们创建locator，并建立约束
     if not pm.objExists(bake_anim_set):
@@ -145,12 +158,25 @@ def animation_proxy():
             pm.parentConstraint(source, local_proxy[1], mo=True)
             pm.PyNode(local_proxy[1]).translate.connect(pm.PyNode(proxy[1]).translate)
 
-        if "Tongue" in item.name():
-            source = item.replace("Tongue", "Tongue_01")
-            source = source.replace("FK_Ctrl", "Ctrl")
-            pm.parentConstraint("MD_LowJaw_Anim_Proxy", pm.PyNode(proxy[1]).getParent(), mo=True)
+        # if "Tongue" in item.name():
+        #     source = item.replace("Tongue", "Tongue_01")
+        #     print("source:{} is existe? {}".format(source, pm.objExists(pm.PyNode(source))))
+        #     source = source.replace("FK_Ctrl", "Ctrl")
+        #     pm.parentConstraint("MD_LowJaw_Anim_Proxy", pm.PyNode(proxy[1]).getParent(), mo=True)
 
         if "MD_Brow" in item.name():
-            pm.PyNode("MD_Brow_01_Sub_01_Jnt").translateY.connect(pm.PyNode("MD_Brow_Jnt").translateY)
+            if not pm.isConnected('MD_Brow_01_Sub_01_Jnt.ty', 'MD_Brow_Jnt.ty'):
+                pm.PyNode("MD_Brow_01_Sub_01_Jnt").translateY.connect(pm.PyNode("MD_Brow_Jnt").translateY)
+
+    for item in all_item:
+        print(u"开始构建{}的代理体".format(item))
+
+        if "Tongue" in item.name():
+            # source = item.replace("Tongue", "Tongue_01")
+            # source = source.replace("FK_Ctrl", "Ctrl")
+            print("tongue source:{}".format(item.name()))
+            # MD_Tongue_01_01_FK_Ctrl
+            # print("source:{} is existe? {}".format(source, pm.objExists(pm.PyNode(source))))
+        #     pm.parentConstraint("MD_LowJaw_Anim_Proxy", pm.PyNode(proxy[1]).getParent(), mo=True)
 
     return

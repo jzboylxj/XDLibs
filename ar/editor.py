@@ -220,43 +220,29 @@ class ARFaceEditor(common.Singleton):
         pm.popupMenu()
         pm.menuItem(label=u"添加映射", c=lambda *args: self.new_mapping())
         pm.menuItem(divider=True)
-        pm.menuItem(
-            label=u"添加影响骨骼", c=lambda *args: self.new_joint_to_ar_channel(auto_sdk=False))
+        pm.menuItem(label=u"添加影响骨骼",
+                    c=lambda *args: self.new_joint_to_ar_channel(auto_sdk=False))
         pm.menuItem(label=u"添加骨骼和SDK",
                     c=lambda *args: self.new_joint_to_ar_channel(auto_sdk=True))
         pm.menuItem(divider=True)
-        pm.menuItem(label=u"移除选择骨骼",
-                    c=lambda *args: self.remove_select_joint_in_scroll())
+        pm.menuItem(label=u"移除选择骨骼", c=lambda *args: self.remove_select_joint_in_scroll())
         pm.menuItem(divider=True)
-        pm.menuItem(label=u"选择所有骨骼",
-                    c=lambda *args: self.select_all_joint_in_scroll())
+        pm.menuItem(label=u"选择所有骨骼", c=lambda *args: self.select_all_joint_in_scroll())
 
         ar_item_data_layout = pm.columnLayout(adj=1, rs=2)
-        self.ar_item_joint_name = pm.text(
-            label=u"Joint name", al="left", fn="boldLabelFont")
-        self.ar_item_attr_tx = pm.floatFieldGrp(
-            adj=1, cw2=[80, 80], label="translateX", pre=3)
-        self.ar_item_attr_ty = pm.floatFieldGrp(
-            adj=1, cw2=[80, 80], label="translateY", pre=3)
-        self.ar_item_attr_tz = pm.floatFieldGrp(
-            adj=1, cw2=[80, 80], label="translateZ", pre=3)
-        self.ar_item_attr_rx = pm.floatFieldGrp(
-            adj=1, cw2=[80, 80], label="rotateX", pre=3)
-        self.ar_item_attr_ry = pm.floatFieldGrp(
-            adj=1, cw2=[80, 80], label="rotateY", pre=3)
-        self.ar_item_attr_rz = pm.floatFieldGrp(
-            adj=1, cw2=[80, 80], label="rotateZ", pre=3)
-        self.ar_item_attr_sx = pm.floatFieldGrp(
-            adj=1, cw2=[80, 80], label="scaleX", pre=3)
-        self.ar_item_attr_sy = pm.floatFieldGrp(
-            adj=1, cw2=[80, 80], label="scaleY", pre=3)
-        self.ar_item_attr_sz = pm.floatFieldGrp(
-            adj=1, cw2=[80, 80], label="scaleZ", pre=3)
+        self.ar_item_joint_name = pm.text(label=u"Joint name", al="left", fn="boldLabelFont")
+        self.ar_item_attr_tx = pm.floatFieldGrp(adj=1, cw2=[80, 80], label="translateX", pre=3)
+        self.ar_item_attr_ty = pm.floatFieldGrp(adj=1, cw2=[80, 80], label="translateY", pre=3)
+        self.ar_item_attr_tz = pm.floatFieldGrp(adj=1, cw2=[80, 80], label="translateZ", pre=3)
+        self.ar_item_attr_rx = pm.floatFieldGrp(adj=1, cw2=[80, 80], label="rotateX", pre=3)
+        self.ar_item_attr_ry = pm.floatFieldGrp(adj=1, cw2=[80, 80], label="rotateY", pre=3)
+        self.ar_item_attr_rz = pm.floatFieldGrp(adj=1, cw2=[80, 80], label="rotateZ", pre=3)
+        self.ar_item_attr_sx = pm.floatFieldGrp(adj=1, cw2=[80, 80], label="scaleX", pre=3)
+        self.ar_item_attr_sy = pm.floatFieldGrp(adj=1, cw2=[80, 80], label="scaleY", pre=3)
+        self.ar_item_attr_sz = pm.floatFieldGrp(adj=1, cw2=[80, 80], label="scaleZ", pre=3)
 
-        pm.button(label="Update Selected",
-                  c=lambda *args: self.update_sdk_json(type="select"))
-        pm.button(label="Update All",
-                  c=lambda *args: self.update_sdk_json(type="all"))
+        pm.button(label="Update Selected", c=lambda *args: self.update_sdk_json(type="select"))
+        pm.button(label="Update All", c=lambda *args: self.update_sdk_json(type="all"))
 
         pm.setParent("..")  # end of ar_item_data_layout
 
@@ -391,29 +377,19 @@ class ARFaceEditor(common.Singleton):
         else:
             pm.warning(U"在场景中没有找到{}".format(current_item))
 
-        current_item_attrs = self.ar_data.get_channel_joint_attr(
-            current_channel, current_item)
+        current_item_attrs = self.ar_data.get_channel_joint_attr(current_channel, current_item)
 
         # 修改通道属性栏里面底部右侧的面板的名称
         pm.text(self.ar_item_joint_name, e=True, label=current_item)
-        pm.floatFieldGrp(
-            self.ar_item_attr_tx, e=True, v1=current_item_attrs[0] * 100)
-        pm.floatFieldGrp(
-            self.ar_item_attr_ty, e=True, v1=current_item_attrs[1] * 100)
-        pm.floatFieldGrp(
-            self.ar_item_attr_tz, e=True, v1=current_item_attrs[2] * 100)
-        pm.floatFieldGrp(
-            self.ar_item_attr_rx, e=True, v1=current_item_attrs[3])
-        pm.floatFieldGrp(
-            self.ar_item_attr_ry, e=True, v1=current_item_attrs[4])
-        pm.floatFieldGrp(
-            self.ar_item_attr_rz, e=True, v1=current_item_attrs[5])
-        pm.floatFieldGrp(
-            self.ar_item_attr_sx, e=True, v1=current_item_attrs[6])
-        pm.floatFieldGrp(
-            self.ar_item_attr_sy, e=True, v1=current_item_attrs[7])
-        pm.floatFieldGrp(
-            self.ar_item_attr_sz, e=True, v1=current_item_attrs[8])
+        pm.floatFieldGrp(self.ar_item_attr_tx, e=True, v1=current_item_attrs[0] * 100)
+        pm.floatFieldGrp(self.ar_item_attr_ty, e=True, v1=current_item_attrs[1] * 100)
+        pm.floatFieldGrp(self.ar_item_attr_tz, e=True, v1=current_item_attrs[2] * 100)
+        pm.floatFieldGrp(self.ar_item_attr_rx, e=True, v1=current_item_attrs[3])
+        pm.floatFieldGrp(self.ar_item_attr_ry, e=True, v1=current_item_attrs[4])
+        pm.floatFieldGrp(self.ar_item_attr_rz, e=True, v1=current_item_attrs[5])
+        pm.floatFieldGrp(self.ar_item_attr_sx, e=True, v1=current_item_attrs[6])
+        pm.floatFieldGrp(self.ar_item_attr_sy, e=True, v1=current_item_attrs[7])
+        pm.floatFieldGrp(self.ar_item_attr_sz, e=True, v1=current_item_attrs[8])
         return
 
     def rebuild_channels_controller(self):
@@ -430,8 +406,7 @@ class ARFaceEditor(common.Singleton):
 
         test_proxy = pm.createNode("transform", name=test_proxy)
         for attr in ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz", "v"]:
-            pm.setAttr("{}.{}".format(test_proxy, attr),
-                       lock=True, keyable=False, channelBox=False)
+            pm.setAttr("{}.{}".format(test_proxy, attr), lock=True, keyable=False, channelBox=False)
 
         all_channel = pm.optionMenuGrp(self.ar_channel_options, q=True, ils=True)
         for item in all_channel:
@@ -504,7 +479,7 @@ class ARFaceEditor(common.Singleton):
                 attr_list = ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz"]
                 for dv_attr in attr_list:
                     # helper.position_joint(
-                        # current_jnt, value=[0, 0, 0, 0, 0, 0, 1, 1, 1])
+                    # current_jnt, value=[0, 0, 0, 0, 0, 0, 1, 1, 1])
 
                     # pm.setDrivenKeyframe(
                     #     "%s.%s" % (current_jnt, dv_attr),
@@ -545,7 +520,7 @@ class ARFaceEditor(common.Singleton):
                 value=jnt_value,
             )
         self.ar_data.data_to_json()
-        
+
         return
 
     def sdk_channel(self, channel):
