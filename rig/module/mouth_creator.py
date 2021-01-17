@@ -1,22 +1,21 @@
 # coding: utf-8
 
-
 from imp import reload
 from pymel import core as pm
+
+import rig.core.utils
 from animation import common
 # import maya.cmds as cmds
 # from pymel.util import path
 # from rig.names import template_dir
-from rig import main
 
 reload(common)
-reload(main)
 
 
 class MouthCreator:
 
     def __init__(self):
-        super(MouthCreator, self).__init__()
+        # super(MouthCreator, self).__init__()
 
         self.module_name = "Mouth_01"
 
@@ -85,8 +84,8 @@ class MouthCreator:
         if not pm.objExists(self.low_base_curve):
             pm.error("{}丢失".format(self.low_base_curve))
 
-        up_curve_center_position = main.point_on_curve_position(curve=self.up_base_curve, parameter=parameter)
-        low_curve_center_position = main.point_on_curve_position(curve=self.low_base_curve, parameter=parameter)
+        up_curve_center_position = rig.core.utils.point_on_curve_position(curve=self.up_base_curve, parameter=parameter)
+        low_curve_center_position = rig.core.utils.point_on_curve_position(curve=self.low_base_curve, parameter=parameter)
         pos_x = (low_curve_center_position[0] + (up_curve_center_position[0] - low_curve_center_position[0]) / 2)
         pos_y = (low_curve_center_position[1] + (up_curve_center_position[1] - low_curve_center_position[1]) / 2)
         pos_z = (low_curve_center_position[2] + (up_curve_center_position[2] - low_curve_center_position[2]) / 2)
@@ -94,7 +93,7 @@ class MouthCreator:
 
         master_ctrl = "{}_Master_Ctrl".format(prefix)
         if not pm.objExists(master_ctrl):
-            main.cyan_control(
+            rig.core.utils.cyan_control(
                 name=master_ctrl,
                 shape_type="sphere",
                 translate=(pos_x, pos_y, pos_z + offset),
@@ -106,12 +105,12 @@ class MouthCreator:
         pm.parent(master_ctrl_jnt, master_ctrl)
         pm.PyNode(master_ctrl_jnt).translate.set([0, 0, 0])
 
-        main.custom_show_channel(master_ctrl, attr_list=["translateX", "translateY", "translateZ", "rotateZ"])
+        rig.core.utils.custom_show_channel(master_ctrl, attr_list=["translateX", "translateY", "translateZ", "rotateZ"])
 
         # MD_Mouth_01_Master_Ctrl_Loc
         master_ctrl_loc = "MD_{}_Master_Ctrl_Loc".format(self.module_name)
         if not pm.objExists(master_ctrl_loc):
-            main.cyan_locator_grp(
+            rig.core.utils.cyan_locator_grp(
                 name=master_ctrl_loc,
                 translate=(pos_x, pos_y, pos_z + offset),
                 parent_node="MD_{}_Deformer_Grp".format(self.module_name))
@@ -128,13 +127,13 @@ class MouthCreator:
 
         master_ctrl_follicle = "MD_{}_Master_Ctrl_Follicle".format(self.module_name)
         if not pm.objExists(master_ctrl_follicle):
-            main.xd_follicle_node(name=master_ctrl_follicle,
-                                  worldMatrixInput=pm.PyNode(self.mouth_surface).getShape().attr(
+            rig.core.utils.xd_follicle_node(name=master_ctrl_follicle,
+                                            worldMatrixInput=pm.PyNode(self.mouth_surface).getShape().attr(
                                       "worldMatrix[0]"),
-                                  surfaceInput=pm.PyNode(self.mouth_surface).getShape().attr("local"),
-                                  paramVInput=pm.PyNode(cpos).attr("parameterV"),
-                                  paramUInput=pm.PyNode(cpos).attr("parameterU"),
-                                  parentNode="MD_{}_Grp".format(self.module_name))
+                                            surfaceInput=pm.PyNode(self.mouth_surface).getShape().attr("local"),
+                                            paramVInput=pm.PyNode(cpos).attr("parameterV"),
+                                            paramUInput=pm.PyNode(cpos).attr("parameterU"),
+                                            parentNode="MD_{}_Grp".format(self.module_name))
 
         ctrl_null_grp = "{}_Master_Ctrl_Null_Grp".format(prefix)
         if not pm.objExists(ctrl_null_grp):
@@ -215,9 +214,9 @@ class MouthCreator:
             temp_loc_name = "{}_temp_Loc".format(item)
             temp_loc = pm.spaceLocator(name=temp_loc_name)
             mp_name = "{}_temp_MP".format(item)
-            mp = main.mp_node(node_name=mp_name,
-                              geometry_path_input=pm.PyNode(self.up_base_curve).getShape().attr("worldSpace[0]"),
-                              all_coordinates_output=temp_loc.translate)
+            mp = rig.core.utils.mp_node(node_name=mp_name,
+                                        geometry_path_input=pm.PyNode(self.up_base_curve).getShape().attr("worldSpace[0]"),
+                                        all_coordinates_output=temp_loc.translate)
             pm.PyNode(mp).rotateX.connect(pm.PyNode(temp_loc).rotateX)
             pm.PyNode(mp).rotateY.connect(pm.PyNode(temp_loc).rotateY)
             pm.PyNode(mp).rotateZ.connect(pm.PyNode(temp_loc).rotateZ)
@@ -245,15 +244,15 @@ class MouthCreator:
 
             control_name = "{}_Ctrl".format(prefix)
             if not pm.objExists(control_name):
-                ctrl_grp = main.yellow_component(name=control_name,
-                                                 shape_type="nurbsPlane",
-                                                 parent_node=base_ctrl_grp,
-                                                 have_jnt=True)
+                ctrl_grp = rig.core.utils.yellow_component(name=control_name,
+                                                           shape_type="nurbsPlane",
+                                                           parent_node=base_ctrl_grp,
+                                                           have_jnt=True)
                 pm.delete(pm.parentConstraint(temp_loc, ctrl_grp, mo=False))
                 pm.delete(pm.scaleConstraint(temp_loc, ctrl_grp, mo=False))
             ctrl_loc = "{}_Ctrl_Loc".format(prefix)
             if not pm.objExists(ctrl_loc):
-                ctrl_loc_grp = main.yellow_component(
+                ctrl_loc_grp = rig.core.utils.yellow_component(
                     name=ctrl_loc, shape_type="locator", parent_node=base_loc_grp)
                 pm.delete(pm.parentConstraint(temp_loc, ctrl_loc_grp, mo=False))
                 pm.delete(pm.scaleConstraint(temp_loc, ctrl_loc_grp, mo=False))
@@ -269,10 +268,10 @@ class MouthCreator:
             else:
                 curve = self.low_base_curve
             if not pm.objExists("{}_Ctrl".format(prefix)):
-                main.yellow_component(name="{}_Ctrl".format(prefix), shape_type="nurbsPlane",
-                                      translate=main.point_on_curve_position(
+                rig.core.utils.yellow_component(name="{}_Ctrl".format(prefix), shape_type="nurbsPlane",
+                                                translate=rig.core.utils.point_on_curve_position(
                                           curve=curve, parameter=parameter),
-                                      parent_node=base_ctrl_grp)
+                                                parent_node=base_ctrl_grp)
 
         if not pm.isConnected(pm.PyNode(base_ctrl_grp).translate, pm.PyNode(base_ctrl_out_grp).translate):
             pm.PyNode(base_ctrl_grp).translate.connect(pm.PyNode(base_ctrl_out_grp).translate)
@@ -323,7 +322,7 @@ class MouthCreator:
             if side == "MD":
                 follicle_name = "{}_Master_Ctrl_Follicle".format(prefix)
                 if not pm.objExists(follicle_name):
-                    main.xd_follicle_node(
+                    rig.core.utils.xd_follicle_node(
                         name=follicle_name,
                         worldMatrixInput=mouth_surface_shape.attr("worldMatrix[0]"),
                         surfaceInput=mouth_surface_shape.attr("local"),
@@ -336,7 +335,7 @@ class MouthCreator:
             else:
                 follicle_name = "{}_Ctrl_Jnt_Follicle".format(prefix)
                 if not pm.objExists(follicle_name):
-                    main.xd_follicle_node(
+                    rig.core.utils.xd_follicle_node(
                         name=follicle_name,
                         worldMatrixInput=mouth_surface_shape.attr("worldMatrix[0]"),
                         surfaceInput=mouth_surface_shape.attr("local"),
@@ -368,10 +367,10 @@ class MouthCreator:
                 base_curve = self.low_base_curve
 
             if not pm.objExists(aim_jnt):
-                main.yellow_component(name=aim_jnt,
-                                      shape_type="joint",
-                                      translate=main.point_on_curve_position(base_curve, 0.5),
-                                      parent_node="MD_{}_Base_Ctrl_Out_Grp".format(self.module_name))
+                rig.core.utils.yellow_component(name=aim_jnt,
+                                                shape_type="joint",
+                                                translate=rig.core.utils.point_on_curve_position(base_curve, 0.5),
+                                                parent_node="MD_{}_Base_Ctrl_Out_Grp".format(self.module_name))
 
             item_ctrl = "{}_{}_Ctrl".format(item, self.module_name)
             pm.PyNode(item_ctrl).translate.connect(pm.PyNode(aim_jnt).rotate)
@@ -396,11 +395,11 @@ class MouthCreator:
                 corner_jnt = "{}_{}_Ctrl_{}_Jnt".format(side, self.module_name, item)
                 corner_jnt_grp = "{}_Grp".format(corner_jnt)
                 if not pm.objExists(corner_jnt):
-                    corner_jnt_grp = main.jnt_or_control_grp(name=corner_jnt, parent_node=corner_follicle)
+                    corner_jnt_grp = rig.core.utils.jnt_or_control_grp(name=corner_jnt, parent_node=corner_follicle)
 
                 check_list.append(corner_jnt)
 
-                if not main.check_constraint(corner_follicle, corner_jnt_grp):
+                if not rig.core.utils.check_constraint(corner_follicle, corner_jnt_grp):
                     pm.aimConstraint(
                         corner_follicle, corner_jnt_grp,
                         aimVector=[0, 0, -1],
@@ -485,7 +484,7 @@ class MouthCreator:
         if not pm.objExists(master_ctrl_null):
             self.master_ctrl_null_grp(parent_node=mouth_center_follicle, translate_clean=True)
 
-        if not main.check_constraint(master_ctrl_null, base_ctrl_grp):
+        if not rig.core.utils.check_constraint(master_ctrl_null, base_ctrl_grp):
             pm.parentConstraint(master_ctrl_null, base_ctrl_grp, mo=True)
 
         # Up_Mouth_01_Ctrl_Jnt
@@ -568,7 +567,7 @@ class MouthCreator:
                 if location == "Up":
                     corner_follicle = "{}_{}_Lip_Jnt_Follicle".format(side, self.module_name)
                     if not pm.objExists(corner_follicle):
-                        corner_follicle = main.xd_follicle_node(
+                        corner_follicle = rig.core.utils.xd_follicle_node(
                             name="{}_{}_Lip_Jnt_Follicle".format(side, self.module_name),
                             worldMatrixInput=tweak_surface.getShape().attr("worldMatrix[0]"),
                             surfaceInput=tweak_surface.getShape().attr("local"),
@@ -579,7 +578,7 @@ class MouthCreator:
                 for index in range(1, segment + 1):
                     lip_follicle = "{}_Mouth_01_{}Lip_{}_Jnt_Follicle".format(side, location, "{0:02d}".format(index))
                     if not pm.objExists(lip_follicle):
-                        lip_follicle = main.xd_follicle_node(
+                        lip_follicle = rig.core.utils.xd_follicle_node(
                             name="{}_Mouth_01_{}Lip_{}_Jnt_Follicle".format(side, location, "{0:02d}".format(index)),
                             worldMatrixInput=tweak_surface.getShape().attr("worldMatrix[0]"),
                             surfaceInput=tweak_surface.getShape().attr("local"),
@@ -629,7 +628,7 @@ class MouthCreator:
                     jnt = "{}_Mouth_01_{}Tweak_{}_Ctrl_Jnt".format(side, location, "{0:02d}".format(index))
                     jnt_grp = "{}_Grp".format(jnt)
                     if not pm.objExists(jnt):
-                        jnt_grp = main.yellow_component(
+                        jnt_grp = rig.core.utils.yellow_component(
                             name="{}_Mouth_01_{}Tweak_{}_Ctrl_Jnt".format(side, location, "{0:02d}".format(index)),
                             shape_type="joint",
                             parent_node=tweak_jnt_grp,
@@ -678,7 +677,7 @@ class MouthCreator:
                     jnt = "{}_{}_Tweak_Ctrl_Jnt".format(side, self.module_name)
                     jnt_grp = "{}_Grp".format(jnt)
                     if not pm.objExists(jnt):
-                        jnt_grp = main.yellow_component(
+                        jnt_grp = rig.core.utils.yellow_component(
                             name="{}_{}_Tweak_Ctrl_Jnt".format(side, self.module_name),
                             shape_type="joint",
                             parent_node=tweak_jnt_grp,
@@ -718,7 +717,7 @@ class MouthCreator:
         if not pm.objExists(tweak_ori_null):
             pm.createNode("transform", name=tweak_ori_null, p=tweak_ctrl_grp)
 
-        if not main.check_constraint(tweak_ori_null, master_ctrl_null):
+        if not rig.core.utils.check_constraint(tweak_ori_null, master_ctrl_null):
             pm.parentConstraint(master_ctrl_null, tweak_ori_null, mo=True)
 
         scale_null = "MD_{}_Scale_Null".format(self.module_name)
@@ -738,7 +737,7 @@ class MouthCreator:
                     ctrl_name = "{}_Mouth_01_{}Tweak_{}_Ctrl".format(side, location, "{0:02d}".format(index))
                     ctrl_grp = "{}_Grp".format(ctrl_name)
                     if not pm.objExists(ctrl_name):
-                        ctrl_grp = main.yellow_component(
+                        ctrl_grp = rig.core.utils.yellow_component(
                             name=ctrl_name,
                             shape_type="sphere",
                             parent_node=tweak_ctrl_grp)
@@ -773,7 +772,7 @@ class MouthCreator:
                     ctrl = "{}_Mouth_01_Tweak_Ctrl".format(side)
                     ctrl_grp = "{}_Grp".format(ctrl)
                     if not pm.objExists(ctrl):
-                        ctrl_grp = main.yellow_component(name=ctrl, shape_type="sphere", parent_node=tweak_ctrl_grp)
+                        ctrl_grp = rig.core.utils.yellow_component(name=ctrl, shape_type="sphere", parent_node=tweak_ctrl_grp)
 
                     mp_node = ctrl_grp.replace("_Grp", "_MP")
                     if not pm.objExists(mp_node):
@@ -793,9 +792,9 @@ class MouthCreator:
                     pm.PyNode("MD_{}_Scale_Null".format(self.module_name)).scale.connect(pm.PyNode(ctrl_grp).scale)
 
         base_ctrl_grp = "MD_{}_Base_Ctrl_Grp".format(self.module_name)
-        if not main.check_constraint(scale_null, base_ctrl_grp):
+        if not rig.core.utils.check_constraint(scale_null, base_ctrl_grp):
             pm.scaleConstraint(base_ctrl_grp, scale_null, mo=True)
-        if not main.check_constraint(tweak_ori_null, master_ctrl_null):
+        if not rig.core.utils.check_constraint(tweak_ori_null, master_ctrl_null):
             pm.parentConstraint(master_ctrl_null, tweak_ori_null, mo=True)
 
         print("tweak_ctrl_grp done")
@@ -1095,7 +1094,7 @@ class MouthCreator:
         for side in ["LF", "RT"]:
             tweak_ctrl = "{}_Mouth_01_Tweak_Ctrl".format(side)
 
-            main.custom_show_channel(tweak_ctrl, attr_list=["translateX", "translateY", "translateZ"])
+            rig.core.utils.custom_show_channel(tweak_ctrl, attr_list=["translateX", "translateY", "translateZ"])
 
             if not pm.attributeQuery("roll", node=tweak_ctrl, ex=True):
                 pm.addAttr(tweak_ctrl, ln="roll", at="double", dv=0)
@@ -1118,7 +1117,7 @@ class MouthCreator:
                 for index in range(1, seg + 1):
                     tweak_ctrl = "{}_Mouth_01_{}Tweak_{}_Ctrl".format(side, location, "{0:02d}".format(index))
 
-                    main.custom_show_channel(tweak_ctrl, attr_list=["translateX", "translateY", "translateZ"])
+                    rig.core.utils.custom_show_channel(tweak_ctrl, attr_list=["translateX", "translateY", "translateZ"])
                     if not pm.attributeQuery("roll", node=tweak_ctrl, ex=True):
                         pm.addAttr(tweak_ctrl, ln="roll", at="double", dv=0)
                         pm.setAttr("{}.roll".format(tweak_ctrl), e=True, k=True)
@@ -1170,9 +1169,9 @@ class MouthCreator:
             else:
                 param_u = 1.0
             param_v = 0.5
-            main.make_follicle_work_on_surface(
+            rig.core.utils.make_follicle_work_on_surface(
                 surface=sew_surface, follicle=follicle, param_u=param_u, param_v=param_v)
-            main.follicle_shape_out_for_parent(pm.PyNode(follicle).getShape())
+            rig.core.utils.follicle_shape_out_for_parent(pm.PyNode(follicle).getShape())
             mouth_scale_null_node = "MD_Mouth_01_Scale_Null"
             pm.PyNode(mouth_scale_null_node).scale.connect(
                 pm.PyNode(follicle).scale, f=True)
@@ -1186,7 +1185,7 @@ class MouthCreator:
             lip_sew_ctrl = "{}_Mouth_01_LipSew_Ctrl".format(side)
             lip_sew_ctrl_grp = "{}_Grp".format(lip_sew_ctrl)
             if not pm.objExists(lip_sew_ctrl):
-                lip_sew_ctrl_grp = main.yellow_component(name=lip_sew_ctrl, shape_type="cone", parent_node=follicle, )
+                lip_sew_ctrl_grp = rig.core.utils.yellow_component(name=lip_sew_ctrl, shape_type="cone", parent_node=follicle, )
             pm.PyNode(lip_sew_ctrl_grp).translate.set([0, 0, 0])
             if side == "LF":
                 pm.PyNode(lip_sew_ctrl_grp).rotate.set([0, 180, 0])
@@ -1194,7 +1193,7 @@ class MouthCreator:
                 pm.PyNode(lip_sew_ctrl_grp).rotate.set([0, 0, 0])
                 pm.PyNode(lip_sew_ctrl_grp).scale.set([1, 1, -1])
 
-            main.custom_show_channel(lip_sew_ctrl, attr_list=["translateX"])
+            rig.core.utils.custom_show_channel(lip_sew_ctrl, attr_list=["translateX"])
 
             pm.transformLimits(lip_sew_ctrl, tx=[-0.81, 0], etx=[1, 1])
 
@@ -1619,7 +1618,7 @@ class MouthCreator:
                 )
 
             side_ctrl_null = ("{}_Mouth_01_Ctrl_Null".format(side))
-            if not main.check_constraint(side_ctrl_null, side_null_03_grp):
+            if not rig.core.utils.check_constraint(side_ctrl_null, side_null_03_grp):
                 pm.parentConstraint(side_null_03_grp, side_ctrl_null, mo=True)
 
         return True
@@ -1648,7 +1647,7 @@ class MouthCreator:
                 pm.PyNode(low_jaw_jnt_grp).rotate, f=True)
 
         master_ctrl_grp = "MD_Mouth_01_Master_Ctrl_Grp"
-        if not main.check_constraint(master_ctrl_grp, jaw_ctrl):
+        if not rig.core.utils.check_constraint(master_ctrl_grp, jaw_ctrl):
             constraint = pm.parentConstraint(jaw_ctrl, pm.PyNode(
                 jaw_ctrl).getParent(), master_ctrl_grp, mo=True)
 
@@ -1716,7 +1715,7 @@ class MouthCreator:
         for side in ["LF", "RT"]:
             follicle_name = "{}_Mouth_01_LipSew_Ctrl_Follicle".format(side)
             surface_shape = pm.PyNode(lip_sew_surface).getShape()
-            follicle = main.xd_follicle_node(
+            follicle = rig.core.utils.xd_follicle_node(
                 name=follicle_name,
                 worldMatrixInput=surface_shape.attr("worldMatrix[0]"),
                 surfaceInput=surface_shape.attr("local"),
@@ -1806,15 +1805,15 @@ class MouthCreator:
 
         low_jnt = "MD_Mouth_01_LowJaw_Jnt"
         if not pm.objExists(low_jnt):
-            low_jnt_grp = main.jnt_or_control_grp(name=low_jnt, parent_node=jaw_out_grp, have_loc=True)
+            low_jnt_grp = rig.core.utils.jnt_or_control_grp(name=low_jnt, parent_node=jaw_out_grp, have_loc=True)
 
-        tweak_jnt_grp = main.jnt_or_control_grp(
+        tweak_jnt_grp = rig.core.utils.jnt_or_control_grp(
             name="MD_Mouth_01_Jaw_Tweak_Ctrl_Jnt", parent_node="MD_Mouth_01_LowJaw_Jnt")
-        low_teeth_jnt_grp = main.jnt_or_control_grp(
+        low_teeth_jnt_grp = rig.core.utils.jnt_or_control_grp(
             name="MD_Mouth_01_Low_Teeth_Ctrl_Jnt", parent_node="MD_Mouth_01_LowJaw_Jnt")
 
-        up_jnt_grp = main.jnt_or_control_grp(name="MD_Mouth_01_UpJaw_Jnt", parent_node=jaw_out_grp)
-        up_teeth_jnt_grp = main.jnt_or_control_grp(
+        up_jnt_grp = rig.core.utils.jnt_or_control_grp(name="MD_Mouth_01_UpJaw_Jnt", parent_node=jaw_out_grp)
+        up_teeth_jnt_grp = rig.core.utils.jnt_or_control_grp(
             name="MD_Mouth_01_Up_Teeth_Ctrl_Jnt", parent_node="MD_Mouth_01_UpJaw_Jnt")
         up_jaw_loc = pm.spaceLocator(name="MD_Mouth_01_UpJaw_Loc")
         pm.parent(up_jaw_loc, up_jnt_grp)
@@ -1832,13 +1831,13 @@ class MouthCreator:
         pm.delete(pm.parentConstraint("proxyJawUpLoc", up_jaw_loc, mo=False))
 
         # 创建null组
-        up_null_grp = main.ctrl_null_grp(name="Up_Mouth_01_Ctrl_Null", parent_node=jaw_out_grp)
+        up_null_grp = rig.core.utils.ctrl_null_grp(name="Up_Mouth_01_Ctrl_Null", parent_node=jaw_out_grp)
         pm.delete(pm.parentConstraint("Up_{}_Ctrl".format(self.module_name), up_null_grp, mo=False))
-        low_null_grp = main.ctrl_null_grp(name="Low_Mouth_01_Ctrl_Null", parent_node=jaw_out_grp)
+        low_null_grp = rig.core.utils.ctrl_null_grp(name="Low_Mouth_01_Ctrl_Null", parent_node=jaw_out_grp)
         pm.delete(pm.parentConstraint("Low_{}_Ctrl".format(self.module_name), low_null_grp, mo=False))
-        lf_null_grp = main.chain_ctrl_null_grp(name="LF_Mouth_01_Ctrl_Null", parent_node=jaw_out_grp)
+        lf_null_grp = rig.core.utils.chain_ctrl_null_grp(name="LF_Mouth_01_Ctrl_Null", parent_node=jaw_out_grp)
         pm.delete(pm.parentConstraint("LF_{}_Ctrl".format(self.module_name), lf_null_grp, mo=False))
-        rt_null_grp = main.chain_ctrl_null_grp(name="RT_Mouth_01_Ctrl_Null", parent_node=jaw_out_grp)
+        rt_null_grp = rig.core.utils.chain_ctrl_null_grp(name="RT_Mouth_01_Ctrl_Null", parent_node=jaw_out_grp)
         pm.delete(pm.parentConstraint("RT_{}_Ctrl".format(self.module_name), rt_null_grp, mo=False))
         pm.PyNode(rt_null_grp).scale.set([1, 1, -1])
         rt_rotate = pm.PyNode(rt_null_grp).rotate.get()
@@ -1852,8 +1851,8 @@ class MouthCreator:
             pm.delete(
                 pm.parentConstraint(
                     "proxyJawRoot",
-                    main.jnt_or_control_grp(name=jaw_ctrl, object_type="plane",
-                                            parent_node="MD_{}_Grp".format(self.module_name)),
+                    rig.core.utils.jnt_or_control_grp(name=jaw_ctrl, object_type="plane",
+                                                      parent_node="MD_{}_Grp".format(self.module_name)),
                     mo=False))
 
         tweak_ctrl = "MD_{}_Jaw_Tweak_Ctrl".format(self.module_name)
@@ -1861,7 +1860,7 @@ class MouthCreator:
             pm.delete(
                 pm.parentConstraint(
                     "proxyJawTeak",
-                    main.jnt_or_control_grp(name=tweak_ctrl, object_type="plane", parent_node=jaw_ctrl),
+                    rig.core.utils.jnt_or_control_grp(name=tweak_ctrl, object_type="plane", parent_node=jaw_ctrl),
                     mo=False))
 
         low_teeth_ctrl = "MD_{}_Low_Teeth_Ctrl".format(self.module_name)
@@ -1869,7 +1868,7 @@ class MouthCreator:
             pm.delete(
                 pm.parentConstraint(
                     "proxyTeethLow",
-                    main.jnt_or_control_grp(name=low_teeth_ctrl, object_type="plane", parent_node=jaw_ctrl),
+                    rig.core.utils.jnt_or_control_grp(name=low_teeth_ctrl, object_type="plane", parent_node=jaw_ctrl),
                     mo=False))
 
         jaw_move_loc = "M_Jaw_Move_Loc"
@@ -1881,7 +1880,7 @@ class MouthCreator:
         pm.delete(
             pm.parentConstraint(
                 "proxyTeethUp",
-                main.jnt_or_control_grp(
+                rig.core.utils.jnt_or_control_grp(
                     name=up_teeth_ctrl, object_type="plane",
                     parent_node=pm.PyNode(jaw_ctrl).getParent()),
                 mo=False))
@@ -2104,10 +2103,10 @@ class MouthCreator:
             tongue_ctrl = "MD_Tongue_01_{}_FK_Ctrl".format("{0:02d}".format(index))
             tongue_ctrl_grp = "MD_Tongue_01_{}_FK_Ctrl_Grp".format("{0:02d}".format(index))
             if index == 1:
-                tongue_ctrl_grp = main.jnt_or_control_grp(
+                tongue_ctrl_grp = rig.core.utils.jnt_or_control_grp(
                     name=tongue_ctrl, object_type="cylinder", parent_node=tongue_main_group, have_jnt=True)
             if index > 1:
-                tongue_ctrl_grp = main.jnt_or_control_grp(
+                tongue_ctrl_grp = rig.core.utils.jnt_or_control_grp(
                     name=tongue_ctrl, object_type="cylinder",
                     parent_node="MD_Tongue_01_{}_FK_Ctrl".format("{0:02d}".format(index - 1)), have_jnt=True)
 

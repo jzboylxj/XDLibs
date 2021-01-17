@@ -1,11 +1,12 @@
 # coding: utf-8
+
 from pymel import core as pm
-from rig.main import Creator, jnt_or_control_grp, yellow_component
+from rig.core.utils import yellow_component, jnt_or_control_grp
 
 
-class NoseCreator(Creator):
+class NoseCreator:
     def __init__(self):
-        super(NoseCreator, self).__init__()
+        # super(NoseCreator, self).__init__()
 
         self.proxy_bridge = ""
         self.proxy_master = ""

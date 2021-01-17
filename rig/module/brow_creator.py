@@ -4,18 +4,24 @@
 from imp import reload
 from pymel import core as pm
 from animation import common
+
 # import maya.cmds as cmds
 # from pymel.util import path
 # from rig.names import template_dir
-from rig import main
+from rig.core.utils import xd_follicle_node, control_grp_have_joint
 
 reload(common)
-reload(main)
+
+AUTHOR = "XiaoJun Li"
+VERSION = [1, 0, 0]
+TYPE = "brow_01"
+NAME = "brow"
+DESCRIPTION = ""
 
 
 class BrowCreator:
     def __init__(self):
-        super(BrowCreator, self).__init__()
+        # super(BrowCreator, self).__init__()
 
         self.module_name = "Brow_01"
         self.left_brow_surface = ""
@@ -67,7 +73,7 @@ class BrowCreator:
                 follicle_name = "{}_{}_Sub_{}_Follicle".format(
                     side, self.module_name, "{0:02d}".format(index + 1))
                 # print(follicle_name)
-                follicle = main.xd_follicle_node(
+                follicle = xd_follicle_node(
                     name=follicle_name,
                     worldMatrixInput=surface_shape.attr("worldMatrix[0]"),
                     surfaceInput=surface_shape.attr("local"),
@@ -118,7 +124,7 @@ class BrowCreator:
             master_follicle_name = "{}_{}_Master_Ctrl_Follicle".format(
                 side, self.module_name)
             if not pm.objExists(master_follicle_name):
-                follicle = main.xd_follicle_node(
+                follicle = xd_follicle_node(
                     name=master_follicle_name,
                     worldMatrixInput=master_surface_shape.attr(
                         "worldMatrix[0]"),
@@ -177,7 +183,7 @@ class BrowCreator:
                     pm.PyNode(temp_mp_node).attr("uValue").set(float(index) / (float(control_num - 1)))
 
                 control_name = "{}_{}_Main_{}_Ctrl".format(side, self.module_name, "{0:02d}".format(index + 1))
-                control_grp = main.control_grp_have_joint(name=control_name, parent_node=master_ctrl)
+                control_grp = control_grp_have_joint(name=control_name, parent_node=master_ctrl)
                 pm.delete(pm.parentConstraint(temp_loc, control_grp, mo=False, skipRotate=["x", "z"]))
                 if side == "RT":
                     rotate_angle = pm.PyNode(control_grp).rotateY.get()

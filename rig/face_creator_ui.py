@@ -1,15 +1,30 @@
 # coding: utf-8
+from imp import reload
+
 from animation import common
 from pymel import core as pm
 from pymel.util import path
-from rig.brow_creator import BrowCreator
-from rig.cheek_creator import CheekCreator
-from rig.eye_creator import EyeCreator
-from rig.main import creator_version, imported_object, symmetry_surface, drag_to_group_and_field, jnt_or_control_grp
-from rig.mouth_creator import MouthCreator
-from rig.names import template_dir
-from rig.neck_ear_creator import NeckEarCreator
-from rig.nose_creator import NoseCreator
+
+from rig import template_dir
+
+reload(brow_creator)
+
+reload(cheek_creator)
+
+from rig.module import eye_creator, brow_creator, cheek_creator, mouth_creator, nose_creator, neck_ear_creator
+
+reload(eye_creator)
+
+reload(mouth_creator)
+
+reload(neck_ear_creator)
+
+reload(nose_creator)
+
+from rig.core.utils import imported_object, jnt_or_control_grp, symmetry_surface, drag_to_group_and_field
+
+
+creator_version = 0.21
 
 
 class FaceCreatorUI(common.Singleton):
@@ -19,14 +34,14 @@ class FaceCreatorUI(common.Singleton):
         self.rig_root_node = ""  # group "World"
 
         # neck and ear module
-        self.neck_ear_creator = NeckEarCreator()
+        self.neck_ear_creator = neck_ear_creator.NeckEarCreator()
 
         # eye module
         self.eye_module = "Eye_01"
-        self.eye_creator = EyeCreator()
+        self.eye_creator = eye_creator.EyeCreator()
 
         # brow module
-        self.brow_creator = BrowCreator()
+        self.brow_creator = brow_creator.BrowCreator()
         self.left_brow_surface = ""
         self.right_brow_surface = ""
         self.left_brow_curve = ""
@@ -36,11 +51,11 @@ class FaceCreatorUI(common.Singleton):
         self.right_master_ctrl_surface = ""
 
         # nose module
-        self.nose_creator = NoseCreator()
+        self.nose_creator = nose_creator.NoseCreator()
 
         # mouth module
         self.mouth_module = "Mouth_01"
-        self.mouth_creator = MouthCreator()
+        self.mouth_creator = mouth_creator.MouthCreator()
 
         self.up_base_curve = ""
         self.low_base_curve = ""
@@ -54,7 +69,7 @@ class FaceCreatorUI(common.Singleton):
 
         # cheek module
         self.cheek_module = "Cheek_01"
-        self.cheek_creator = CheekCreator()
+        self.cheek_creator = cheek_creator.CheekCreator()
 
         self.show_window()
 
@@ -227,23 +242,18 @@ class FaceCreatorUI(common.Singleton):
     def menu_bar(self):
         u"""菜单栏"""
         menu_component = pm.menu(label=u"Component", tearOff=False)
-        pm.menuItem(p=menu_component, label=u"Base loc",
-                    c=lambda *args: self.build_base_loc())
+        pm.menuItem(p=menu_component, label=u"Base loc", c=lambda *args: self.build_base_loc())
 
         menu_template = pm.menu(label="Module", tearOff=False)
-        pm.menuItem(p=menu_template, label=u"Mouth surface",
-                    c=lambda *args: self.build_base_loc())
-        pm.menuItem(p=menu_template, label=u"Mouth tweak surface",
-                    c=lambda *args: self.build_base_loc())
+        pm.menuItem(p=menu_template, label=u"Mouth surface", c=lambda *args: self.build_base_loc())
+        pm.menuItem(p=menu_template, label=u"Mouth tweak surface", c=lambda *args: self.build_base_loc())
 
         menu_tools = pm.menu(label="Tools", tearOff=False)
-        pm.menuItem(p=menu_tools, label=u"Symmetry surface",
-                    c=lambda *args: self.symmetry_surface())
+        pm.menuItem(p=menu_tools, label=u"Symmetry surface", c=lambda *args: self.symmetry_surface())
 
     def rig_pre_frame(self, parent):
         layout = pm.frameLayout(p=parent, lv=False, mw=10, mh=5, bgs=True)
-        pm.button("xdMouthCreatorNewRigBtn", label=u"New",
-                  c=lambda *args: self.new_rig_structure())
+        pm.button("xdMouthCreatorNewRigBtn", label=u"New", c=lambda *args: self.new_rig_structure())
         pm.setParent(layout)
 
         return layout
@@ -262,44 +272,45 @@ class FaceCreatorUI(common.Singleton):
     def eye_module_frame(self, parent):
         frame = pm.frameLayout(p=parent, label="Preparatory Work", mh=5, mw=10)
 
-        pm.frameLayout(label=u"Eye Guid Curve", ann=u"这些曲线将会约束眼皮的蒙皮骨骼", mh=10, mw=10, bgs=True, cll=True, cl=True)
+        pm.frameLayout(label=u"Eye Guid Curve",
+                       ann=u"这些曲线将会约束眼皮的蒙皮骨骼", mh=10, mw=10, bgs=True, cll=True, cl=True)
         pm.text(label="Left side:", al="left")
 
         pm.textFieldButtonGrp(
             "xdMouthCreatorLeftUpMasterCurveField",
             label=u"Left Up Master Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorLeftUpMasterCurveField",
-                                                         group="LF_Eye_01_Curve_Grp"))
+            bc=lambda *args: self.eye_component_in_field(
+                field="xdMouthCreatorLeftUpMasterCurveField", group="LF_Eye_01_Curve_Grp"))
         pm.textFieldButtonGrp(
             "xdMouthCreatorLeftLowMasterCurveField",
             label=u"Left Low Master Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorLeftLowMasterCurveField",
-                                                         group="LF_Eye_01_Curve_Grp"))
+            bc=lambda *args: self.eye_component_in_field(
+                field="xdMouthCreatorLeftLowMasterCurveField", group="LF_Eye_01_Curve_Grp"))
         pm.textFieldButtonGrp(
             "xdMouthCreatorLeftUpBlinkCurveField",
             label=u"Left Up Blink Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorLeftUpBlinkCurveField",
-                                                         group="LF_Eye_01_Curve_Grp"))
+            bc=lambda *args: self.eye_component_in_field(
+                field="xdMouthCreatorLeftUpBlinkCurveField", group="LF_Eye_01_Curve_Grp"))
         pm.textFieldButtonGrp(
             "xdMouthCreatorLeftLowBlinkCurveField",
             label=u"Left Low Blink Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorLeftLowBlinkCurveField",
-                                                         group="LF_Eye_01_Curve_Grp"))
+            bc=lambda *args: self.eye_component_in_field(
+                field="xdMouthCreatorLeftLowBlinkCurveField", group="LF_Eye_01_Curve_Grp"))
         pm.textFieldButtonGrp(
             "xdMouthCreatorLeftUpOutCurveField",
             label=u"Left Up Out Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorLeftUpOutCurveField",
-                                                         group="LF_Eye_01_Curve_Grp"))
+            bc=lambda *args: self.eye_component_in_field(
+                field="xdMouthCreatorLeftUpOutCurveField", group="LF_Eye_01_Curve_Grp"))
         pm.textFieldButtonGrp(
             "xdMouthCreatorLeftLowOutCurveField",
             label=u"Left Low Out Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorLeftLowOutCurveField",
-                                                         group="LF_Eye_01_Curve_Grp"))
+            bc=lambda *args: self.eye_component_in_field(
+                field="xdMouthCreatorLeftLowOutCurveField", group="LF_Eye_01_Curve_Grp"))
         pm.textFieldButtonGrp(
             "xdMouthCreatorLeftUpTweakCurveField",
             label=u"Left Up Tweak Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorLeftUpTweakCurveField",
-                                                         group="LF_Eye_01_Curve_Grp"))
+            bc=lambda *args: self.eye_component_in_field(
+                field="xdMouthCreatorLeftUpTweakCurveField", group="LF_Eye_01_Curve_Grp"))
         pm.textFieldButtonGrp(
             "xdMouthCreatorLeftLowTweakCurveField",
             label=u"Left Low Tweak Curve", bl=u"Get Object", adj=2,

@@ -1,10 +1,12 @@
+# coding: utf-8
+
 from pymel import core as pm
-from rig.main import Creator, yellow_component
+from rig.core.utils import yellow_component
 
 
-class CheekCreator(Creator):
+class CheekCreator:
     def __init__(self):
-        super(CheekCreator, self).__init__()
+        # super(CheekCreator, self).__init__()
 
         self.module_name = "Cheek_01"
 

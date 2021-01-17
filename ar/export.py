@@ -5,7 +5,6 @@
 # @Site    :
 # @File    : export.py
 
-import os
 from imp import reload
 
 import maya.cmds as cmds
@@ -139,77 +138,98 @@ class ExportUI(common.Singleton):
             file_name = cmds.file(q=1, sceneName=True, shortName=True).split('.')[0]
             print (file_name + ' already open!')
 
-            # todo 导入文件
-            refs = cmds.ls(type='reference')
-            if "sharedReferenceNode" in refs:
-                refs.remove('sharedReferenceNode')
-            for i in refs:
-                rFile = cmds.referenceQuery(i, f=True)
+            defaults = ['UI', 'shared']
+
+            def num_children(ns):
+                return ns.count(':')
+
+            namespaces = [ns for ns in cmds.namespaceInfo(lon=True, r=True) if ns not in defaults]
+            # We want to reverse the list, so that namespaces with more children are at the front of the list.
+            namespaces.sort(key=num_children, reverse=True)
+            for ns in namespaces:
+                print("{}:export".format(ns))
+
+                if not pm.objExists("{}:export".format(ns)):
+                    print(u"没有找到{}:export，即将跳过循环".format(ns))
+                    continue
+
+                # todo 导入文件
+                # refs = cmds.ls(type='reference')
+                # if "sharedReferenceNode" in refs:
+                #     refs.remove('sharedReferenceNode')
+                # for i in refs:
+                #     if "_UNKNOWN_REF_NODE_" not in i:
+                #         rFile = cmds.referenceQuery(i, f=True)
+                #         print i, rFile
+                #     cmds.file(rFile, importReference=True)
+                rFile = cmds.referenceQuery("{}RN".format(ns), f=True)
+                print(u"即将导入文件:{}".format(rFile))
                 cmds.file(rFile, importReference=True)
 
-            # 烘焙动画
-            bake_sets = []
-            anim_set = "{}:{}".format(self.get_namespace(),
-                                      pm.textFieldButtonGrp("ARExporterBakeField", q=True, text=True))
-            del_set = "{}:Del".format(self.get_namespace())
+                print(u"开始烘焙动画")
+                self.bake_anim(namespace=ns)
 
-            if pm.objExists(anim_set):
-                bake_sets = pm.sets(anim_set, q=True)
+                del_set = "{}:Del".format(ns)
                 del_items = pm.sets(del_set, q=True)
-                if len(bake_sets) < 1:
-                    pm.error(u"选择集{}里面为空".format(anim_set))
+                # 删除相关节点
+                for item in del_items:
+                    print(u"删除元素{}".format(item))
+                    pm.delete(item)
+
+                # todo 删除命名空间前缀
+                if namespaces.index(ns)+1 < len(namespaces):
+                    parent_ns = namespaces[namespaces.index(ns)+1]
+                    cmds.namespace(mv=[ns, parent_ns], f=True)
+                    cmds.namespace(rm=ns)
                 else:
-                    time_range = self.anim_range()
-                    pm.bakeResults(bake_sets, simulation=True,
-                                   t=time_range,
-                                   sb=1,
-                                   # at=pm.listAttr(cam, k=True),
-                                   dic=True,
-                                   preserveOutsideKeys=False,
-                                   sparseAnimCurveBake=False,
-                                   removeBakedAttributeFromLayer=False,
-                                   bakeOnOverrideLayer=False,
-                                   controlPoints=False,
-                                   shape=False)
+                    cmds.namespace(mv=[ns, ":"], f=True)
+                    cmds.namespace(rm=ns)
 
-                    # 删除相关节点
-                    for item in del_items:
-                        pm.delete(item)
+                # 导出文件
+                if len(namespaces) > 1:
+                    output_file = "{}/{}_{}.fbx".format(self.output_path, file_name, ns)
+                else:
+                    output_file = "{}/{}.fbx".format(self.output_path, file_name)
 
-                    # todo 删除命名空间前缀
-                    defaults = ['UI', 'shared']
+                pm.select("export")
+                cmds.file(output_file, f=True, options="v=0;", type="FBX export", pr=True, es=True)
 
-                    def num_children(ns):
-                        return ns.count(':')
-
-                    namespaces = [ns for ns in cmds.namespaceInfo(lon=True, r=True) if ns not in defaults]
-                    # We want to reverse the list, so that namespaces with more children are at the front of the list.
-                    namespaces.sort(key=num_children, reverse=True)
-                    for ns in namespaces:
-                        if namespaces.index(ns)+1 < len(namespaces):
-                            parent_ns = namespaces[namespaces.index(ns)+1]
-                            cmds.namespace(mv=[ns, parent_ns], f=True)
-                            cmds.namespace(rm=ns)
-                        else:
-                            cmds.namespace(mv=[ns, ":"], f=True)
-                            cmds.namespace(rm=ns)
-
-            else:
-                pm.error(u"缺少{}".format(anim_set))
-
-            # 导出文件
-            output_file = "{}/{}.fbx".format(self.output_path, file_name)
-            cmds.file(output_file,
-                      f=True, options="v=0;", type="FBX export", pr=True, ea=True)
-
+        pm.log()
         return
 
-    def anim_range(*args):
+    def bake_anim(self, namespace=None):
+        # 烘焙动画
+        bake_sets = []
+        set_name = pm.textFieldButtonGrp("ARExporterBakeField", q=True, text=True)
+
+        anim_set = "{}:{}".format(namespace, set_name)
+
+        if pm.objExists(anim_set):
+            bake_sets = pm.sets(anim_set, q=True)
+            if len(bake_sets) < 1:
+                pm.error(u"选择集{}里面为空".format(anim_set))
+            else:
+                time_range = self.anim_range()
+                pm.bakeResults(bake_sets, simulation=True,
+                               t=time_range,
+                               sb=1,
+                               # at=pm.listAttr(cam, k=True),
+                               dic=True,
+                               preserveOutsideKeys=False,
+                               sparseAnimCurveBake=False,
+                               removeBakedAttributeFromLayer=False,
+                               bakeOnOverrideLayer=False,
+                               controlPoints=False,
+                               shape=False)
+        else:
+            pm.error(u"缺少{}".format(anim_set))
+
+    def anim_range(self):
         start_time = pm.playbackOptions(q=True, min=True)
         end_time = pm.playbackOptions(q=True, max=True)
         return [start_time, end_time]
 
-    def get_namespace(*args):
+    def get_namespace(self):
         namespace_list = pm.namespaceInfo(an=True, lon=True)
         namespace_list.remove(":UI")
         namespace_list.remove(":shared")

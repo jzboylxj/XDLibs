@@ -1,12 +1,11 @@
 # coding: utf-8
+
 from pymel import core as pm
-from rig.main import Creator, jnt_or_control_grp
+from rig.core.utils import jnt_or_control_grp
 
 
-class NeckEarCreator(Creator):
+class NeckEarCreator:
     def __init__(self):
-        super(NeckEarCreator, self).__init__()
-
         self.module_name = "Neck_01"
 
     def proxy(self):
@@ -48,3 +47,6 @@ class NeckEarCreator(Creator):
             pm.delete(pm.parentConstraint("proxy{}EarLoc".format(side), ear_fk_ctrl_grp, mo=False))
 
         return
+
+    def __str__(self):
+        return self.module_name

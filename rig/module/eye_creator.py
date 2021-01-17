@@ -3,19 +3,19 @@
 
 from imp import reload
 from pymel import core as pm
+
+import rig.core.utils
 from animation import common
 # import maya.cmds as cmds
 # from pymel.util import path
 # from rig.names import template_dir
-from rig import main
 
 reload(common)
-reload(main)
 
 
 class EyeCreator:
     def __init__(self):
-        super(EyeCreator, self).__init__()
+        # super(EyeCreator, self).__init__()
 
         self.module_name = "Eye_01"
 
@@ -120,9 +120,9 @@ class EyeCreator:
                 temp_loc_name = "{}_{}_temp_Loc".format(side, item)
                 temp_loc = pm.spaceLocator(name=temp_loc_name)
                 temp_mp_name = "{}_{}_temp_MP".format(side, item)
-                temp_mp = main.mp_node(node_name=temp_mp_name,
-                                       geometry_path_input=pm.PyNode(out_curve).getShape().attr("worldSpace[0]"),
-                                       all_coordinates_output=pm.PyNode(temp_loc).translate)
+                temp_mp = rig.core.utils.mp_node(node_name=temp_mp_name,
+                                                 geometry_path_input=pm.PyNode(out_curve).getShape().attr("worldSpace[0]"),
+                                                 all_coordinates_output=pm.PyNode(temp_loc).translate)
                 pm.PyNode(temp_mp).rotateX.connect(pm.PyNode(temp_loc).rotateX)
                 pm.PyNode(temp_mp).rotateY.connect(pm.PyNode(temp_loc).rotateY)
                 pm.PyNode(temp_mp).rotateZ.connect(pm.PyNode(temp_loc).rotateZ)
@@ -172,12 +172,12 @@ class EyeCreator:
                         pm.PyNode(temp_loc).rotateZ.set(0)
 
                 ctrl_name = "{}_{}_Ctrl".format(prefix, item)
-                base_ctrl_grp = main.yellow_component(
+                base_ctrl_grp = rig.core.utils.yellow_component(
                     name=ctrl_name, shape_type="nurbsPlane", parent_node=base_ctrl_group)
 
                 pm.delete(pm.orientConstraint(temp_loc_name, base_ctrl_grp, mo=False))
 
-                main.dm_node(
+                rig.core.utils.dm_node(
                     node_name="{}_{}_Ctrl_Inverse_DM".format(prefix, item),
                     matrix_input=pm.PyNode(ctrl_name).attr("inverseMatrix"),
                     translate_output=pm.PyNode(ctrl_name).getParent().translate,
@@ -217,7 +217,7 @@ class EyeCreator:
 
             for item in ["Up", "Low", "Inner", "Outer"]:
                 loc_name = "{}_{}_Ctrl_Loc".format(prefix, item)
-                loc_grp = main.jnt_or_control_grp(name=loc_name, object_type="locator")
+                loc_grp = rig.core.utils.jnt_or_control_grp(name=loc_name, object_type="locator")
 
                 if item == "Low":
                     master_curve = "{}_Low_Master_Curve".format(prefix)
@@ -230,13 +230,13 @@ class EyeCreator:
 
                 postion = None
                 if item == "Outer":
-                    postion = main.point_on_curve_position(master_curve, 1.0)
+                    postion = rig.core.utils.point_on_curve_position(master_curve, 1.0)
                     pm.PyNode(ctrl).translate.connect(pm.PyNode(loc_name).translate)
                 elif item == "Inner":
-                    postion = main.point_on_curve_position(master_curve, 0)
+                    postion = rig.core.utils.point_on_curve_position(master_curve, 0)
                     pm.PyNode(ctrl).translate.connect(pm.PyNode(loc_name).translate)
                 elif item == "Low" or "Up":
-                    postion = main.point_on_curve_position(master_curve, 0.5)
+                    postion = rig.core.utils.point_on_curve_position(master_curve, 0.5)
                     pm.PyNode(ctrl).translateX.connect(pm.PyNode(loc_name).translateX)
                     pm.PyNode(ctrl).translateZ.connect(pm.PyNode(loc_name).translateZ)
 
@@ -318,9 +318,9 @@ class EyeCreator:
                     bind_loc = pm.spaceLocator(name=loc_name)
                     pm.parent(bind_loc, bind_loc_group)
 
-                    mp = main.mp_node(node_name=loc_name.replace("Loc", "MP"),
-                                      geometry_path_input=pm.PyNode(master_curve).getShape().attr("worldSpace[0]"),
-                                      all_coordinates_output=bind_loc.translate)
+                    mp = rig.core.utils.mp_node(node_name=loc_name.replace("Loc", "MP"),
+                                                geometry_path_input=pm.PyNode(master_curve).getShape().attr("worldSpace[0]"),
+                                                all_coordinates_output=bind_loc.translate)
                     u_value = 0
                     if index == 1:
                         u_value = 0
@@ -338,7 +338,7 @@ class EyeCreator:
                     if vertical == "Low":
                         up_loc = "{}_Up_{}_Loc".format(prefix, "{0:02d}".format(index))
                         up_ctrl = "{}_Up_Ctrl".format(prefix)
-                        main.custom_show_channel(
+                        rig.core.utils.custom_show_channel(
                             up_ctrl,
                             attr_list=["translateX", "translateY", "rotateX", "rotateY", "rotateZ"])
                         if not pm.attributeQuery("collideGap", node=up_ctrl, ex=True):
@@ -445,18 +445,18 @@ class EyeCreator:
 
                 for index in range(1, seg + 1):
                     tweak_ctrl = "{}_{}Tweak_{}_Ctrl".format(prefix, vertical, "{0:02d}".format(index))
-                    tweak_ctrl_grp = main.yellow_component(name=tweak_ctrl,
-                                                           shape_type="sphere",
-                                                           parent_node=tweak_ctrl_group)
-                    main.dm_node(
+                    tweak_ctrl_grp = rig.core.utils.yellow_component(name=tweak_ctrl,
+                                                                     shape_type="sphere",
+                                                                     parent_node=tweak_ctrl_group)
+                    rig.core.utils.dm_node(
                         node_name="{}_Inverse_DM".format(tweak_ctrl),
                         matrix_input=pm.PyNode(tweak_ctrl).attr("inverseMatrix"),
                         translate_output=pm.PyNode(tweak_ctrl).getParent().translate,
                         rotate_output=pm.PyNode(tweak_ctrl).getParent().rotate)
 
-                    mp = main.mp_node(node_name=tweak_ctrl.replace("Ctrl", "MP"),
-                                      geometry_path_input=out_curve.getShape().attr("worldSpace[0]"),
-                                      all_coordinates_output=pm.PyNode(tweak_ctrl_grp).translate)
+                    mp = rig.core.utils.mp_node(node_name=tweak_ctrl.replace("Ctrl", "MP"),
+                                                geometry_path_input=out_curve.getShape().attr("worldSpace[0]"),
+                                                all_coordinates_output=pm.PyNode(tweak_ctrl_grp).translate)
                     u_value = float(index) / float(seg + 1)
                     pm.PyNode(mp).attr("uValue").set(u_value)
 
@@ -464,7 +464,7 @@ class EyeCreator:
                     pm.orientConstraint(master_ctrl, tweak_ctrl_grp)
 
                     ctrl_jnt = "{}_Jnt".format(tweak_ctrl)
-                    ctrl_jnt_grp = main.jnt_or_control_grp(name=ctrl_jnt, parent_node=tweak_jnt_group)
+                    ctrl_jnt_grp = rig.core.utils.jnt_or_control_grp(name=ctrl_jnt, parent_node=tweak_jnt_group)
                     pm.delete(pm.pointConstraint(tweak_ctrl_grp, ctrl_jnt_grp, mo=False))
 
                     pm.PyNode(tweak_ctrl).translate.connect(pm.PyNode(ctrl_jnt).translate)
@@ -474,19 +474,19 @@ class EyeCreator:
                 if vertical == "Up":
                     for horizontal in ["Inner", "Outer"]:
                         tweak_ctrl = "{}_{}Tweak_Ctrl".format(prefix, horizontal)
-                        tweak_ctrl_grp = main.yellow_component(name=tweak_ctrl,
-                                                               shape_type="sphere",
-                                                               parent_node=tweak_ctrl_group)
+                        tweak_ctrl_grp = rig.core.utils.yellow_component(name=tweak_ctrl,
+                                                                         shape_type="sphere",
+                                                                         parent_node=tweak_ctrl_group)
 
-                        main.dm_node(
+                        rig.core.utils.dm_node(
                             node_name="{}_Inverse_DM".format(tweak_ctrl),
                             matrix_input=pm.PyNode(tweak_ctrl).attr("inverseMatrix"),
                             translate_output=pm.PyNode(tweak_ctrl).getParent().translate,
                             rotate_output=pm.PyNode(tweak_ctrl).getParent().rotate)
 
-                        mp = main.mp_node(node_name=tweak_ctrl.replace("Ctrl", "MP"),
-                                          geometry_path_input=out_curve.getShape().attr("worldSpace[0]"),
-                                          all_coordinates_output=pm.PyNode(tweak_ctrl_grp).translate)
+                        mp = rig.core.utils.mp_node(node_name=tweak_ctrl.replace("Ctrl", "MP"),
+                                                    geometry_path_input=out_curve.getShape().attr("worldSpace[0]"),
+                                                    all_coordinates_output=pm.PyNode(tweak_ctrl_grp).translate)
                         if horizontal == "Inner":
                             pm.PyNode(mp).attr("uValue").set(0)
                         else:
@@ -496,7 +496,7 @@ class EyeCreator:
                         pm.orientConstraint(master_ctrl, tweak_ctrl_grp)
 
                         ctrl_jnt = "{}_Jnt".format(tweak_ctrl)
-                        ctrl_jnt_grp = main.jnt_or_control_grp(name=ctrl_jnt, parent_node=tweak_jnt_group)
+                        ctrl_jnt_grp = rig.core.utils.jnt_or_control_grp(name=ctrl_jnt, parent_node=tweak_jnt_group)
                         pm.delete(pm.pointConstraint(tweak_ctrl_grp, ctrl_jnt_grp, mo=False))
 
                         pm.PyNode(tweak_ctrl).translate.connect(pm.PyNode(ctrl_jnt).translate)
@@ -512,8 +512,8 @@ class EyeCreator:
 
             master_ctrl = "{}_Master_Ctrl".format(prefix)  # LF_Eye_01_Master_Ctrl
 
-            main.custom_show_channel(master_ctrl,
-                                     attr_list=["translateX", "translateY", "translateZ",
+            rig.core.utils.custom_show_channel(master_ctrl,
+                                               attr_list=["translateX", "translateY", "translateZ",
                                                 "rotateX", "rotateY", "rotateZ",
                                                 "scaleX", "scaleY", "scaleZ"])
 
@@ -653,7 +653,7 @@ class EyeCreator:
                 shape_surface = pm.PyNode("{}_{}_Shape_Surface".format(prefix, vertical))
 
                 for index in range(1, seg + 1):
-                    follicle = main.xd_follicle_node(
+                    follicle = rig.core.utils.xd_follicle_node(
                         name="{}_{}_{}_Shape_Follicle".format(prefix, vertical, "{0:02d}".format(index)),
                         worldMatrixInput=shape_surface.getShape().attr("worldMatrix[0]"),
                         surfaceInput=shape_surface.getShape().attr("local"),
@@ -661,7 +661,7 @@ class EyeCreator:
                     pm.PyNode(follicle).getShape().attr("parameterU").set(0.5)
                     pm.PyNode(follicle).getShape().attr("parameterV").set(float(index) / float(seg + 1))
 
-                    shape_ctrl = main.jnt_or_control_grp(
+                    shape_ctrl = rig.core.utils.jnt_or_control_grp(
                         name="{}_{}_{}_Shape_Ctrl".format(prefix, vertical, "{0:02d}".format(index)),
                         object_type="sphere",
                         parent_node=follicle)
@@ -672,7 +672,7 @@ class EyeCreator:
                         pm.PyNode(shape_ctrl).rotate.set([90, 0, -90])
 
                 main_shape_ctrl = "{}_{}_Main_Shape_Ctrl".format(prefix, vertical)
-                main_shape_ctrl_grp = main.control_grp_have_joint(
+                main_shape_ctrl_grp = rig.core.utils.control_grp_have_joint(
                     name=main_shape_ctrl, parent_node="{}_Grp".format(prefix))
                 pm.delete(
                     pm.parentConstraint("{}_{}_02_Shape_Follicle".format(prefix, vertical),
@@ -705,7 +705,7 @@ class EyeCreator:
             for vertical in ["Up", "Low"]:
                 for index in range(1, seg + 1):
                     jnt = "{}_{}_{}_Shape_Ctrl_Jnt".format(prefix, vertical, "{0:02d}".format(index))
-                    jnt_grp = main.yellow_component(
+                    jnt_grp = rig.core.utils.yellow_component(
                         name=jnt,
                         shape_type="joint",
                         parent_node=shape_jnt_group)
@@ -717,10 +717,10 @@ class EyeCreator:
                     eye_group.attr("worldInverseMatrix[0]").connect(shape_ctrl_jnt_mm.attr("matrixIn[1]"))
 
                     jnt_dm = "{}_{}_{}_Shape_Ctrl_Jnt_DM".format(prefix, vertical, "{0:02d}".format(index))
-                    main.dm_node(node_name=jnt_dm,
-                                 matrix_input=pm.PyNode(shape_ctrl_jnt_mm).attr("matrixSum"),
-                                 translate_output=pm.PyNode(jnt_grp).translate,
-                                 rotate_output=pm.PyNode(jnt_grp).rotate)
+                    rig.core.utils.dm_node(node_name=jnt_dm,
+                                           matrix_input=pm.PyNode(shape_ctrl_jnt_mm).attr("matrixSum"),
+                                           translate_output=pm.PyNode(jnt_grp).translate,
+                                           rotate_output=pm.PyNode(jnt_grp).rotate)
 
                     if side == "LF":
                         pm.PyNode(jnt).getParent().rotate.set([90, 0, 90])
@@ -763,7 +763,7 @@ class EyeCreator:
                 pm.delete(pm.pointConstraint(proxy_geo, aim_grp, mo=False))
 
             aim_ctrl = "{}_Aim_01_Ctrl".format(prefix)
-            aim_ctrl_grp = main.jnt_or_control_grp(
+            aim_ctrl_grp = rig.core.utils.jnt_or_control_grp(
                 name=aim_ctrl, object_type="sphere", parent_node=aim_grp)
             pm.delete(pm.orientConstraint(proxy_geo, aim_ctrl_grp, mo=False))
             rotate = pm.PyNode(aim_ctrl_grp).rotate.get()
@@ -789,7 +789,7 @@ class EyeCreator:
 
             prefix = "{}_{}".format(side, self.module_name)
             eye_aim_ctrl = "{}_Aim_02_Ctrl".format(prefix)
-            eye_aim_ctrl_grp = main.jnt_or_control_grp(
+            eye_aim_ctrl_grp = rig.core.utils.jnt_or_control_grp(
                 name=eye_aim_ctrl, object_type="sphere", parent_node="{}_Grp".format(prefix))
             pm.delete(pm.pointConstraint(proxy_geo, eye_aim_ctrl_grp, mo=False))
             translate_Z = pm.PyNode(eye_aim_ctrl_grp).translateZ.get()
@@ -805,7 +805,7 @@ class EyeCreator:
                 mo=True)
 
         main_aim_ctrl = "MD_{}_Main_Aim_Ctrl".format(self.module_name)
-        main_aim_ctrl_grp = main.jnt_or_control_grp(
+        main_aim_ctrl_grp = rig.core.utils.jnt_or_control_grp(
             name=main_aim_ctrl, object_type="sphere", parent_node="{}_Grp".format(prefix))
 
         pm.delete(

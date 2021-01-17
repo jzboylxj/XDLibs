@@ -25,7 +25,7 @@ eye_icon = icon_path + "eye2.png"
 
 
 class ModuleRig(common.Singleton):
-    """
+    u"""
     模块化绑定工具包
     """
 
@@ -294,22 +294,11 @@ class ModuleRig(common.Singleton):
         else:
             layout = pm.formLayout()
 
-        pane_layout = pm.paneLayout(configuration='vertical2', p=layout)
+        pane_layout = pm.paneLayout(configuration='vertical2', p=layout, swp=0)
 
-        tree_view_frame = pm.frameLayout(
-            label=u"Models Tree",
-            mw=5, mh=5,
-            bgs=True,
-            # bv=True,
-            p=pane_layout,
-            w=200)
+        tree_view_frame = pm.frameLayout(label=u"Models Tree", mw=5, mh=5, bgs=True, p=pane_layout, w=200)
 
-        self.tree_view = pm.treeView(
-            w=200,
-            vis=True,
-            parent=tree_view_frame,
-            # numberOfButtons=3,
-            abr=False)
+        self.tree_view = pm.treeView(w=200, vis=True, parent=tree_view_frame, abr=False)
         pm.treeView(
             self.tree_view,
             edit=True,
@@ -325,11 +314,9 @@ class ModuleRig(common.Singleton):
         module_frame = pm.frameLayout(
             label="Info", p=module_tab_options)
         pm.setParent(module_frame)
-
         options_frame = pm.frameLayout(
             label="Module Options", p=module_tab_options)
         pm.setParent(module_frame)
-
         controls_frame = pm.frameLayout(
             label="Controls", p=module_tab_options)
         pm.setParent(module_frame)
