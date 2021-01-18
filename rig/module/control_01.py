@@ -13,3 +13,6 @@ class Positioner:
 
     author = AUTHOR
     version = VERSION
+
+    def draw(self):
+        pass

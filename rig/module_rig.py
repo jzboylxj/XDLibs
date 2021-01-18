@@ -294,11 +294,11 @@ class ModuleRig(common.Singleton):
         else:
             layout = pm.formLayout()
 
-        pane_layout = pm.paneLayout(configuration='vertical2', p=layout, swp=0)
+        pane_layout = pm.paneLayout(configuration='vertical2', p=layout, swp=1)
 
-        tree_view_frame = pm.frameLayout(label=u"Models Tree", mw=5, mh=5, bgs=True, p=pane_layout, w=200)
+        tree_view_frame = pm.frameLayout(label=u"Models Tree", mw=5, mh=5, bgs=True, p=pane_layout, w=250)
 
-        self.tree_view = pm.treeView(w=200, vis=True, parent=tree_view_frame, abr=False)
+        self.tree_view = pm.treeView(vis=True, parent=tree_view_frame, abr=False)
         pm.treeView(
             self.tree_view,
             edit=True,

@@ -7,10 +7,6 @@ from pymel.util import path
 
 from rig import template_dir
 
-reload(brow_creator)
-
-reload(cheek_creator)
-
 from rig.module import eye_creator, brow_creator, cheek_creator, mouth_creator, nose_creator, neck_ear_creator
 
 reload(eye_creator)
