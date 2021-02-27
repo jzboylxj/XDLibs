@@ -7,7 +7,7 @@ from pymel.util import path
 
 from rig import template_dir
 
-from rig.module import eye_creator, brow_creator, cheek_creator, mouth_creator, nose_creator, neck_ear_creator
+from rig_classic_components import nose_creator, mouth_creator, eye_creator, neck_ear_creator
 
 reload(eye_creator)
 
@@ -17,132 +17,186 @@ reload(neck_ear_creator)
 
 reload(nose_creator)
 
-from rig.core.utils import imported_object, jnt_or_control_grp, symmetry_surface, drag_to_group_and_field
+from core.utils import imported_object, jnt_or_control_grp, symmetry_surface, drag_to_group_and_field
+
+VERSION = 0.21
 
 
-creator_version = 0.21
+def draw_component(comp_type, parent=None, showSettingWnd=False):
+    u"""Draw a new component of a given name
+
+    :return:
+    """
+    pass
 
 
 class FaceCreatorUI(common.Singleton):
     def __init__(self):
         super(FaceCreatorUI, self).__init__()
 
-        self.rig_root_node = ""  # group "World"
+        self.version = VERSION
 
-        # neck and ear module
-        self.neck_ear_creator = neck_ear_creator.NeckEarCreator()
+        # self.rig_root_node = ""  # group "World"
 
-        # eye module
-        self.eye_module = "Eye_01"
-        self.eye_creator = eye_creator.EyeCreator()
-
-        # brow module
-        self.brow_creator = brow_creator.BrowCreator()
-        self.left_brow_surface = ""
-        self.right_brow_surface = ""
-        self.left_brow_curve = ""
-        self.right_brow_curve = ""
-
-        self.left_master_ctrl_surface = ""
-        self.right_master_ctrl_surface = ""
-
-        # nose module
-        self.nose_creator = nose_creator.NoseCreator()
-
-        # mouth module
-        self.mouth_module = "Mouth_01"
-        self.mouth_creator = mouth_creator.MouthCreator()
-
-        self.up_base_curve = ""
-        self.low_base_curve = ""
-        self.up_tweak_surface = ""
-        self.low_tweak_surface = ""
-        self.up_out_curve = ""
-        self.low_out_curve = ""
-
-        self.mouth_surface = ""
-        self.mouth_lip_sew_surface = ""
-
-        # cheek module
-        self.cheek_module = "Cheek_01"
-        self.cheek_creator = cheek_creator.CheekCreator()
+        # # neck and ear rig_classic_components
+        # self.neck_ear_creator = neck_ear_creator.NeckEarCreator()
+        #
+        # # eye rig_classic_components
+        # self.eye_module = "Eye_01"
+        # self.eye_creator = eye_creator.EyeCreator()
+        #
+        # # brow rig_classic_components
+        # self.brow_creator = brow_creator.BrowCreator()
+        # self.left_brow_surface = ""
+        # self.right_brow_surface = ""
+        # self.left_brow_curve = ""
+        # self.right_brow_curve = ""
+        #
+        # self.left_master_ctrl_surface = ""
+        # self.right_master_ctrl_surface = ""
+        #
+        # # nose rig_classic_components
+        # self.nose_creator = nose_creator.NoseCreator()
+        #
+        # # mouth rig_classic_components
+        # self.mouth_module = "Mouth_01"
+        # self.mouth_creator = mouth_creator.MouthCreator()
+        #
+        # self.up_base_curve = ""
+        # self.low_base_curve = ""
+        # self.up_tweak_surface = ""
+        # self.low_tweak_surface = ""
+        # self.up_out_curve = ""
+        # self.low_out_curve = ""
+        #
+        # self.mouth_surface = ""
+        # self.mouth_lip_sew_surface = ""
+        #
+        # # cheek rig_classic_components
+        # self.cheek_module = "Cheek_01"
+        # self.cheek_creator = cheek_creator.CheekCreator()
 
         self.show_window()
 
     def show_window(self):
-        self.initialize()
+        template = pm.uiTemplate('ModuleRigWindowTemplate', force=True)
+        template.define(pm.button, width=100, height=30, align='left')
+        template.define(pm.frameLayout, labelVisible=False, mw=5, mh=5)
 
         if pm.window("xdFaceCreatorWnd", exists=True):
             pm.deleteUI("xdFaceCreatorWnd")
 
-        pm.window("xdFaceCreatorWnd",
-                  title="Biped Creator dev {}".format(creator_version),
-                  mb=True,
-                  cc=lambda *args: self._closed_window_cmd())
+        with pm.window("xdFaceCreatorWnd",
+                       title="Biped Creator dev {}".format(self.version),
+                       mb=True) as win:
+            with template:
+                with pm.formLayout(en=False) as self.root_layout:
+                    with pm.tabLayout(p=self.root_layout, cr=True) as module_tab_layout:
+                        with pm.paneLayout(configuration='vertical2', swp=1) as module_sub_tab:
+                            with pm.frameLayout(label=u"Models Tree", mw=0, mh=0, bgs=True, w=250):
+                                pm.treeView(vis=True, abr=False)
+                            with pm.tabLayout() as setting_sub_tab:
+                                main_setting_sub = pm.columnLayout(adj=1)
+                                pm.setParent("..")
+                                component_setting_sub = pm.columnLayout(adj=1)
+                                pm.setParent("..")
 
-        self.menu_bar()
+                            pm.tabLayout(
+                                setting_sub_tab, edit=True,
+                                tabLabel=(
+                                    (main_setting_sub, 'Main Setting'),
+                                    (component_setting_sub, 'Component Setting'),
+                                ),
+                                sti=1,
+                            )
 
-        root_layout = pm.scrollLayout(hst=16, vst=16, cr=True)
+                        control_sub_tab = pm.columnLayout(adj=1, p=module_tab_layout)
 
-        tab_layout = pm.tabLayout(p=root_layout)
+                    pm.tabLayout(
+                        module_tab_layout, edit=True,
+                        tabLabel=(
+                            (module_sub_tab, 'Module'),
+                            (control_sub_tab, 'Control'),
+                        ),
+                        sti=1,
+                    )
 
-        pre_tab = pm.columnLayout(adj=1, p=tab_layout)
-        self.rig_pre_frame(pre_tab)
-        pm.setParent(pre_tab)
+                pm.formLayout(
+                    self.root_layout, edit=True,
+                    attachForm=[
+                        (module_tab_layout, "top", 5),
+                        (module_tab_layout, "left", 10),
+                        (module_tab_layout, "right", 10),
+                        (module_tab_layout, "bottom", 10),
+                    ],
+                    attachControl=[
+                        # (data_form, 'top', 2, tool_tab_bar),
+                    ])
 
-        neck_ear_tab = pm.columnLayout(adj=1, p=tab_layout)
-        self.neck_ear_module_frame(neck_ear_tab)
-        pm.setParent(neck_ear_tab)
+            # pre_tab = pm.columnLayout(adj=1, p=tab_layout)
+            # self.rig_pre_frame(pre_tab)
+            # pm.setParent(pre_tab)
+            #
+            # neck_ear_tab = pm.columnLayout(adj=1, p=tab_layout)
+            # self.neck_ear_module_frame(neck_ear_tab)
+            # pm.setParent(neck_ear_tab)
+            #
+            # eye_tab = pm.columnLayout(adj=1, p=tab_layout)
+            # self.eye_module_frame(eye_tab)
+            # pm.setParent(eye_tab)
+            #
+            # brow_tab = pm.columnLayout(adj=1, p=tab_layout)
+            # self.brow_module_frame(brow_tab)
+            # pm.setParent(brow_tab)
+            #
+            # nose_tab = pm.columnLayout(adj=1, p=tab_layout)
+            # self.nose_module_frame(nose_tab)
+            # pm.setParent(nose_tab)
+            #
+            # mouth_tab = pm.columnLayout(adj=1, p=tab_layout)
+            # self.mouth_module_frame(mouth_tab)
+            # pm.setParent(mouth_tab)
+            #
+            # face_tab = pm.columnLayout(adj=1, p=tab_layout)
+            # self.cheek_module_frame(face_tab)
+            # pm.setParent(face_tab)
+            #
+            # linkage_tab = pm.columnLayout(adj=1, p=tab_layout)
+            # self.linkage_frame(linkage_tab)
+            # pm.setParent(linkage_tab)
 
-        eye_tab = pm.columnLayout(adj=1, p=tab_layout)
-        self.eye_module_frame(eye_tab)
-        pm.setParent(eye_tab)
+        with win:
+            with pm.menu(label="Rig"):
+                pm.menuItem(label='New', c=lambda *args: self.new_rig_structure())
+                pm.menuItem(label='Delete')
+                pm.menuItem(divider=True)
+                pm.menuItem(label='Publish Rig')
+            with pm.menu(label="Templates"):
+                pm.menuItem(label='Save Template')
+                pm.menuItem(divider=True)
+                pm.menuItem(label='Human')
+            with pm.menu(label="Modules"):
+                pm.menuItem(label=u"Mouth surface", c=lambda *args: self.build_base_loc())
+                pm.menuItem(label=u"Mouth tweak surface", c=lambda *args: self.build_base_loc())
+            with pm.menu(label="Components"):
+                pm.menuItem(label=u"control_01",
+                            c=lambda *args: draw_component(comp_type="control_01", parent=None, showSettingWnd=True))
+            with pm.menu(label="Tools"):
+                pm.menuItem(label=u"Symmetry surface", c=lambda *args: self.symmetry_surface())
 
-        brow_tab = pm.columnLayout(adj=1, p=tab_layout)
-        self.brow_module_frame(brow_tab)
-        pm.setParent(brow_tab)
+        pm.showWindow(win)
 
-        nose_tab = pm.columnLayout(adj=1, p=tab_layout)
-        self.nose_module_frame(nose_tab)
-        pm.setParent(nose_tab)
+        if pm.objExists("World"):
+            pm.formLayout(self.root_layout, e=True, en=True)
 
-        mouth_tab = pm.columnLayout(adj=1, p=tab_layout)
-        self.mouth_module_frame(mouth_tab)
-        pm.setParent(mouth_tab)
-
-        face_tab = pm.columnLayout(adj=1, p=tab_layout)
-        self.cheek_module_frame(face_tab)
-        pm.setParent(face_tab)
-
-        linkage_tab = pm.columnLayout(adj=1, p=tab_layout)
-        self.linkage_frame(linkage_tab)
-        pm.setParent(linkage_tab)
-
-        pm.tabLayout(
-            tab_layout, edit=True,
-            tabLabel=(
-                (pre_tab, 'Pre'),
-                (neck_ear_tab, 'NeckAndNeck'),
-                (eye_tab, 'Eye'),
-                (brow_tab, 'Brow'),
-                (nose_tab, 'Nose'),
-                (mouth_tab, 'Mouth'),
-                (face_tab, 'Cheek'),
-                (linkage_tab, 'Linkage'),
-            ),
-            sti=8,
-        )
-        pm.setParent(tab_layout)
-        pm.showWindow("xdFaceCreatorWnd")
-
-        self.eye_control_location_frame_init()
-        self.nose_proxy_frame_init()
-        self.cheek_proxy_frame_init()
+        # self.eye_control_location_frame_init()
+        # self.nose_proxy_frame_init()
+        # self.cheek_proxy_frame_init()
 
         return
 
     def _closed_window_cmd(self):
-        # brow module
+        # brow rig_classic_components
         pm.optionVar(
             sv=('brow_01_left_sub_surface',
                 pm.textFieldButtonGrp("xdMouthCreatorLeftBrowSurfaceField", q=True, text=True)))
@@ -164,7 +218,7 @@ class FaceCreatorUI(common.Singleton):
             sv=('brow_01_right_master_surface',
                 pm.textFieldButtonGrp("xdMouthCreatorRightMasterSurfaceField", q=True, text=True)))
 
-        # mouth module
+        # mouth rig_classic_components
         pm.optionVar(
             sv=('mouth_01_Up_Base_Curve', pm.textFieldButtonGrp("xdMouthCreatorUpBaseCurveField", q=True, text=True)))
         pm.optionVar(
@@ -197,24 +251,24 @@ class FaceCreatorUI(common.Singleton):
 
         :return:
         """
-        # brow module
-        if pm.optionVar(q='brow_01_left_sub_surface'):
-            self.left_brow_surface = pm.optionVar(q='brow_01_left_sub_surface')
-        if pm.optionVar(q='brow_01_right_sub_surface'):
-            self.right_brow_surface = pm.optionVar(
-                q='brow_01_right_sub_surface')
-        if pm.optionVar(q='brow_01_left_sub_curve'):
-            self.left_brow_curve = pm.optionVar(q='brow_01_left_sub_curve')
-        if pm.optionVar(q='brow_01_right_sub_curve'):
-            self.right_brow_curve = pm.optionVar(q='brow_01_right_sub_curve')
-        if pm.optionVar(q='brow_01_left_master_surface'):
-            self.left_master_ctrl_surface = pm.optionVar(
-                q='brow_01_left_master_surface')
-        if pm.optionVar(q='brow_01_right_master_surface'):
-            self.right_master_ctrl_surface = pm.optionVar(
-                q='brow_01_right_master_surface')
+        # brow rig_classic_components
+        # if pm.optionVar(q='brow_01_left_sub_surface'):
+        #     self.left_brow_surface = pm.optionVar(q='brow_01_left_sub_surface')
+        # if pm.optionVar(q='brow_01_right_sub_surface'):
+        #     self.right_brow_surface = pm.optionVar(
+        #         q='brow_01_right_sub_surface')
+        # if pm.optionVar(q='brow_01_left_sub_curve'):
+        #     self.left_brow_curve = pm.optionVar(q='brow_01_left_sub_curve')
+        # if pm.optionVar(q='brow_01_right_sub_curve'):
+        #     self.right_brow_curve = pm.optionVar(q='brow_01_right_sub_curve')
+        # if pm.optionVar(q='brow_01_left_master_surface'):
+        #     self.left_master_ctrl_surface = pm.optionVar(
+        #         q='brow_01_left_master_surface')
+        # if pm.optionVar(q='brow_01_right_master_surface'):
+        #     self.right_master_ctrl_surface = pm.optionVar(
+        #         q='brow_01_right_master_surface')
 
-        # mouth module
+        # mouth rig_classic_components
         if pm.optionVar(q='mouth_01_Up_Base_Curve'):
             self.up_base_curve = pm.optionVar(q='mouth_01_Up_Base_Curve')
         if pm.optionVar(q='mouth_01_Low_Base_Curve'):
@@ -234,18 +288,6 @@ class FaceCreatorUI(common.Singleton):
             self.mouth_lip_sew_surface = pm.optionVar(
                 q='mouth_01_lip_sew_surface')
         return
-
-    def menu_bar(self):
-        u"""菜单栏"""
-        menu_component = pm.menu(label=u"Component", tearOff=False)
-        pm.menuItem(p=menu_component, label=u"Base loc", c=lambda *args: self.build_base_loc())
-
-        menu_template = pm.menu(label="Module", tearOff=False)
-        pm.menuItem(p=menu_template, label=u"Mouth surface", c=lambda *args: self.build_base_loc())
-        pm.menuItem(p=menu_template, label=u"Mouth tweak surface", c=lambda *args: self.build_base_loc())
-
-        menu_tools = pm.menu(label="Tools", tearOff=False)
-        pm.menuItem(p=menu_tools, label=u"Symmetry surface", c=lambda *args: self.symmetry_surface())
 
     def rig_pre_frame(self, parent):
         layout = pm.frameLayout(p=parent, lv=False, mw=10, mh=5, bgs=True)
@@ -433,54 +475,54 @@ class FaceCreatorUI(common.Singleton):
         pm.setParent(frame)
         return frame
 
-    def brow_module_frame(self, parent):
-        frame = pm.frameLayout(p=parent, label="Preparatory Work", mh=5, mw=10)
-
-        pm.button(label="Add module", p=frame, vis=False)
-
-        pre_frame = pm.frameLayout(p=frame, label=u"Components", mh=10, mw=10, bgs=True)
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftBrowSurfaceField",
-            label="Left brow surface", adj=2, text=self.left_brow_surface, bl="Get Object",
-            bc=lambda *args: self.brow_follicle_field(
-                template_name="lf_brow_sub_surface",
-                field="xdMouthCreatorLeftBrowSurfaceField",
-                side="LF",
-                module="Brow_01"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorRightBrowSurfaceField",
-            label="Right brow surface", adj=2, text=self.right_brow_surface, bl="Get Object",
-            bc=lambda *args: self.brow_follicle_field(
-                template_name="rt_brow_sub_surface",
-                field="xdMouthCreatorRightBrowSurfaceField",
-                side="RT",
-                module="Brow_01"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftBrowCurveField",
-            label="Left brow curve", adj=2, text=self.left_brow_curve, bl="Get Object",
-            bc=lambda *args: self.get_object_in_field("xdMouthCreatorLeftBrowCurveField"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorRightBrowCurveField",
-            label="Right brow curve", adj=2, text=self.right_brow_curve, bl="Get Object",
-            bc=lambda *args: self.get_object_in_field("xdMouthCreatorRightBrowCurveField"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftMasterSurfaceField",
-            label="Left master surface", adj=2, text=self.left_master_ctrl_surface, bl="Get Object",
-            bc=lambda *args: self.get_object_in_field("xdMouthCreatorLeftMasterSurfaceField"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorRightMasterSurfaceField",
-            label="Right master surface", adj=2, text=self.right_master_ctrl_surface, bl="Get Object",
-            bc=lambda *args: self.get_object_in_field("xdMouthCreatorRightMasterSurfaceField"))
-        pm.setParent(pre_frame)
-
-        parameter_frame = pm.frameLayout(p=frame, label=u"Parameters", mh=5, mw=10, bgs=True)
-        pm.intFieldGrp("xdMouthCreatorBrowSubSegmentField", label=u"Segment", numberOfFields=1, value1=7)
-        pm.setParent(parameter_frame)
-
-        pm.button(label="Build module", p=frame, c=lambda *args: self.build_brow_module())
-        pm.setParent(frame)
-
-        return frame
+    # def brow_module_frame(self, parent):
+    #     frame = pm.frameLayout(p=parent, label="Preparatory Work", mh=5, mw=10)
+    #
+    #     pm.button(label="Add rig_classic_components", p=frame, vis=False)
+    #
+    #     pre_frame = pm.frameLayout(p=frame, label=u"Components", mh=10, mw=10, bgs=True)
+    #     pm.textFieldButtonGrp(
+    #         "xdMouthCreatorLeftBrowSurfaceField",
+    #         label="Left brow surface", adj=2, text=self.left_brow_surface, bl="Get Object",
+    #         bc=lambda *args: self.brow_follicle_field(
+    #             template_name="lf_brow_sub_surface",
+    #             field="xdMouthCreatorLeftBrowSurfaceField",
+    #             side="LF",
+    #             module="Brow_01"))
+    #     pm.textFieldButtonGrp(
+    #         "xdMouthCreatorRightBrowSurfaceField",
+    #         label="Right brow surface", adj=2, text=self.right_brow_surface, bl="Get Object",
+    #         bc=lambda *args: self.brow_follicle_field(
+    #             template_name="rt_brow_sub_surface",
+    #             field="xdMouthCreatorRightBrowSurfaceField",
+    #             side="RT",
+    #             module="Brow_01"))
+    #     pm.textFieldButtonGrp(
+    #         "xdMouthCreatorLeftBrowCurveField",
+    #         label="Left brow curve", adj=2, text=self.left_brow_curve, bl="Get Object",
+    #         bc=lambda *args: self.get_object_in_field("xdMouthCreatorLeftBrowCurveField"))
+    #     pm.textFieldButtonGrp(
+    #         "xdMouthCreatorRightBrowCurveField",
+    #         label="Right brow curve", adj=2, text=self.right_brow_curve, bl="Get Object",
+    #         bc=lambda *args: self.get_object_in_field("xdMouthCreatorRightBrowCurveField"))
+    #     pm.textFieldButtonGrp(
+    #         "xdMouthCreatorLeftMasterSurfaceField",
+    #         label="Left master surface", adj=2, text=self.left_master_ctrl_surface, bl="Get Object",
+    #         bc=lambda *args: self.get_object_in_field("xdMouthCreatorLeftMasterSurfaceField"))
+    #     pm.textFieldButtonGrp(
+    #         "xdMouthCreatorRightMasterSurfaceField",
+    #         label="Right master surface", adj=2, text=self.right_master_ctrl_surface, bl="Get Object",
+    #         bc=lambda *args: self.get_object_in_field("xdMouthCreatorRightMasterSurfaceField"))
+    #     pm.setParent(pre_frame)
+    #
+    #     parameter_frame = pm.frameLayout(p=frame, label=u"Parameters", mh=5, mw=10, bgs=True)
+    #     pm.intFieldGrp("xdMouthCreatorBrowSubSegmentField", label=u"Segment", numberOfFields=1, value1=7)
+    #     pm.setParent(parameter_frame)
+    #
+    #     pm.button(label="Build rig_classic_components", p=frame, c=lambda *args: self.build_brow_module())
+    #     pm.setParent(frame)
+    #
+    #     return frame
 
     def nose_module_frame(self, parent):
         frame = pm.frameLayout(p=parent, label=u"Preparatory Work", mh=5, mw=10)
@@ -844,15 +886,14 @@ class FaceCreatorUI(common.Singleton):
     def new_rig_structure(self):
         if not pm.objExists("World"):
             self.rig_root_node = pm.createNode("transform", name="World")
-
             deformer_grp = pm.createNode("transform", name="Deformer_Grp")
             pm.parent(deformer_grp, self.rig_root_node)
             master_ctrl = pm.createNode("transform", name="Master_Ctrl")
             pm.parent(master_ctrl, self.rig_root_node)
-
-            pm.button("xdMouthCreatorNewRigBtn", e=True, en=False)
+            # pm.button("xdMouthCreatorNewRigBtn", e=True, en=False)
+            pm.formLayout(self.root_layout, e=True, en=True)
         else:
-            pm.confirmDialog(title=u'错误提示', icn="warning",
+            pm.confirmDialog(title=u'提示', icn="warning",
                              message=u"场景中已存在绑定\n"
                                      u"提示：开始绑定前需要检查文件，确保场景中没有存在绑定结构")
         return
@@ -910,33 +951,33 @@ class FaceCreatorUI(common.Singleton):
         if self.mouth_creator.proxy_jaw():
             pm.button("xdMouthCreatorAddProxyJawBtn", e=True, en=False)
 
-    def before_build_brow(self):
-        self.left_brow_surface = pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftBrowSurfaceField", q=True, text=True)
-        self.right_brow_surface = pm.textFieldButtonGrp(
-            "xdMouthCreatorRightBrowSurfaceField", q=True, text=True)
-        self.brow_creator.left_brow_surface = self.left_brow_surface
-        self.brow_creator.right_brow_surface = self.right_brow_surface
+    # def before_build_brow(self):
+    #     self.left_brow_surface = pm.textFieldButtonGrp(
+    #         "xdMouthCreatorLeftBrowSurfaceField", q=True, text=True)
+    #     self.right_brow_surface = pm.textFieldButtonGrp(
+    #         "xdMouthCreatorRightBrowSurfaceField", q=True, text=True)
+    #     self.brow_creator.left_brow_surface = self.left_brow_surface
+    #     self.brow_creator.right_brow_surface = self.right_brow_surface
+    #
+    #     self.left_brow_curve = pm.textFieldButtonGrp(
+    #         "xdMouthCreatorLeftBrowCurveField", q=True, text=True)
+    #     self.right_brow_curve = pm.textFieldButtonGrp(
+    #         "xdMouthCreatorRightBrowCurveField", q=True, text=True)
+    #     self.brow_creator.left_brow_curve = self.left_brow_curve
+    #     self.brow_creator.right_brow_curve = self.right_brow_curve
 
-        self.left_brow_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftBrowCurveField", q=True, text=True)
-        self.right_brow_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorRightBrowCurveField", q=True, text=True)
-        self.brow_creator.left_brow_curve = self.left_brow_curve
-        self.brow_creator.right_brow_curve = self.right_brow_curve
-
-    def build_brow_module(self):
-        self.before_build_brow()
-        self.brow_creator.init_structure()
-        self.brow_creator.output_follicle()
-        self.brow_creator.build_master_control()
-        self.brow_creator.master_sub_control()
-        self.brow_creator.make_master_control_rotate()
-        self.brow_creator.make_master_control_scale()
-        self.brow_creator.master_ctrl_vis()
-        self.brow_creator.local_rig_out()
-
-        return True
+    # def build_brow_module(self):
+    #     self.before_build_brow()
+    #     self.brow_creator.init_structure()
+    #     self.brow_creator.creat_sub_controllers()
+    #     self.brow_creator.build_master_control()
+    #     self.brow_creator.create_master_sub_controllers()
+    #     self.brow_creator.make_master_control_rotate()
+    #     self.brow_creator.make_master_control_scale()
+    #     self.brow_creator.master_ctrl_vis()
+    #     self.brow_creator.local_rig_out()
+    #
+    #     return True
 
     def proxy_nose(self):
         self.nose_creator.proxy()

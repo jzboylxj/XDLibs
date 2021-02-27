@@ -8,7 +8,7 @@ from imp import reload
 
 from pymel import core as pm
 
-import rig.core.utils
+import core.utils
 from rig import main as main_kit
 
 reload(main_kit)
@@ -35,15 +35,15 @@ def multiple_object_on_curve(curve="", spans=7, prefix=None, object_type="joint"
 
         if object_type == "joint":
             object = "{}_Ctrl_Jnt".format(object_name)
-            object_grp = rig.core.utils.yellow_component(name=object, shape_type="joint")
+            object_grp = core.utils.yellow_component(name=object, shape_type="joint")
         elif object_type == "control":
             object = "{}_Ctrl".format(object_name)
-            object_grp = rig.core.utils.yellow_component(name=object, shape_type="sphere")
+            object_grp = core.utils.yellow_component(name=object, shape_type="sphere")
 
         mp_name = "{}_MP".format(object_name)
-        mp_node = rig.core.utils.mp_node(node_name=mp_name,
-                                         geometry_path_input="{}.worldSpace[0]".format(shape),
-                                         all_coordinates_output="{}.translate".format(object_grp))
+        mp_node = core.utils.mp_node(node_name=mp_name,
+                                     geometry_path_input="{}.worldSpace[0]".format(shape),
+                                     all_coordinates_output="{}.translate".format(object_grp))
 
         # 曲线的起始端
         if index == 0:

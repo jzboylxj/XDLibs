@@ -95,7 +95,7 @@ def getInfos(level):
 
     # Function Name
     functionName = f.f_code.co_name
-    if functionName != "<module>":
+    if functionName != "<rig_classic_components>":
         infos += functionName + "()"
 
     # Line Number

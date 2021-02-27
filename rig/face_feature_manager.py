@@ -514,7 +514,7 @@ class FaceEditUI(xd_com.Singleton):
         for module_name in self.module_sections:
             module = FaceModule(module_name)
             module.load_data(file_path=self.json_path)
-            # print module.get_controller_list()
+            # print rig_classic_components.get_controller_list()
             module.build_widget(parent=parent)
 
 

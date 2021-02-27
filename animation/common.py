@@ -403,3 +403,19 @@ def compile_ui_file_to_py():
         p=file_frame, bc=partial(_set_output_path))
     pm.button(label=u'Compile!', c=partial(_compile_ui_file))
     pm.showWindow("compileHelperWnd")
+
+
+def error_dialog(msg):
+    u"""弹出错误信息窗口
+
+    :type msg: string
+    :parameter msg: 错误信息
+    """
+
+    pm.confirmDialog(
+        title='错误提示',
+        message=msg,
+        button=[u'确认'],
+        defaultButton=u'Yes',
+        cancelButton='No',
+        dismissString='No' )

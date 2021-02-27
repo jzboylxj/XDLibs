@@ -1505,7 +1505,7 @@ class JsonManager(common.Singleton):
             module.json_location(os.path.join(self.json_folder, module_section))
             layout = module.custom_widget(parent=self.main_tab)
             pm.tabLayout(self.main_tab, edit=True, tabLabel=((layout, module_section)))
-            # for module
+            # for rig_classic_components
 
     def _closed_window_cmd(self):
         pm.optionVar(sv=('jsonManagerFolder', self.json_folder))

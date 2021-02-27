@@ -11,23 +11,29 @@ from pymel import core as pm
 
 from animation import common
 from animation import helper
-from rig.module import node
+from rig_classic_components import node
 
 reload(common)
 reload(helper)
 reload(node)
 
-tool_version = 0.4
-
 icon_path = "C:/Users/86181/Documents/maya/2016.5/zh_CN/prefs/icons/"
 head_icon = icon_path + "head.png"
 eye_icon = icon_path + "eye2.png"
+
+AUTHOR = "XiaoJun Li"
+VERSION = [1, 0, 4]
+TYPE = "rig_classic_components"
+NAME = "rig_classic_components"
+DESCRIPTION = ""
 
 
 class ModuleRig(common.Singleton):
     u"""
     模块化绑定工具包
     """
+
+    tool_version = VERSION
 
     def __init__(self):
         super(ModuleRig, self).__init__()
@@ -50,13 +56,11 @@ class ModuleRig(common.Singleton):
         """
         if pm.window("xdModuleRigUI", ex=True):
             pm.deleteUI("xdModuleRigUI")
-        pm.window(
-            "xdModuleRigUI",
-            t=u"XD模块化绑定 %s" % tool_version,
-            mb=True,
-            cc=lambda *args: self._closed_window_cmd())
+        pm.window("xdModuleRigUI",
+                  t=u"XD模块化绑定 %s" % self.tool_version,
+                  mb=True,
+                  cc=lambda *args: self._closed_window_cmd())
         self.menu_bar()
-
         self.main_layout()
 
         pm.showWindow("xdModuleRigUI")
@@ -121,7 +125,7 @@ class ModuleRig(common.Singleton):
         """
         config_list = pm.PyNode("head_config").getChildren()
         for config_node in config_list:
-            module_name = pm.PyNode(config_node).attr("module").get()
+            module_name = pm.PyNode(config_node).attr("rig_classic_components").get()
             module_parent = pm.PyNode(config_node).attr("parentModule").get()
             new_item = [module_name, module_parent]
             print(new_item)
@@ -187,8 +191,8 @@ class ModuleRig(common.Singleton):
         #     ann=u"创建一个具有三层结构的骨骼",
         #     # c=lambda *args: add_node_as_parent()
         # )
-        #
-        # pm.menu(label=u"组件", tearOff=False)
+        
+        pm.menu(label=u"组件", tearOff=False)
         # pm.menuItem(
         #     label=u"Create head root",
         #     # ann=u"创建一个具有三层结构的骨骼",
