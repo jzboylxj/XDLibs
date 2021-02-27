@@ -1,13 +1,18 @@
 # coding: utf-8
 
+from imp import reload
+from animation import common
+from core import utils
+
 from pymel import core as pm
-from core.utils import yellow_component, jnt_or_control_grp
 
+reload(common)
+reload(utils)
 
-class NoseCreator:
+class Creator:
     def __init__(self):
-        # super(NoseCreator, self).__init__()
-
+        self.module_name = "Nose_01"
+        
         self.proxy_bridge = ""
         self.proxy_master = ""
         self.proxy_tip = ""
@@ -15,15 +20,14 @@ class NoseCreator:
         self.proxy_right = ""
         self.proxy_up = ""
 
-        self.module_name = "Nose_01"
 
     def update_init(self):
-        self.proxy_bridge = pm.textFieldButtonGrp("xdMouthCreatorNoseBridgeProxyField", q=True, text=True)
-        self.proxy_master = pm.textFieldButtonGrp("xdMouthCreatorNoseMasterProxyField", q=True, text=True)
-        self.proxy_tip = pm.textFieldButtonGrp("xdMouthCreatorNoseTipProxyField", q=True, text=True)
-        self.proxy_left = pm.textFieldButtonGrp("xdMouthCreatorNoseLeftProxyField", q=True, text=True)
-        self.proxy_right = pm.textFieldButtonGrp("xdMouthCreatorNoseRightProxyField", q=True, text=True)
-        self.proxy_up = pm.textFieldButtonGrp("xdMouthCreatorNoseUpProxyField", q=True, text=True)
+        self.proxy_bridge = pm.textFieldButtonGrp("xdBridgeProxyField", q=True, text=True)
+        self.proxy_master = pm.textFieldButtonGrp("xdMasterProxyField", q=True, text=True)
+        self.proxy_tip = pm.textFieldButtonGrp("xdTipProxyField", q=True, text=True)
+        self.proxy_left = pm.textFieldButtonGrp("xdLeftProxyField", q=True, text=True)
+        self.proxy_right = pm.textFieldButtonGrp("xdRightProxyField", q=True, text=True)
+        self.proxy_up = pm.textFieldButtonGrp("xdUpProxyField", q=True, text=True)
         return
 
     def proxy(self):
@@ -36,7 +40,9 @@ class NoseCreator:
         pm.createNode("transform", name="Proxy_Nose_Grp", p="Proxy_Grp")
 
         for item in ["Bridge", "Master", "MD", "LF", "RT", "Up"]:
-            pm.parent(pm.spaceLocator(name="proxyNose{}Loc".format(item)), "Proxy_Nose_Grp")
+            pm.parent(
+                pm.spaceLocator(name="proxyNose{}Loc".format(item)), 
+                "Proxy_Nose_Grp")
 
         pm.PyNode("proxyNoseBridgeLoc").translateY.set(3)
         pm.PyNode("proxyNoseBridgeLoc").rotateX.set(-15)
@@ -81,57 +87,57 @@ class NoseCreator:
         if not pm.objExists(local_rig_out_grp):
             pm.createNode("transform", name=local_rig_out_grp, p="{}_Deformer_Grp".format(mid_prefix))
 
-        bridge_jnt_grp = jnt_or_control_grp(
+        bridge_jnt_grp = utils.jnt_or_control_grp(
             name="{}_Bridge_Ctrl_Jnt".format(mid_prefix), parent_node=local_rig_out_grp)
         pm.delete(pm.parentConstraint(self.proxy_bridge, bridge_jnt_grp, mo=False))
-        bridge_ctrl_grp = jnt_or_control_grp(
+        bridge_ctrl_grp = utils.jnt_or_control_grp(
             name="{}_Bridge_Ctrl".format(mid_prefix), object_type="plane", parent_node=control_grp)
         pm.delete(pm.parentConstraint(self.proxy_bridge, bridge_ctrl_grp, mo=False))
         ctrl_list.append("{}_Bridge_Ctrl".format(mid_prefix))
 
-        master_jnt_grp = yellow_component(
+        master_jnt_grp = utils.yellow_component(
             name="{}_Master_Ctrl_Jnt".format(mid_prefix),
             shape_type="joint",
             parent_node="{}_Bridge_Ctrl_Jnt".format(mid_prefix))
         pm.delete(pm.parentConstraint(self.proxy_master, master_jnt_grp, mo=False))
-        master_ctrl_grp = yellow_component(
+        master_ctrl_grp = utils.yellow_component(
             name="{}_Master_Ctrl".format(mid_prefix),
             shape_type="sphere",
             parent_node="{}_Bridge_Ctrl".format(mid_prefix))
         pm.delete(pm.parentConstraint(self.proxy_master, master_ctrl_grp, mo=False))
         ctrl_list.append("{}_Master_Ctrl".format(mid_prefix))
 
-        tip_jnt_grp = jnt_or_control_grp(
+        tip_jnt_grp = utils.jnt_or_control_grp(
             name="{}_Ctrl_Jnt".format(mid_prefix),
             object_type='joint',
             parent_node="{}_Master_Ctrl_Jnt".format(mid_prefix))
         pm.delete(pm.parentConstraint(self.proxy_tip, tip_jnt_grp, mo=False))
-        tip_ctrl_grp = jnt_or_control_grp(
+        tip_ctrl_grp = utils.jnt_or_control_grp(
             name="{}_Ctrl".format(mid_prefix),
             object_type='plane',
             parent_node="{}_Master_Ctrl".format(mid_prefix))
         pm.delete(pm.parentConstraint(self.proxy_tip, tip_ctrl_grp, mo=False))
         ctrl_list.append("{}_Ctrl".format(mid_prefix))
 
-        left_jnt_grp = yellow_component(
+        left_jnt_grp = utils.yellow_component(
             name="{}_Ctrl_Jnt".format(lf_prefix),
             shape_type="joint",
             parent_node="{}_Master_Ctrl_Jnt".format(mid_prefix))
         pm.delete(pm.parentConstraint(self.proxy_left, left_jnt_grp, mo=False))
-        left_ctrl_grp = yellow_component(
+        left_ctrl_grp = utils.yellow_component(
             name="{}_Ctrl".format(lf_prefix),
             shape_type="sphere",
             parent_node="{}_Master_Ctrl".format(mid_prefix))
         pm.delete(pm.parentConstraint(self.proxy_left, left_ctrl_grp, mo=False))
         ctrl_list.append("{}_Ctrl".format(lf_prefix))
 
-        right_jnt_grp = yellow_component(
+        right_jnt_grp = utils.yellow_component(
             name="{}_Ctrl_Jnt".format(rt_prefix), shape_type="joint",
             parent_node="{}_Master_Ctrl_Jnt".format(mid_prefix))
         pm.PyNode(right_jnt_grp).scaleZ.set(-1)
         pm.delete(pm.parentConstraint(self.proxy_right, right_jnt_grp, mo=False))
 
-        right_ctrl_grp = yellow_component(
+        right_ctrl_grp = utils.yellow_component(
             name="{}_Ctrl".format(rt_prefix),
             shape_type="sphere",
             parent_node="{}_Master_Ctrl".format(mid_prefix))
@@ -140,12 +146,12 @@ class NoseCreator:
 
         ctrl_list.append("{}_Ctrl".format(rt_prefix))
 
-        up_jnt_grp = jnt_or_control_grp(
+        up_jnt_grp = utils.jnt_or_control_grp(
             name="{}_Up_Ctrl_Jnt".format(mid_prefix),
             object_type="joint",
             parent_node=local_rig_out_grp)
         pm.delete(pm.parentConstraint(self.proxy_up, up_jnt_grp, mo=False))
-        up_ctrl_grp = jnt_or_control_grp(
+        up_ctrl_grp = utils.jnt_or_control_grp(
             name="{}_Up_Ctrl".format(mid_prefix),
             object_type="plane",
             parent_node="Head_02_Grp")
@@ -163,3 +169,76 @@ class NoseCreator:
             pm.PyNode(ctrl).getParent().rotate.connect(pm.PyNode(jnt).getParent().rotate)
             pm.PyNode(ctrl).scale.connect(pm.PyNode(jnt).scale)
         # todo 鼻子的微表情
+
+
+EDITOR_VERSION = 1.10
+
+
+class Editor(common.Singleton):
+    name = "xdNoseCreatorEditor"
+
+    def __init__(self):
+        super(Editor, self).__init__()
+
+        self.creator = Creator()
+
+        self.create_window()
+
+    def create_window(self):
+        if pm.window(self.name, ex=True):
+            pm.deleteUI(self.name)
+
+        with pm.window(self.name, title=u"Nose Creator Version {}".format(EDITOR_VERSION)):
+            with pm.columnLayout(adj=1) as layout:
+                self.create_layout(parent=layout)
+
+        pm.showWindow(self.name)
+
+    def create_layout(self, parent):
+        with parent:
+            with pm.frameLayout(p=parent, lv=False, mh=10, mw=10) as frame:
+                with pm.frameLayout(label=u"Proxy", mh=10, mw=10, bgs=True):
+                    pm.button(label=u"Build Proxy",
+                              c=lambda *args: self.creator.proxy())
+
+                    with pm.frameLayout(label=u"component detail", cl=False, cll=True, mh=10, mw=10):
+                        pm.textFieldButtonGrp(
+                            "xdBridgeProxyField",
+                            label=u"Nose bridge",
+                            adj=2,
+                            bl="Get object",
+                            bc=lambda *args: utils.get_object_in_field("xdBridgeProxyField"))
+                        pm.textFieldButtonGrp(
+                            "xdMasterProxyField",
+                            label=u"Nose master",
+                            adj=2,
+                            bl="Get object",
+                            bc=lambda *args: utils.get_object_in_field("xdMasterProxyField"))
+                        pm.textFieldButtonGrp(
+                            "xdTipProxyField",
+                            label=u"Nose tip",
+                            adj=2,
+                            bl="Get object",
+                            bc=lambda *args: utils.get_object_in_field("xdTipProxyField"))
+                        pm.textFieldButtonGrp(
+                            "xdLeftProxyField",
+                            label=u"Nose left",
+                            adj=2,
+                            bl="Get object",
+                            bc=lambda *args: utils.get_object_in_field("xdLeftProxyField"))
+                        pm.textFieldButtonGrp(
+                            "xdRightProxyField",
+                            label=u"Nose right",
+                            adj=2,
+                            bl="Get object",
+                            bc=lambda *args: utils.get_object_in_field("xdRightProxyField"))
+                        pm.textFieldButtonGrp(
+                            "xdUpProxyField",
+                            label=u"Nose up",
+                            adj=2,
+                            bl="Get object",
+                            bc=lambda *args: utils.get_object_in_field("xdUpProxyField"))
+
+                pm.button(label=u"Build Module", c=lambda *args: self.creator.build_module())
+
+        return frame

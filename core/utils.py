@@ -468,3 +468,9 @@ class Creator(common.Singleton):
 
     def build_module(self):
         pass
+
+
+def get_object_in_field(field):
+    sel_object = pm.ls(sl=True)[0]
+    pm.textFieldButtonGrp(field, e=True, text=sel_object)
+    return

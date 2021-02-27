@@ -2,7 +2,6 @@
 
 
 from imp import reload
-from re import S
 from pymel import core as pm
 from pymel.util import path
 
@@ -50,7 +49,6 @@ class Creator:
         pm.createNode("transform", name=squeeze_grp, p=local_scale_grp)
         pm.createNode("transform", name=control_grp, p=squeeze_grp)
 
-        
         pm.sphere(name=control, p=[0, 0, 0], ax=[
                   0, 1, 0], ssw=0, esw=360, r=0.3, d=3, ut=0, tol=0.01, s=4, nsp=2, ch=0)
 
@@ -138,15 +136,10 @@ class Creator:
                 rig_track_grp=rig_track_grp,
                 rig_out_grp=rig_out_grp)
 
-            if side == "LF":
-                master_ctrl = self.left_master_ctrl
-            elif side == "RT":
-                master_ctrl = self.right_master_ctrl
             self.make_master_control_squeeze(
                 side=side,
                 index=index,
                 sub_surface=sub_surface,
-                master_ctrl=master_ctrl,
                 stretch_md_node=stretch_md_node,
                 sub_ctrl=sub_control)
 
@@ -167,17 +160,14 @@ class Creator:
             pm.createNode("transform", name=side_module_grp, p="Head_01_Grp")
 
         if side == "LF":
-            self.left_output_jnt_grp = "{}_{}_Sub_Output_Jnt_Grp".format(
-                side, self.module_name)
+            self.left_output_jnt_grp = "{}_{}_Sub_Output_Jnt_Grp".format(side, self.module_name)
             side_output_jnt_grp = self.left_output_jnt_grp
         elif side == "RT":
-            self.right_output_jnt_grp = "{}_{}_Sub_Output_Jnt_Grp".format(
-                side, self.module_name)
+            self.right_output_jnt_grp = "{}_{}_Sub_Output_Jnt_Grp".format(side, self.module_name)
             side_output_jnt_grp = self.right_output_jnt_grp
 
         if not pm.objExists(side_output_jnt_grp):
-            pm.createNode("transform", name=side_output_jnt_grp,
-                          p=side_module_grp)
+            pm.createNode("transform", name=side_output_jnt_grp, p=side_module_grp)
             pm.PyNode(side_output_jnt_grp).attr("inheritsTransform").set(0)
 
         return
@@ -229,7 +219,7 @@ class Creator:
             pm.parent(master_ctrl, master_ctrl_grp)
 
             if not pm.attributeQuery("ctrlVis", node=master_ctrl, ex=True):
-                pm.addAttr(master_ctrl, ln="ctrlVis", at="long", dv=1, min=0, max=1)
+                pm.addAttr(master_ctrl, ln="ctrlVis", at="long", dv=0, min=0, max=1)
                 pm.setAttr("{}.ctrlVis".format(master_ctrl), e=True, k=True)
 
             if not pm.attributeQuery("squeeze", node=master_ctrl, ex=True):
@@ -281,6 +271,8 @@ class Creator:
             pm.createNode("transform", name=local_rig_out_grp, p="{}_{}_Deformer_Grp".format(side, self.module_name))
 
         pm.PyNode(master_ctrl).attr("squeeze").connect(pm.PyNode(sub_surface).attr("squeeze"))
+
+        pm.PyNode(master_surface).visibility.set(0)
 
         print(u"{}的主控制器构建完成".format(self.module_name))
         return master_ctrl
@@ -358,8 +350,10 @@ class Creator:
         skin_name = "{}_SC".format(sub_surface)
         pm.skinCluster(surface_skin_items, tsb=True, name=skin_name)
 
-        print(
-            u"----------- 控制器: {}_{} 已经创建完成 ---------------".format(side, self.module_name))
+        pm.PyNode(sub_curve).visibility.set(0)
+        pm.PyNode(sub_surface).visibility.set(0)
+
+        print(u"----------- 控制器: {}_{} 已经创建完成 ---------------".format(side, self.module_name))
         return True
 
     def connect_follicle_rotate(self, side="LF", rotate_node=""):
@@ -488,31 +482,26 @@ class Creator:
         return
 
     def local_rig_out(self, sub_ctrl="", sub_null="", bone="", rig_track_grp="", rig_out_grp=""):
-        # for side in ["LF", "RT"]:
+        u"""创建local rig joint
 
-        # rig_out_grp = "{}_LocalRig_Out_Grp".format(prefix)
-        # if not pm.objExists(rig_out_grp):
-        #     pm.createNode("transform", name=rig_out_grp, p="{}_Deformer_Grp".format(prefix))
-
-        # rig_track_grp = "{}_LocalRig_Track_Grp".format(prefix)
-        # if not pm.objExists(rig_track_grp):
-        #     pm.createNode("transform", name=rig_track_grp)
-        #     pm.parent(rig_track_grp, "{}_Master_Ctrl_Grp".format(prefix))
-
-        # for index in range(1, seg_of_brow + 1):
+        Args:
+            sub_ctrl (str, optional): [description]. Defaults to "".
+            sub_null (str, optional): [description]. Defaults to "".
+            bone (str, optional): [description]. Defaults to "".
+            rig_track_grp (str, optional): [description]. Defaults to "".
+            rig_out_grp (str, optional): [description]. Defaults to "".
+        """
         if not pm.objExists(sub_null):
-            # sub_null = "{}_Sub_{}_Null".format(prefix, "{0:02d}".format(index))
             pm.createNode("transform", name=sub_null, p=rig_track_grp)
             pm.PyNode(sub_null).scaleX.set(-1)
 
-        # sub_ctrl = "{}_Sub_{}_Ctrl".format(prefix, "{0:02d}".format(index))
         pm.parentConstraint(sub_ctrl, sub_null, mo=False)
         pm.scaleConstraint(sub_ctrl, sub_null, mo=True)
 
         if not pm.objExists(bone):
             pm.select(cl=True)
-            # bone = pm.joint(name="{}_Sub_{}_Jnt".format(prefix, "{0:02d}".format(index)))
             bone = pm.joint(name=bone)
+            bone.visibility.set(0)
             pm.parent(bone, rig_out_grp)
 
         pm.PyNode(sub_null).translate.connect(pm.PyNode(bone).translate)
@@ -571,7 +560,7 @@ class Editor(common.Singleton):
     def __init__(self):
         super(Editor, self).__init__()
 
-        self.brow_creator = Creator()
+        self.creator = Creator()
         self.left_brow_surface = ""
         self.right_brow_surface = ""
         self.left_brow_curve = ""
@@ -630,38 +619,32 @@ class Editor(common.Singleton):
                         adj=2,
                         text=self.left_brow_curve,
                         bl="Get Object",
-                        bc=lambda *args: self.get_object_in_field("xdLeftBrowCurveField"))
+                        bc=lambda *args: utils.get_object_in_field("xdLeftBrowCurveField"))
                     pm.textFieldButtonGrp(
                         "xdRightBrowCurveField",
                         label="Right brow curve",
                         adj=2,
                         text=self.right_brow_curve,
                         bl="Get Object",
-                        bc=lambda *args: self.get_object_in_field(
-                            "xdRightBrowCurveField")
-                    )
+                        bc=lambda *args: utils.get_object_in_field("xdRightBrowCurveField"))
                     pm.textFieldButtonGrp(
                         "xdLeftBrowMasterSurfaceField",
                         label="Left master surface",
                         adj=2,
                         text=self.left_master_ctrl_surface,
                         bl="Get Object",
-                        bc=lambda *args: self.get_object_in_field(
-                            "xdLeftBrowMasterSurfaceField")
-                    )
+                        bc=lambda *args: utils.get_object_in_field("xdLeftBrowMasterSurfaceField"))
                     pm.textFieldButtonGrp(
                         "xdRightBrowMasterSurfaceField",
                         label="Right master surface",
                         adj=2,
                         text=self.right_master_ctrl_surface,
                         bl="Get Object",
-                        bc=lambda *args: self.get_object_in_field(
-                            "xdRightBrowMasterSurfaceField")
-                    )
+                        bc=lambda *args: utils.get_object_in_field("xdRightBrowMasterSurfaceField"))
 
                 with pm.frameLayout(label=u"Parameters", mh=5, mw=10, bgs=True):
                     pm.intFieldGrp(
-                        "xdMouthCreatorBrowSubSegmentField",
+                        "xdBrowSubSegmentField",
                         label=u"Segment",
                         numberOfFields=1,
                         value1=self.brow_seg)
@@ -678,26 +661,22 @@ class Editor(common.Singleton):
         """
         lf_sub_surface = "LF_Brow_01_Sub_Surface"
         if pm.objExists(lf_sub_surface):
-            pm.textFieldButtonGrp("xdLeftBrowSurfaceField",
-                                  e=True, text=lf_sub_surface)
+            pm.textFieldButtonGrp("xdLeftBrowSurfaceField", e=True, text=lf_sub_surface)
             self.left_brow_surface = lf_sub_surface
 
         rt_sub_surface = "RT_Brow_01_Sub_Surface"
         if pm.objExists(rt_sub_surface):
-            pm.textFieldButtonGrp("xdRightBrowSurfaceField",
-                                  e=True, text=rt_sub_surface)
+            pm.textFieldButtonGrp("xdRightBrowSurfaceField", e=True, text=rt_sub_surface)
             self.right_brow_surface = rt_sub_surface
 
         lf_sub_curve = "LF_Brow_01_Sub_Curve"
         if pm.objExists(lf_sub_curve):
-            pm.textFieldButtonGrp("xdLeftBrowCurveField",
-                                  e=True, text=lf_sub_curve)
+            pm.textFieldButtonGrp("xdLeftBrowCurveField", e=True, text=lf_sub_curve)
             self.left_brow_curve = lf_sub_curve
 
         rt_sub_curve = "RT_Brow_01_Sub_Curve"
         if pm.objExists(rt_sub_curve):
-            pm.textFieldButtonGrp("xdRightBrowCurveField",
-                                  e=True, text=rt_sub_curve)
+            pm.textFieldButtonGrp("xdRightBrowCurveField", e=True, text=rt_sub_curve)
             self.right_brow_curve = rt_sub_curve
 
         lf_master_surface = "LF_Brow_01_Master_Ctrl_Follicle_Surface"
@@ -745,16 +724,11 @@ class Editor(common.Singleton):
 
         return True
 
-    def get_object_in_field(self, field):
-        sel_object = pm.ls(sl=True)[0]
-        pm.textFieldButtonGrp(field, e=True, text=sel_object)
-        return
-
     def build_module(self):
         u"""构建模块"""
         if self.before_build():
             print(u"模块构建准备检查已完成")
-            self.brow_creator.build()
+            self.creator.build()
 
         return True
 
@@ -764,36 +738,36 @@ class Editor(common.Singleton):
             "xdLeftBrowSurfaceField", q=True, text=True)
         if self.left_brow_surface == "" or self.left_brow_surface is None:
             pm.error(u"left brow surface不能为空\n")
-        self.brow_creator.left_brow_surface = self.left_brow_surface
+        self.creator.left_brow_surface = self.left_brow_surface
 
         self.right_brow_surface = pm.textFieldButtonGrp(
             "xdRightBrowSurfaceField", q=True, text=True)
         if self.right_brow_surface == "" or self.right_brow_surface is None:
             pm.error(u"right brow surface不能为空\n")
-        self.brow_creator.right_brow_surface = self.right_brow_surface
+        self.creator.right_brow_surface = self.right_brow_surface
 
         self.left_brow_curve = pm.textFieldButtonGrp(
             "xdLeftBrowCurveField", q=True, text=True)
         if self.left_brow_curve == "" or self.left_brow_curve is None:
             pm.error(u"left brow curve不能为空")
-        self.brow_creator.left_brow_curve = self.left_brow_curve
+        self.creator.left_brow_curve = self.left_brow_curve
 
         self.right_brow_curve = pm.textFieldButtonGrp(
             "xdRightBrowCurveField", q=True, text=True)
         if self.right_brow_curve == "" or self.right_brow_curve is None:
             pm.error(u"right brow curve不能为空")
-        self.brow_creator.right_brow_curve = self.right_brow_curve
+        self.creator.right_brow_curve = self.right_brow_curve
 
         self.left_master_ctrl_surface = pm.textFieldButtonGrp(
             "xdLeftBrowMasterSurfaceField", q=True, text=True)
         if self.left_master_ctrl_surface == "" or self.left_master_ctrl_surface is None:
             pm.error(u"left master ctrl surface不能为空")
-        self.brow_creator.left_master_ctrl_surface = self.left_master_ctrl_surface
+        self.creator.left_master_ctrl_surface = self.left_master_ctrl_surface
 
         self.right_master_ctrl_surface = pm.textFieldButtonGrp(
             "xdRightBrowMasterSurfaceField", q=True, text=True)
         if self.right_master_ctrl_surface == "" or self.right_master_ctrl_surface is None:
             pm.error(u"right master ctrl surface不能为空")
-        self.brow_creator.right_master_ctrl_surface = self.right_master_ctrl_surface
+        self.creator.right_master_ctrl_surface = self.right_master_ctrl_surface
 
         return True
