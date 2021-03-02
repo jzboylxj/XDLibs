@@ -1,12 +1,12 @@
 # coding: utf-8
 from imp import reload
 
-from animation import common
 from pymel import core as pm
 from pymel.util import path
 
+from animation import common
+from core.utils import imported_object, symmetry_surface
 from rig import template_dir
-
 from rig_classic_components import nose_creator, mouth_creator, eye_creator, neck_ear_creator
 
 reload(eye_creator)
@@ -16,8 +16,6 @@ reload(mouth_creator)
 reload(neck_ear_creator)
 
 reload(nose_creator)
-
-from core.utils import imported_object, jnt_or_control_grp, symmetry_surface, drag_to_group_and_field
 
 VERSION = 0.21
 
@@ -40,10 +38,6 @@ class FaceCreatorUI(common.Singleton):
 
         # # neck and ear rig_classic_components
         # self.neck_ear_creator = neck_ear_creator.NeckEarCreator()
-
-        # # eye rig_classic_components
-        # self.eye_module = "Eye_01"
-        # self.eye_creator = eye_creator.EyeCreator()
 
         # self.left_master_ctrl_surface = ""
         # self.right_master_ctrl_surface = ""
@@ -130,10 +124,6 @@ class FaceCreatorUI(common.Singleton):
             # neck_ear_tab = pm.columnLayout(adj=1, p=tab_layout)
             # self.neck_ear_module_frame(neck_ear_tab)
             # pm.setParent(neck_ear_tab)
-
-            # eye_tab = pm.columnLayout(adj=1, p=tab_layout)
-            # self.eye_module_frame(eye_tab)
-            # pm.setParent(eye_tab)
 
             # mouth_tab = pm.columnLayout(adj=1, p=tab_layout)
             # self.mouth_module_frame(mouth_tab)
@@ -251,174 +241,6 @@ class FaceCreatorUI(common.Singleton):
         pm.setParent(frame)
         return frame
 
-    def eye_module_frame(self, parent):
-        frame = pm.frameLayout(p=parent, label="Preparatory Work", mh=5, mw=10)
-
-        pm.frameLayout(label=u"Eye Guid Curve",
-                       ann=u"这些曲线将会约束眼皮的蒙皮骨骼", mh=10, mw=10, bgs=True, cll=True, cl=True)
-        pm.text(label="Left side:", al="left")
-
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftUpMasterCurveField",
-            label=u"Left Up Master Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(
-                field="xdMouthCreatorLeftUpMasterCurveField", group="LF_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftLowMasterCurveField",
-            label=u"Left Low Master Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(
-                field="xdMouthCreatorLeftLowMasterCurveField", group="LF_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftUpBlinkCurveField",
-            label=u"Left Up Blink Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(
-                field="xdMouthCreatorLeftUpBlinkCurveField", group="LF_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftLowBlinkCurveField",
-            label=u"Left Low Blink Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(
-                field="xdMouthCreatorLeftLowBlinkCurveField", group="LF_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftUpOutCurveField",
-            label=u"Left Up Out Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(
-                field="xdMouthCreatorLeftUpOutCurveField", group="LF_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftLowOutCurveField",
-            label=u"Left Low Out Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(
-                field="xdMouthCreatorLeftLowOutCurveField", group="LF_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftUpTweakCurveField",
-            label=u"Left Up Tweak Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(
-                field="xdMouthCreatorLeftUpTweakCurveField", group="LF_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftLowTweakCurveField",
-            label=u"Left Low Tweak Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorLeftLowTweakCurveField",
-                                                         group="LF_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftUpFreshyCurveField",
-            label=u"Left Up Freshy Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorLeftUpFreshyCurveField",
-                                                         group="LF_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftLowFreshyCurveField",
-            label=u"Left Low Freshy Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorLeftLowFreshyCurveField",
-                                                         group="LF_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftUpShapeSurfaceField",
-            label=u"Left Up Shape Surface", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.import_eye_up_shape_surface(vertical="Up", side="LF",
-                                                              field="xdMouthCreatorLeftUpShapeSurfaceField"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftLowShapeSurfaceField",
-            label=u"Left Low Shape Surface", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.import_eye_up_shape_surface(vertical="Low", side="LF",
-                                                              field="xdMouthCreatorLeftLowShapeSurfaceField"))
-
-        pm.separator(style="in", h=5)
-
-        pm.text(label="Right side:", al="left")
-
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorRightUpMasterCurveField",
-            label=u"Right Up Master Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorRightUpMasterCurveField",
-                                                         group="RT_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorRightLowMasterCurveField",
-            label=u"Right Low Master Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorRightLowMasterCurveField",
-                                                         group="RT_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorRightUpBlinkCurveField",
-            label=u"Right Up Blink Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorRightUpBlinkCurveField",
-                                                         group="RT_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorRightLowBlinkCurveField",
-            label=u"Right Low Blink Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorRightLowBlinkCurveField",
-                                                         group="RT_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorRightUpOutCurveField",
-            label=u"Right Up Out Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorRightUpOutCurveField",
-                                                         group="RT_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorRightLowOutCurveField",
-            label=u"Right Low Out Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorRightUpOutCurveField",
-                                                         group="RT_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorRightUpTweakCurveField",
-            label=u"Right Up Tweak Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorRightUpTweakCurveField",
-                                                         group="RT_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorRightLowTweakCurveField",
-            label=u"Right Low Tweak Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorRightLowTweakCurveField",
-                                                         group="RT_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorRightUpFreshyCurveField",
-            label=u"Right Up Freshy Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorRightUpFreshyCurveField",
-                                                         group="RT_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorRightLowFreshyCurveField",
-            label=u"Right Low Freshy Curve", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorRightLowFreshyCurveField",
-                                                         group="RT_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorRightUpShapeSurfaceField",
-            label=u"Right Up Shape Surface", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorRightUpShapeSurfaceField",
-                                                         group="RT_Eye_01_Curve_Grp"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorRightLowShapeSurfaceField",
-            label=u"Right Low Shape Surface", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorRightLowShapeSurfaceField",
-                                                         group="RT_Eye_01_Curve_Grp"))
-
-        pm.setParent("..")
-
-        pm.frameLayout(label=u"Eye Control location", mh=10, mw=10, bgs=True, cll=True, cl=False)
-        pm.text(label=u"* is optional", al='left')
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftEyeGeoField",
-            label=u"Left eye geo", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorLeftEyeGeoField"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorRightEyeGeoField",
-            label=u"Right eye geo", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorRightEyeGeoField"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftEyeProxyField",
-            label=u"Left eye proxy(*)", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorLeftEyeProxyField"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorRightEyeProxyField",
-            label=u"Right eye proxy(*)", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_component_in_field(field="xdMouthCreatorRightEyeProxyField"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftMasterCtrlField",
-            label=u"Left master control", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_master_ctrl_field(side="LF", field="xdMouthCreatorLeftMasterCtrlField"))
-        pm.textFieldButtonGrp(
-            "xdMouthCreatorRightMasterCtrlField",
-            label=u"Right master control", bl=u"Get Object", adj=2,
-            bc=lambda *args: self.eye_master_ctrl_field(side="RT", field="xdMouthCreatorRightMasterCtrlField"))
-        pm.setParent("..")
-
-        pm.button(label=u"Build Module", c=lambda *args: self.build_eye_module())
-
-        pm.setParent(frame)
-        return frame
-
     def cheek_module_frame(self, parent):
         frame = pm.frameLayout(p=parent, label=u"Preparatory Work", mh=5, mw=10)
 
@@ -489,40 +311,6 @@ class FaceCreatorUI(common.Singleton):
         pm.button(label=u"Build", p=frame, c=lambda *args: self.build_linkage())
         pm.setParent(frame)
         return frame
-
-    def eye_control_location_frame_init(self):
-        for side in ["LF", "RT"]:
-            if side == "LF":
-                side_alias = "Left"
-            else:
-                side_alias = "Right"
-
-            for vertical in ["Up", "Low"]:
-                prefix = "{}_{}_{}".format(side, self.eye_module, vertical)
-                for item in ["Master", "Blink", "Out", "Tweak", "Freshy"]:
-                    curve = "{}_{}_Curve".format(prefix, item)
-                    if pm.objExists(curve):
-                        pm.textFieldButtonGrp(
-                            "xdMouthCreator{}{}{}CurveField".format(side_alias, vertical, item), e=True, text=curve)
-                surface = "{}_Shape_Surface".format(prefix)
-                # print("surface:{}".format(surface))
-                if pm.objExists(surface):
-                    pm.textFieldButtonGrp(
-                        "xdMouthCreator{}{}ShapeSurfaceField".format(side_alias, vertical), e=True, text=surface)
-            # control location frame上面的字段
-            eye_geo = "{}_Eye_Geo".format(side)
-            if pm.objExists(eye_geo):
-                pm.textFieldButtonGrp("xdMouthCreator{}EyeGeoField".format(side_alias), e=True, text=eye_geo)
-
-            eye_proxy = "{}_proxy_eye".format(side)
-            if pm.objExists(eye_proxy):
-                pm.textFieldButtonGrp("xdMouthCreator{}EyeProxyField".format(side_alias), e=True, text=eye_proxy)
-
-            master_ctrl = "{}_{}_Master_Ctrl".format(side, self.eye_module)
-            if pm.objExists(master_ctrl):
-                pm.textFieldButtonGrp("xdMouthCreator{}MasterCtrlField".format(side_alias), e=True, text=master_ctrl)
-
-        return
 
     def cheek_proxy_frame_init(self):
         for side in ["LF", "RT"]:
@@ -664,24 +452,6 @@ class FaceCreatorUI(common.Singleton):
 
         return True
 
-    def import_eye_up_shape_surface(self, vertical="Up", side="LF", field=""):
-        if vertical == "Up":
-            template_file = path(template_dir).joinpath(
-                "lf_eye_up_shape_surface.mb")
-        else:
-            template_file = path(template_dir).joinpath(
-                "lf_eye_low_shape_surface.mb")
-
-        import_object = pm.rename(imported_object(template_file),
-                                  "{}_{}_{}_Shape_Surface".format(side, self.eye_module, vertical))
-        if pm.objExists("{}_{}_Curve_Grp".format(side, self.eye_module)):
-            pm.parent(import_object, "{}_{}_Curve_Grp".format(
-                side, self.eye_module))
-
-        pm.textFieldButtonGrp(field, e=True, text=import_object)
-
-        return True
-
     def new_rig_structure(self):
         if not pm.objExists("World"):
             self.rig_root_node = pm.createNode("transform", name="World")
@@ -700,7 +470,7 @@ class FaceCreatorUI(common.Singleton):
     def build_mouth_module(self):
         self.before_build_mouth()
 
-        self.mouth_creator.build_module()
+        self.mouth_creator.build()
         return
 
     def build_base_loc(self):
@@ -774,92 +544,10 @@ class FaceCreatorUI(common.Singleton):
             pm.error(u"请选择两个或两个以上的对象")
 
     def build_neck_head_module(self):
-        self.neck_ear_creator.build_module()
+        self.neck_ear_creator.build()
 
     def build_cheek_module(self):
-        self.cheek_creator.build_module()
-
-    def build_eye_module(self):
-        self.eye_module_init()
-        self.eye_creator.init_structure()
-        self.eye_creator.build_module()
-        return
-
-    def eye_module_init(self):
-        self.eye_creator.left_up_master_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftUpMasterCurveField", q=True, text=True)
-        self.eye_creator.left_low_master_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftLowMasterCurveField", q=True, text=True)
-        self.eye_creator.left_up_blink_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftUpBlinkCurveField", q=True, text=True)
-        self.eye_creator.left_low_blink_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftLowBlinkCurveField", q=True, text=True)
-        self.eye_creator.left_up_out_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftUpOutCurveField", q=True, text=True)
-        self.eye_creator.left_low_out_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftLowOutCurveField", q=True, text=True)
-        self.eye_creator.left_up_tweak_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftUpTweakCurveField", q=True, text=True)
-        self.eye_creator.left_low_tweak_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftLowTweakCurveField", q=True, text=True)
-        self.eye_creator.left_up_freshy_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftUpFreshyCurveField", q=True, text=True)
-        self.eye_creator.left_low_freshy_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftLowFreshyCurveField", q=True, text=True)
-        self.eye_creator.left_up_shape_surface = pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftUpShapeSurfaceField", q=True, text=True)
-        self.eye_creator.left_low_shape_surface = pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftLowShapeSurfaceField", q=True, text=True)
-
-        self.eye_creator.right_up_master_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorRightUpMasterCurveField", q=True, text=True)
-        self.eye_creator.right_low_master_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorRightLowMasterCurveField", q=True, text=True)
-        self.eye_creator.right_up_blink_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorRightUpBlinkCurveField", q=True, text=True)
-        self.eye_creator.right_low_blink_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorRightLowBlinkCurveField", q=True, text=True)
-        self.eye_creator.right_up_out_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorRightUpOutCurveField", q=True, text=True)
-        self.eye_creator.right_low_out_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorRightLowOutCurveField", q=True, text=True)
-        self.eye_creator.right_up_tweak_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorRightUpTweakCurveField", q=True, text=True)
-        self.eye_creator.right_low_tweak_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorRightLowTweakCurveField", q=True, text=True)
-        self.eye_creator.right_up_freshy_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorRightUpFreshyCurveField", q=True, text=True)
-        self.eye_creator.right_low_freshy_curve = pm.textFieldButtonGrp(
-            "xdMouthCreatorRightLowFreshyCurveField", q=True, text=True)
-        self.eye_creator.right_up_shape_surface = pm.textFieldButtonGrp(
-            "xdMouthCreatorRightUpShapeSurfaceField", q=True, text=True)
-        self.eye_creator.right_low_shape_surface = pm.textFieldButtonGrp(
-            "xdMouthCreatorRightLowShapeSurfaceField", q=True, text=True)
-
-        self.eye_creator.left_eye_geo = pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftEyeGeoField", q=True, text=True)
-        self.eye_creator.right_eye_geo = pm.textFieldButtonGrp(
-            "xdMouthCreatorRightEyeGeoField", q=True, text=True)
-        self.eye_creator.left_eye_proxy = pm.textFieldButtonGrp(
-            "xdMouthCreatorLeftEyeProxyField", q=True, text=True)
-        self.eye_creator.right_eye_proxy = pm.textFieldButtonGrp(
-            "xdMouthCreatorRightEyeProxyField", q=True, text=True)
-
-        return
-
-    def eye_component_in_field(self, field, group=None):
-        target = pm.ls(sl=True)[0]
-        self.eye_creator.init_structure()
-        drag_to_group_and_field(target, field=field, group=group)
-        return
-
-    def eye_master_ctrl_field(self, side, field):
-        self.eye_creator.init_structure()
-
-        prefix = "{}_{}".format(side, self.eye_module)
-        master_ctrl = "{}_Master_Ctrl".format(prefix)
-        jnt_or_control_grp(name=master_ctrl, object_type="tours", parent_node="{}_Grp".format(prefix))
-        pm.textFieldButtonGrp(field, e=True, text=master_ctrl)
+        self.cheek_creator.build()
 
     def build_linkage(self):
         jaw_ctrl = "MD_Mouth_01_Jaw_Ctrl"
