@@ -103,22 +103,50 @@ class Creator:
 
                 base_ctrl_group = self.right_base_ctrl_group
 
+            deformer_loc_group = "{}_Eye_01_Loc_Grp".format(side)
+            if not pm.objExists(deformer_loc_group):
+                pm.createNode("transform", name=deformer_loc_group)
+                pm.parent(deformer_loc_group, "{}_Eye_01_Deformer_Grp".format(side))
+
+            # master_ctrl = "{}_Eye_01_Master_Ctrl".format(side)
+            pm.delete(pm.parentConstraint(master_ctrl, deformer_loc_group, mo=False))
+
+            base_loc_group = "{}_Eye_01_Base_Loc_Grp".format(side)
+            if not pm.objExists(base_loc_group):
+                pm.createNode("transform", name=base_loc_group, p=deformer_loc_group)
+
+            root_jnt_group = "{}_Eye_01_Jnt_Grp".format(side)   # LF_Eye_01_Jnt_Grp
+            if not pm.objExists(root_jnt_group):
+                pm.createNode("transform", name=root_jnt_group,
+                              p="{}_Eye_01_Deformer_Grp".format(side))  # LF_Eye_01_Deformer_Grp
+            pm.delete(pm.parentConstraint(master_ctrl, root_jnt_group, mo=False))
+
+            master_ctrl_jnt_group = "{}_Eye_01_Master_Ctrl_Jnt_Grp".format(side)    # LF_Eye_01_Master_Ctrl_Jnt_Grp
+            pm.createNode("transform", name=master_ctrl_jnt_group, p=root_jnt_group)
+
+            base_jnt_group = "{}_Eye_01_Base_Jnt_Grp".format(side)  # LF_Eye_01_Base_Jnt_Grp
+            pm.createNode("transform", name=base_jnt_group, p=master_ctrl_jnt_group)
+
             for item in ["Up", "Low", "Inner", "Outer"]:
                 self.build_base_ctrl_group(side, master_ctrl, base_ctrl_group, item)
+                self.build_base_loc_group(side, item, base_loc_group)
 
-            # self.build_base_loc_group(side)
-            # self.build_base_jnt_group(side)
-            # self.build_bind_loc_group(side)
-            # self.build_bind_jnt_group(side)
-            # self.skin_out_curve(side)
-            # self.tweak_ctrl_group(side)
-            # self.make_blink_work(side)
-            # self.skin_master_curve(side)
-            # self.make_master_ctrl_work(side)
-            # self.build_shape_ctrl_group(side)
-            # self.build_shape_jnt_group(side)
-            # self.build_eyeball_ctrl_group(side)
-        # self.build_aim_ctrl_group()
+            self.build_base_jnt_group(side, base_jnt_group)
+            self.build_bind_loc_group(side)
+            self.build_bind_jnt_group(side)
+            self.skin_out_curve(side)
+            self.tweak_ctrl_group(side)
+            self.make_blink_work(side)
+            self.skin_master_curve(side)
+            self.make_master_ctrl_work(side)
+            self.build_shape_ctrl_group(side)
+            self.build_shape_jnt_group(side)
+            self.build_eyeball_ctrl_group(side)
+        self.build_aim_ctrl_group()
+
+        print("Build Done!")
+
+        return
 
     def build_base_ctrl_group(self, side, master_ctrl, base_ctrl_group, item):
         # for item in ["Up", "Low", "Inner", "Outer"]:
@@ -218,72 +246,43 @@ class Creator:
 
         return
 
-    def build_base_loc_group(self, side):
-        deformer_loc_group = "{}_Eye_01_Loc_Grp".format(side)
-        if not pm.objExists(deformer_loc_group):
-            pm.createNode("transform", name=deformer_loc_group)
+    def build_base_loc_group(self, side, item, base_loc_group):
+        base_loc = "{}_Eye_01_{}_Ctrl_Loc".format(side, item)
+        loc_grp = utils.jnt_or_control_grp(name=base_loc, object_type="locator")
 
-        pm.parent(deformer_loc_group, "{}_Eye_01_Deformer_Grp".format(side))
+        if item == "Low":
+            master_curve = "{}_Eye_01_Low_Master_Curve".format(side)
+        else:
+            master_curve = "{}_Eye_01_Up_Master_Curve".format(side)
 
-        master_ctrl = "{}_Eye_01_Master_Ctrl".format(side)
-        pm.delete(pm.parentConstraint(master_ctrl, deformer_loc_group, mo=False))
+        ctrl = "{}_Eye_01_{}_Ctrl".format(side, item)
+        ctrl_grp = "{}_Grp".format(ctrl)
+        pm.delete(pm.orientConstraint(ctrl_grp, loc_grp, mo=False))
 
-        base_loc_group = "{}_Eye_01_Base_Loc_Grp".format(side)
-        pm.createNode("transform", name=base_loc_group, p=deformer_loc_group)
+        postion = None
+        if item == "Outer":
+            postion = utils.point_on_curve_position(master_curve, 1.0)
+            pm.PyNode(ctrl).translate.connect(pm.PyNode(base_loc).translate)
+        elif item == "Inner":
+            postion = utils.point_on_curve_position(master_curve, 0)
+            pm.PyNode(ctrl).translate.connect(pm.PyNode(base_loc).translate)
+        elif item == "Low" or "Up":
+            postion = utils.point_on_curve_position(master_curve, 0.5)
+            pm.PyNode(ctrl).translateX.connect(pm.PyNode(base_loc).translateX)
+            pm.PyNode(ctrl).translateZ.connect(pm.PyNode(base_loc).translateZ)
 
-        for item in ["Up", "Low", "Inner", "Outer"]:
-            loc_name = "{}_Eye_01_{}_Ctrl_Loc".format(side, item)
-            loc_grp = utils.jnt_or_control_grp(name=loc_name, object_type="locator")
+        pm.PyNode(ctrl).rotate.connect(pm.PyNode(base_loc).rotate)
 
-            if item == "Low":
-                master_curve = "{}_Eye_01_Low_Master_Curve".format(side)
-            else:
-                master_curve = "{}_Eye_01_Up_Master_Curve".format(side)
-
-            ctrl = "{}_Eye_01_{}_Ctrl".format(side, item)
-            ctrl_grp = "{}_Grp".format(ctrl)
-            pm.delete(pm.orientConstraint(ctrl_grp, loc_grp, mo=False))
-
-            postion = None
-            if item == "Outer":
-                postion = utils.point_on_curve_position(master_curve, 1.0)
-                pm.PyNode(ctrl).translate.connect(pm.PyNode(loc_name).translate)
-            elif item == "Inner":
-                postion = utils.point_on_curve_position(master_curve, 0)
-                pm.PyNode(ctrl).translate.connect(pm.PyNode(loc_name).translate)
-            elif item == "Low" or "Up":
-                postion = utils.point_on_curve_position(master_curve, 0.5)
-                pm.PyNode(ctrl).translateX.connect(pm.PyNode(loc_name).translateX)
-                pm.PyNode(ctrl).translateZ.connect(pm.PyNode(loc_name).translateZ)
-
-            pm.PyNode(ctrl).rotate.connect(pm.PyNode(loc_name).rotate)
-
-            pm.PyNode(loc_grp).translate.set(postion)
-            pm.parent(loc_grp, base_loc_group)
+        pm.PyNode(loc_grp).translate.set(postion)
+        pm.parent(loc_grp, base_loc_group)
 
         return
 
-    def build_base_jnt_group(self, side):
-        master_ctrl = "{}_Eye_01_Master_Ctrl".format(side)
-
-        root_jnt_group = "{}_Eye_01_Jnt_Grp".format(side)
-        if not pm.objExists(root_jnt_group):
-            pm.createNode("transform", name=root_jnt_group, p="{}_Eye_01_Deformer_Grp".format(side))
-        pm.delete(pm.parentConstraint(master_ctrl, root_jnt_group, mo=False))
-
-        master_ctrl_jnt_group = "{}_Eye_01_Master_Ctrl_Jnt_Grp".format(side)
-        pm.createNode("transform", name=master_ctrl_jnt_group, p=root_jnt_group)
-
-        base_jnt_group = "{}_Eye_01_Base_Jnt_Grp".format(side)
-        pm.createNode("transform", name=base_jnt_group, p=master_ctrl_jnt_group)
-
-        side_name = "LF"
+    def build_base_jnt_group(self, side, base_jnt_group):
         if side == "LF":
-            side_name = "Left"
+            proxy_eye = self.left_eye_proxy
         elif side == "RT":
-            side_name = "Right"
-
-        proxy_eye = pm.textFieldButtonGrp("xdMouthCreator{}EyeProxyField".format(side_name), q=True, text=True)
+            proxy_eye = self.right_eye_proxy
 
         temp_locs = []
 
@@ -388,7 +387,7 @@ class Creator:
         elif side == "RT":
             side_name = "Right"
 
-        proxy_eye = pm.textFieldButtonGrp("xdMouthCreator{}EyeProxyField".format(side_name), q=True, text=True)
+        proxy_eye = pm.textFieldButtonGrp("xdEyeCreator{}EyeProxyField".format(side_name), q=True, text=True)
 
         temp_locs = []
 
@@ -639,7 +638,6 @@ class Creator:
 
     def build_shape_ctrl_group(self, side):
         seg = 3
-        # for side in ["LF", "RT"]:
         prefix = "{}_{}".format(side, self.module_name)
 
         shape_ctrl_group = "{}_Shape_Ctrl_Grp".format(prefix)
@@ -652,9 +650,9 @@ class Creator:
         pm.parent(original_jnt, "{}_Grp".format(prefix))
 
         if side == "LF":
-            proxy_eye = pm.textFieldButtonGrp("xdMouthCreator{}EyeProxyField".format("Left"), q=True, text=True)
+            proxy_eye = pm.textFieldButtonGrp("xdEyeCreator{}EyeProxyField".format("Left"), q=True, text=True)
         else:
-            proxy_eye = pm.textFieldButtonGrp("xdMouthCreator{}EyeProxyField".format("Right"), q=True, text=True)
+            proxy_eye = pm.textFieldButtonGrp("xdEyeCreator{}EyeProxyField".format("Right"), q=True, text=True)
         pm.delete(pm.pointConstraint(proxy_eye, original_jnt, mo=False))
 
         for vertical in ["Up", "Low"]:
@@ -701,7 +699,6 @@ class Creator:
 
     def build_shape_jnt_group(self, side):
         seg = 3
-        # for side in ["LF", "RT"]:
         prefix = "{}_{}".format(side, self.module_name)
 
         shape_jnt_group = "{}_Shape_Jnt_Grp".format(prefix)
@@ -871,184 +868,55 @@ class Editor(common.Singleton):
     def create_layout(self, parent):
         with parent:
             with pm.scrollLayout(p=parent, cr=True) as frame:
-                with pm.frameLayout(label=u"Eye Guid Curve",
-                                    ann=u"这些曲线将会约束眼皮的蒙皮骨骼",
-                                    mh=10, mw=10, cll=True, cl=False):
-                    with pm.frameLayout(label="Left", mh=10, mw=10, bgs=True, cll=True, cl=True):
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorLeftUpMasterCurveField",
-                            label=u"Left Up Master Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorLeftUpMasterCurveField", group="LF_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorLeftLowMasterCurveField",
-                            label=u"Left Low Master Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorLeftLowMasterCurveField", group="LF_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorLeftUpBlinkCurveField",
-                            label=u"Left Up Blink Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorLeftUpBlinkCurveField", group="LF_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorLeftLowBlinkCurveField",
-                            label=u"Left Low Blink Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorLeftLowBlinkCurveField", group="LF_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorLeftUpOutCurveField",
-                            label=u"Left Up Out Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorLeftUpOutCurveField", group="LF_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorLeftLowOutCurveField",
-                            label=u"Left Low Out Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorLeftLowOutCurveField", group="LF_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorLeftUpTweakCurveField",
-                            label=u"Left Up Tweak Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorLeftUpTweakCurveField", group="LF_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorLeftLowTweakCurveField",
-                            label=u"Left Low Tweak Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorLeftLowTweakCurveField", group="LF_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorLeftUpFreshyCurveField",
-                            label=u"Left Up Freshy Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorLeftUpFreshyCurveField", group="LF_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorLeftLowFreshyCurveField",
-                            label=u"Left Low Freshy Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorLeftLowFreshyCurveField",
-                                group="LF_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorLeftUpShapeSurfaceField",
-                            label=u"Left Up Shape Surface",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.import_eye_up_shape_surface(
-                                vertical="Up", side="LF", field="xdEyeCreatorLeftUpShapeSurfaceField"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorLeftLowShapeSurfaceField",
-                            label=u"Left Low Shape Surface",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.import_eye_up_shape_surface(
-                                vertical="Low", side="LF", field="xdEyeCreatorLeftLowShapeSurfaceField"))
+                with pm.frameLayout(label=u"Eye Guid Curve", mh=10, mw=10, cll=True, cl=False):
+                    for side in ["LF", "RT"]:
+                        if side == "LF":
+                            label = "Left"
+                        else:
+                            label = "Right"
 
-                    with pm.frameLayout(label="Right", mh=10, mw=10, bgs=True, cll=True, cl=True):
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorRightUpMasterCurveField",
-                            label=u"Right Up Master Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorRightUpMasterCurveField", group="RT_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorRightLowMasterCurveField",
-                            label=u"Right Low Master Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorRightLowMasterCurveField", group="RT_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorRightUpBlinkCurveField",
-                            label=u"Right Up Blink Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorRightUpBlinkCurveField", group="RT_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorRightLowBlinkCurveField",
-                            label=u"Right Low Blink Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorRightLowBlinkCurveField", group="RT_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorRightUpOutCurveField",
-                            label=u"Right Up Out Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorRightUpOutCurveField", group="RT_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorRightLowOutCurveField",
-                            label=u"Right Low Out Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorRightUpOutCurveField", group="RT_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorRightUpTweakCurveField",
-                            label=u"Right Up Tweak Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorRightUpTweakCurveField", group="RT_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorRightLowTweakCurveField",
-                            label=u"Right Low Tweak Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorRightLowTweakCurveField", group="RT_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorRightUpFreshyCurveField",
-                            label=u"Right Up Freshy Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorRightUpFreshyCurveField", group="RT_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorRightLowFreshyCurveField",
-                            label=u"Right Low Freshy Curve",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorRightLowFreshyCurveField", group="RT_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorRightUpShapeSurfaceField",
-                            label=u"Right Up Shape Surface",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorRightUpShapeSurfaceField", group="RT_Eye_01_Curve_Grp"))
-                        pm.textFieldButtonGrp(
-                            "xdEyeCreatorRightLowShapeSurfaceField",
-                            label=u"Right Low Shape Surface",
-                            bl=u"Get Object",
-                            adj=2,
-                            bc=lambda *args: self.parent_field_to_spec(
-                                field="xdEyeCreatorRightLowShapeSurfaceField", group="RT_Eye_01_Curve_Grp"))
+                        with pm.frameLayout(label=label, mh=10, mw=10, bgs=True, cll=True, cl=True):
+                            for item in ["Master", "Blink", "Out", "Tweak", "Freshy"]:
+                                for position in ["Up", "Low"]:
+                                    pm.textFieldButtonGrp(
+                                        "xdEyeCreator{}{}{}CurveField".format(label, position, item),
+                                        label=u"{} {} {} Curve".format(label, position, item),
+                                        bl=u"Get Object",
+                                        adj=2,
+                                        bc=lambda *args: self.parent_field_to_spec(
+                                            field="xdEyeCreator{}{}{}CurveField".format(label, position, item),
+                                            group="{}_Eye_01_Curve_Grp".format(side)))
 
                 with pm.frameLayout(label=u"Eye Control location", mh=10, mw=10, bgs=True, cll=True, cl=False):
                     pm.text(label=u"* is optional", al='left')
+                    pm.textFieldButtonGrp(
+                        "xdEyeCreatorLeftUpShapeSurfaceField",
+                        label=u"Left Up Shape Surface",
+                        bl=u"Get Object",
+                        adj=2,
+                        bc=lambda *args: self.import_eye_up_shape_surface(
+                            vertical="Up", side="LF", field="xdEyeCreatorLeftUpShapeSurfaceField"))
+                    pm.textFieldButtonGrp(
+                        "xdEyeCreatorLeftLowShapeSurfaceField",
+                        label=u"Left Low Shape Surface",
+                        bl=u"Get Object",
+                        adj=2,
+                        bc=lambda *args: self.import_eye_up_shape_surface(
+                            vertical="Low", side="LF", field="xdEyeCreatorLeftLowShapeSurfaceField"))
+                    pm.textFieldButtonGrp(
+                        "xdEyeCreatorRightUpShapeSurfaceField",
+                        label=u"Right Up Shape Surface",
+                        bl=u"Get Object",
+                        adj=2,
+                        bc=lambda *args: self.parent_field_to_spec(
+                            field="xdEyeCreatorRightUpShapeSurfaceField", group="RT_Eye_01_Curve_Grp"))
+                    pm.textFieldButtonGrp(
+                        "xdEyeCreatorRightLowShapeSurfaceField",
+                        label=u"Right Low Shape Surface",
+                        bl=u"Get Object",
+                        adj=2,
+                        bc=lambda *args: self.parent_field_to_spec(
+                            field="xdEyeCreatorRightLowShapeSurfaceField", group="RT_Eye_01_Curve_Grp"))
                     pm.textFieldButtonGrp(
                         "xdEyeCreatorLeftEyeGeoField",
                         label=u"Left eye geo", bl=u"Get Object", adj=2,
@@ -1165,51 +1033,18 @@ class Editor(common.Singleton):
         return
 
     def init(self):
-        self.creator.left_up_master_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorLeftUpMasterCurveField", q=True, text=True)
-        self.creator.left_low_master_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorLeftLowMasterCurveField", q=True, text=True)
-        self.creator.left_up_blink_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorLeftUpBlinkCurveField", q=True, text=True)
-        self.creator.left_low_blink_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorLeftLowBlinkCurveField", q=True, text=True)
-        self.creator.left_up_out_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorLeftUpOutCurveField", q=True, text=True)
-        self.creator.left_low_out_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorLeftLowOutCurveField", q=True, text=True)
-        self.creator.left_up_tweak_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorLeftUpTweakCurveField", q=True, text=True)
-        self.creator.left_low_tweak_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorLeftLowTweakCurveField", q=True, text=True)
-        self.creator.left_up_freshy_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorLeftUpFreshyCurveField", q=True, text=True)
-        self.creator.left_low_freshy_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorLeftLowFreshyCurveField", q=True, text=True)
+        for side in ["left", "right"]:
+            for item in ["master", "blink", "out", "tweak", "freshy"]:
+                for position in ["up", "low"]:
+                    self.creator.__dict__["{}_{}_{}_curve".format(side, position, item)] = pm.textFieldButtonGrp(
+                        "xdEyeCreator{}{}{}CurveField".format(side.title(), position.title(), item.title()),
+                        q=True, text=True)
+
         self.creator.left_up_shape_surface = pm.textFieldButtonGrp(
             "xdEyeCreatorLeftUpShapeSurfaceField", q=True, text=True)
         self.creator.left_low_shape_surface = pm.textFieldButtonGrp(
             "xdEyeCreatorLeftLowShapeSurfaceField", q=True, text=True)
 
-        self.creator.right_up_master_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorRightUpMasterCurveField", q=True, text=True)
-        self.creator.right_low_master_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorRightLowMasterCurveField", q=True, text=True)
-        self.creator.right_up_blink_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorRightUpBlinkCurveField", q=True, text=True)
-        self.creator.right_low_blink_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorRightLowBlinkCurveField", q=True, text=True)
-        self.creator.right_up_out_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorRightUpOutCurveField", q=True, text=True)
-        self.creator.right_low_out_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorRightLowOutCurveField", q=True, text=True)
-        self.creator.right_up_tweak_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorRightUpTweakCurveField", q=True, text=True)
-        self.creator.right_low_tweak_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorRightLowTweakCurveField", q=True, text=True)
-        self.creator.right_up_freshy_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorRightUpFreshyCurveField", q=True, text=True)
-        self.creator.right_low_freshy_curve = pm.textFieldButtonGrp(
-            "xdEyeCreatorRightLowFreshyCurveField", q=True, text=True)
         self.creator.right_up_shape_surface = pm.textFieldButtonGrp(
             "xdEyeCreatorRightUpShapeSurfaceField", q=True, text=True)
         self.creator.right_low_shape_surface = pm.textFieldButtonGrp(
@@ -1222,5 +1057,7 @@ class Editor(common.Singleton):
 
         self.creator.left_master_ctrl = pm.textFieldButtonGrp("xdEyeCreatorLeftMasterCtrlField", q=True, text=True)
         self.creator.right_master_ctrl = pm.textFieldButtonGrp("xdEyeCreatorRightMasterCtrlField", q=True, text=True)
+
+        print(self.creator.__dict__)
 
         return
